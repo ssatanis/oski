@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<!-- This site was created in Webflow. https://webflow.com --><!-- Last Published: Fri Jun 13 2025 13:52:06 GMT+0000 (Coordinated Universal Time) --><html data-wf-domain="tenet-template.webflow.io" data-wf-page="683d91777124b040c4a5b5cd" data-wf-site="683d91777124b040c4a5b5db" lang="en"><head><meta charset="utf-8"><title>Oski</title><meta content="A breakthrough HTML template designed to propel visionary brands to market before the competition blinks." name="description"><meta content="Oski" property="og:title"><meta content="A breakthrough HTML template designed to propel visionary brands to market before the competition blinks." property="og:description"><meta content="Tenet - Webflow HTML website template" property="twitter:title"><meta content="A breakthrough HTML template designed to propel visionary brands to market before the competition blinks." property="twitter:description"><meta property="og:type" content="website"><meta content="summary_large_image" name="twitter:card"><meta content="width=device-width, initial-scale=1" name="viewport"><meta content="Webflow" name="generator"><link href="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/css/tenet-template.webflow.shared.40365d26e.css" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com" rel="preconnect"><link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous"><script src="js/1.6.26-webfont.js" type="text/javascript"></script><script type="text/javascript">WebFont.load({  google: {    families: ["Geist:100,200,300,regular,500,600,700,800,900","Prata:regular"]  }});</script><script type="text/javascript">!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
+
+<!-- Dynamic Favicon based on theme -->
+<script>
+function setFavicon() {
+  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const favicon = document.querySelector('link[rel="shortcut icon"]') || document.createElement('link');
+  favicon.rel = 'shortcut icon';
+  favicon.type = 'image/svg+xml';
+  favicon.href = isDarkMode ? 'favicons/White.svg' : 'favicons/Black.svg';
+  if (!document.querySelector('link[rel="shortcut icon"]')) {
+    document.head.appendChild(favicon);
+  }
+}
+setFavicon();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setFavicon);
+</script>
+
+<link href="favicons/683d91777124b040c4a5b5db-683d91777124b040c4a5b63e_logo.png" rel="apple-touch-icon">
+<style>
+/* Hide Webflow badge */
+.w-webflow-badge {
+    display: none !important;
+}
+
+/* Set examiner.jpg as background for the top-part */
+.top-part {
+  background-image: url('images/examiner.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Carousel image normalization styles */
+.logo-carousel img {
+    filter: grayscale(100%) brightness(0%) contrast(100%) !important;
+    opacity: 1 !important;
+    mix-blend-mode: normal !important;
+    -webkit-filter: grayscale(100%) brightness(0%) contrast(100%) !important;
+    width: 140px !important;
+    height: auto !important;
+    object-fit: contain !important;
+}
+
+/* Make active nav link white with black background */
+.navbar-link.w--current {
+    background-color: #000000;
+    color: #ffffff !important;
+    border-radius: 25px;
+    padding: 10px 20px;
+}
+
+/* Center the pricing title */
+.max-w-width .display-1._01 {
+    text-align: center;
+}
+
+/* Navigation hover effects */
+.navbar-link {
+    transition: all 0.3s ease;
+    padding: 10px 20px;
+    border-radius: 25px;
+    position: relative;
+}
+
+.navbar-link:hover {
+    background-color: #000000;
+    color: #ffffff !important;
+}
+
+
+</style>
+</head><body><div class="page-wrapper"><div id="header-container"></div><section class="hero" id="hero"><div class="container"><div class="max-w-width" style="margin-top: 120px;"><div data-w-id="cc4bc4b9-3fd8-9621-1de2-e0b7a0bf1285" style="opacity:0" class="top-text">Welcome to Oski</div><h1 data-w-id="6b4f9255-2b7e-e6bc-76d5-b0e49087b85c" style="opacity:0" class="display-1">Turning <span class="other-font">interactions</span> into clinical excellence.</h1><div class="margin-20"><p data-w-id="b90b02c7-115c-c062-22d1-a988e276c1cf" style="opacity:0" class="p-02">Complexity in, precise insights out.</p></div><div data-w-id="4c25a1b6-df10-f474-31b4-08ca1d59a136" style="opacity:0" class="margin-30"><div class="button-flex center-mobile"><a data-w-id="808f99a7-6144-0b76-f91d-d0f0d0481c64" href="#pricing" class="button-first w-inline-block"><div class="txt-wrapper"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div></div></a><a data-w-id="808f99a7-6144-0b76-f91d-d0f0d0481c6a" href="#features" class="button-main first w-inline-block"><div class="button-text">Learn more</div><div class="button-icon-wrapper"><div style="-webkit-transform:translate3d(-16%, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(-16%, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(-16%, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(-16%, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-arrow hover w-embed"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div><div class="button-arrow w-embed"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div></div></a></div></div>
+
+<div data-w-id="b6c92d62-c40a-6e4b-ac8b-672462c0ea3c" style="opacity:0; margin-top: 60px;" class="carousel-header">
+    <h3 style="text-align: center; font-size: 1.1rem; font-weight: 500; color: #6b7280; margin-bottom: 30px; letter-spacing: 0.05em;">Used by:</h3>
+</div>
+<div class="infinite-carousel">
+    <div class="carousel-fade left"></div>
+    <div class="carousel-fade right"></div>
+    <div class="carousel-track">
+        <div class="carousel-item">
+            <img src="images/A&MMed.png" alt="A&M Medical College">
+        </div>
+        <div class="carousel-item">
+            <img src="images/TuftsMed.png" alt="Tufts Medical School">
+        </div>
+        <div class="carousel-item">
+            <img src="images/UTSWMed.png" alt="UT Southwestern Medical Center">
+        </div>
+        <div class="carousel-item">
+            <img src="images/USAMed.png" alt="USA Medical School">
+        </div>
+        <!-- Duplicate for seamless loop -->
+        <div class="carousel-item">
+            <img src="images/A&MMed.png" alt="A&M Medical College">
+        </div>
+        <div class="carousel-item">
+            <img src="images/TuftsMed.png" alt="Tufts Medical School">
+        </div>
+        <div class="carousel-item">
+            <img src="images/UTSWMed.png" alt="UT Southwestern Medical Center">
+        </div>
+        <div class="carousel-item">
+            <img src="images/USAMed.png" alt="USA Medical School">
+        </div>
+    </div>
+</div></div></div><div class="shadow-absolute"></div><div class="logo-absolute">
+<style>
+.infinite-carousel {
+    width: 100%;
+    overflow: hidden;
+    background: transparent;
+    padding: 40px 0;
+    position: relative;
+}
+
+.carousel-track {
+    display: flex;
+    animation: scroll 30s linear infinite;
+    width: calc(240px * 8); /* 4 logos * 2 for seamless loop */
+    gap: 0;
+}
+
+.carousel-item {
+    flex: 0 0 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 30px;
+}
+
+.carousel-item img {
+    width: 180px !important;
+    height: auto !important;
+    max-height: 80px !important;
+    opacity: 0.9 !important;
+    transition: opacity 0.3s ease !important;
+    object-fit: contain !important;
+}
+
+.carousel-item img {
+    filter: brightness(0) saturate(100%) !important;
+}
+
+.carousel-item:hover img {
+    opacity: 1 !important;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(calc(-240px * 4));
+    }
+}
+
+.carousel-fade {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.carousel-fade.left {
+    left: 0;
+    background: linear-gradient(to right, rgba(255,255,255,1), rgba(255,255,255,0));
+}
+
+.carousel-fade.right {
+    right: 0;
+    background: linear-gradient(to left, rgba(255,255,255,1), rgba(255,255,255,0));
+}
+</style>
+
+
+</div><img src="images/683d91777124b040c4a5b5db-683dc0f529301b61e3b57cf5_circle.webp" loading="lazy" width="500" sizes="(max-width: 767px) 100vw, 500px" alt="" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683dc0f529301b61e3b57cf5_circle-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683dc0f529301b61e3b57cf5_circle.webp 1000w" class="shape-1"></section><section class="section"><div class="container"><div class="home-grid"><div data-w-id="d4a1e282-1195-f779-23b0-de39cf1529ce" style="opacity:0" class="testimonials-wrapper"><div class="shape first bottom"></div><div class="shape second"></div><div class="testimonials-second"><div class="right-testi"><div><h2 class="top-text">From Founder<br></h2></div><div><h2 class="second-title">&ldquo;From initial student encounters to comprehensive evaluations, we pinpoint what truly defines clinical competency <span class="other-font _01">&mdash; and help transform it into unparalleled assessment solutions.</span>&bdquo;</h2></div><div><div class="author-flex"><div class="author-photo second" style="background-image: url('images/Jamieson.jpg'); background-size: cover; background-position: center; width: 60px; height: 60px; border-radius: 50%;"></div><h2 class="second-title _03">Andrew R. Jamieson, PhD, <span class="other-font _01">Founder</span></h2></div></div></div><div class="left-testi"><div class="photo-movement _02"><img sizes="(max-width: 1999px) 100vw, 1999px" srcset="images/Jamieson.jpg 500w, images/Jamieson.jpg 800w, images/Jamieson.jpg 1080w, images/Jamieson.jpg 1600w, images/Jamieson.jpg 1999w" alt="Andrew R. Jamieson, PhD" src="images/Jamieson.jpg" loading="lazy" class="photo-first"></div></div></div></div><div id="w-node-_9cde6fbe-6648-f55b-f693-6832eee415a0-c4a5b5cd" data-w-id="9cde6fbe-6648-f55b-f693-6832eee415a0" style="opacity:0" class="full-card"><div class="box-wrapper"><div class="top-part"></div><div class="second-part"><h2 class="second-title">Reduced human effort <span class="other-font _02">by 91%.</span></h2><div class="small-divider"><p class="p-01">Metrics from Winter 2024 OSCE deployment.<br></p><div><div class="button-flex"><a href="https://ai.nejm.org/doi/abs/10.1056/AIcs2400631" target="_blank" class="button-first _02 w-inline-block"><div class="txt-wrapper"><div class="button-txt">Learn</div><div class="button-txt">Learn</div></div></a></div></div></div></div></div></div></div><div id="features" class="margin-150"><div data-w-id="1acbf59a-d3ab-83bd-2ecc-033c9a86eb19" style="opacity:0" class="max-w-width"><h2 class="display-1 _01">More than a grading system, <span class="other-font _01">Oski is a partner in education.</span></h2><div class="margin-20"><p class="p-02">Beloved by educators, trusted by institutions</p></div></div><div data-w-id="453011f2-4f73-4bf0-f9f8-20d318268fd0" style="opacity:0" class="margin-60">
+<style>
+.oski-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 16px;
+    padding: 32px 24px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.oski-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.oski-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.oski-card:hover::before {
+    opacity: 1;
+}
+
+.oski-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.oski-card:hover .oski-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.oski-icon svg {
+    width: 28px;
+    height: 28px;
+    fill: white;
+}
+
+.oski-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 12px;
+    line-height: 1.3;
+}
+
+.oski-description {
+    color: #6b7280;
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+.oski-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 24px;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.oski-card:nth-child(1) { animation-delay: 0.1s; }
+.oski-card:nth-child(2) { animation-delay: 0.2s; }
+.oski-card:nth-child(3) { animation-delay: 0.3s; }
+.oski-card:nth-child(4) { animation-delay: 0.4s; }
+.oski-card:nth-child(5) { animation-delay: 0.5s; }
+.oski-card:nth-child(6) { animation-delay: 0.6s; }
+
+@media (max-width: 768px) {
+    .oski-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .oski-card {
+        padding: 24px 20px;
+    }
+}
+</style>
+
+<div class="oski-grid">
+    <div class="oski-card">
+        <div class="oski-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <h3 class="oski-title">Note Analysis & Grading</h3>
+        <p class="oski-description">Automated, accurate grading of post-encounter notes against detailed rubrics, leveraging LLMs for highly accurate information extraction and normalization.</p>
+    </div>
+    
+    <div class="oski-card">
+        <div class="oski-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+        </div>
+        <h3 class="oski-title">Interaction Assessment</h3>
+        <p class="oski-description">Analyze student-patient interactions (behaviors, physical exam maneuvers, communication skills) from textualized audiovisual data (ASR transcripts, descriptive summaries from video frames).</p>
+    </div>
+    
+    <div class="oski-card">
+        <div class="oski-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4"/>
+            </svg>
+        </div>
+        <h3 class="oski-title">Adaptive Rubric Integration</h3>
+        <p class="oski-description">Easily adapt to new evaluation rubrics with flexible prompt templates and minimal prompt engineering.</p>
+    </div>
+    
+    <div class="oski-card">
+        <div class="oski-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+        </div>
+        <h3 class="oski-title">Reduced Human Effort</h3>
+        <p class="oski-description">Achieved an estimated 91% reduction in manual scoring effort and dramatically reduced turnaround time from weeks to days.</p>
+    </div>
+    
+    <div class="oski-card">
+        <div class="oski-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l-3-1M9 5l3-1"/>
+            </svg>
+        </div>
+        <h3 class="oski-title">Scalability & Efficiency</h3>
+        <p class="oski-description">Designed for large-scale deployment, enhancing assessment quality and freeing up valuable human talent.</p>
+    </div>
+    
+    <div class="oski-card">
+        <div class="oski-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+        </div>
+        <h3 class="oski-title">Continuous Improvement</h3>
+        <p class="oski-description">Leverages an iterative refinement process guided by a comprehensive error ontology for ongoing system enhancement.</p>
+    </div>
+</div>
+</div><div data-w-id="18b1f2ea-bdf3-5ac7-0519-56b714285300" style="opacity:0" class="margin-30"><div class="button-flex center"><a data-w-id="18b1f2ea-bdf3-5ac7-0519-56b714285302" href="contact.html" class="button-first _01 w-inline-block"><div class="txt-wrapper"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div></div></a></div></div></div></div></section><section class="section gray" style="display: none;"><div class="container"><div><div data-w-id="4d163e14-8ac1-3451-2133-57efe34e71a7" style="opacity:0" class="max-w-width"><div class="top-text">Featured Work</div><h2 class="display-1 _01">Showcasing our most <span class="other-font _01">impactful projects</span></h2><div class="margin-20"><p class="p-02">Beloved by educators, trusted by institutions</p></div><div class="margin-30"><div class="button-flex center"><a data-w-id="6464c505-0550-8bb1-4d55-36ae0c302fec" href="work.html" class="button-first _01 w-inline-block"><div class="txt-wrapper"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">View all work</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">View all work</div></div></a></div></div></div></div><div class="margin-60"><div class="w-dyn-list"><div role="list" class="work-grid w-dyn-items"><div data-w-id="eae118c9-6477-b13c-d4ef-bac4f1ac12f4" style="opacity:0" role="listitem" class="w-dyn-item"><a data-w-id="4a0b8e2b-c7f4-cd48-f6b4-98f1d03dc2dd" href="bold-moves.html" class="work-wrapper-first w-inline-block"><div class="circle-center"><div class="project-circle-text"><img width="125" loading="lazy" alt="" src="images/683d91777124b040c4a5b5db-683ef44092b10e0ef994bb9d_icons8-play-250%20(1).webp" class="play-icon"></div><img loading="eager" src="images/683d91777124b040c4a5b5f9-6840a72ed9ee839b1c984d0d_Joyful%20Portrait%20in%20Green.webp" alt="" sizes="100vw" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a72ed9ee839b1c984d0d_Joyful%20Portrait%20in%20Green-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a72ed9ee839b1c984d0d_Joyful%20Portrait%20in%20Green-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a72ed9ee839b1c984d0d_Joyful%20Portrait%20in%20Green-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a72ed9ee839b1c984d0d_Joyful%20Portrait%20in%20Green-p-1600.webp 1600w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a72ed9ee839b1c984d0d_Joyful%20Portrait%20in%20Green-p-2000.webp 2000w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a72ed9ee839b1c984d0d_Joyful%20Portrait%20in%20Green.webp 2400w" class="work-photo-first"></div><div class="vertical-flex"><div class="title-line-wrapper"><h3 class="work-title-first">Bold Moves</h3><div class="line-overlay"><div class="line-title"></div></div></div><div><p class="category-title">Web Design, Marketing</p></div></div></a></div><div data-w-id="eae118c9-6477-b13c-d4ef-bac4f1ac12f4" style="opacity:0" role="listitem" class="w-dyn-item"><a data-w-id="4a0b8e2b-c7f4-cd48-f6b4-98f1d03dc2dd" href="studio-focus.html" class="work-wrapper-first w-inline-block"><div class="circle-center"><div class="project-circle-text"><img width="125" loading="lazy" alt="" src="images/683d91777124b040c4a5b5db-683ef44092b10e0ef994bb9d_icons8-play-250%20(1).webp" class="play-icon"></div><img loading="eager" src="images/683d91777124b040c4a5b5f9-6840a879afa04d97566d09f2_Hands%20Holding%20Tablet.webp" alt="" sizes="100vw" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a879afa04d97566d09f2_Hands%20Holding%20Tablet-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a879afa04d97566d09f2_Hands%20Holding%20Tablet-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a879afa04d97566d09f2_Hands%20Holding%20Tablet-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a879afa04d97566d09f2_Hands%20Holding%20Tablet-p-1600.webp 1600w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a879afa04d97566d09f2_Hands%20Holding%20Tablet-p-2000.webp 2000w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a879afa04d97566d09f2_Hands%20Holding%20Tablet.webp 2400w" class="work-photo-first"></div><div class="vertical-flex"><div class="title-line-wrapper"><h3 class="work-title-first">Studio Focus</h3><div class="line-overlay"><div class="line-title"></div></div></div><div><p class="category-title">Web Design, Marketing</p></div></div></a></div></div></div><div class="margin-20 make-10"><div class="w-dyn-list"><div role="list" class="work-grid half w-dyn-items"><div data-w-id="a2ccfade-612b-96cd-c79a-fca43b3cefd5" style="opacity:0" role="listitem" class="w-dyn-item"><a data-w-id="a2ccfade-612b-96cd-c79a-fca43b3cefd6" href="creative-impact.html" class="work-wrapper-first w-inline-block"><div class="circle-center"><div class="project-circle-text"><img width="125" loading="lazy" alt="" src="images/683d91777124b040c4a5b5db-683ef44092b10e0ef994bb9d_icons8-play-250%20(1).webp" class="play-icon"></div><img loading="eager" src="images/683d91777124b040c4a5b5f9-6840a94cee5f44c00a833234_Abstract%203D%20Fluid%20Shape.webp" alt="" sizes="100vw" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a94cee5f44c00a833234_Abstract%203D%20Fluid%20Shape-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a94cee5f44c00a833234_Abstract%203D%20Fluid%20Shape-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a94cee5f44c00a833234_Abstract%203D%20Fluid%20Shape-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a94cee5f44c00a833234_Abstract%203D%20Fluid%20Shape-p-1600.webp 1600w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a94cee5f44c00a833234_Abstract%203D%20Fluid%20Shape-p-2000.webp 2000w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a94cee5f44c00a833234_Abstract%203D%20Fluid%20Shape.webp 2400w" class="work-photo-first"></div><div class="vertical-flex"><div class="title-line-wrapper"><h3 class="work-title-first">Creative Impact</h3><div class="line-overlay"><div class="line-title"></div></div></div><div><p class="category-title">Strategy, Concept</p></div></div></a></div><div data-w-id="a2ccfade-612b-96cd-c79a-fca43b3cefd5" style="opacity:0" role="listitem" class="w-dyn-item"><a data-w-id="a2ccfade-612b-96cd-c79a-fca43b3cefd6" href="digital-direction.html" class="work-wrapper-first w-inline-block"><div class="circle-center"><div class="project-circle-text"><img width="125" loading="lazy" alt="" src="images/683d91777124b040c4a5b5db-683ef44092b10e0ef994bb9d_icons8-play-250%20(1).webp" class="play-icon"></div><img loading="eager" src="images/683d91777124b040c4a5b5f9-6840a76be2733b53303ac193_Fashion%20Portrait%20with%20Eyewear.webp" alt="" sizes="100vw" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a76be2733b53303ac193_Fashion%20Portrait%20with%20Eyewear-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a76be2733b53303ac193_Fashion%20Portrait%20with%20Eyewear-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a76be2733b53303ac193_Fashion%20Portrait%20with%20Eyewear-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a76be2733b53303ac193_Fashion%20Portrait%20with%20Eyewear-p-1600.webp 1600w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a76be2733b53303ac193_Fashion%20Portrait%20with%20Eyewear-p-2000.webp 2000w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840a76be2733b53303ac193_Fashion%20Portrait%20with%20Eyewear.webp 2400w" class="work-photo-first"></div><div class="vertical-flex"><div class="title-line-wrapper"><h3 class="work-title-first">Digital Direction</h3><div class="line-overlay"><div class="line-title"></div></div></div><div><p class="category-title">Strategy, Web Design, Marketing</p></div></div></a></div></div></div></div><div class="margin-20 make-10"><div class="w-dyn-list"><div role="list" class="work-grid rervers w-dyn-items"><div data-w-id="c5da028d-6421-0295-f24b-19c6527d46c7" style="opacity:0" role="listitem" class="w-dyn-item"><a data-w-id="c5da028d-6421-0295-f24b-19c6527d46c8" href="design-depth.html" class="work-wrapper-first w-inline-block"><div class="circle-center"><div class="project-circle-text"><img width="125" loading="lazy" alt="" src="images/683d91777124b040c4a5b5db-683ef44092b10e0ef994bb9d_icons8-play-250%20(1).webp" class="play-icon"></div><img loading="eager" src="images/683d91777124b040c4a5b5f9-6840aa4260a5f67a96e0452a_Modern%20Metallic%20Design.webp" alt="" sizes="100vw" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa4260a5f67a96e0452a_Modern%20Metallic%20Design-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa4260a5f67a96e0452a_Modern%20Metallic%20Design-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa4260a5f67a96e0452a_Modern%20Metallic%20Design-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa4260a5f67a96e0452a_Modern%20Metallic%20Design-p-1600.webp 1600w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa4260a5f67a96e0452a_Modern%20Metallic%20Design-p-2000.webp 2000w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa4260a5f67a96e0452a_Modern%20Metallic%20Design.webp 2400w" class="work-photo-first"></div><div class="vertical-flex"><div class="title-line-wrapper"><h3 class="work-title-first">Design Depth</h3><div class="line-overlay"><div class="line-title"></div></div></div><div><p class="category-title">Concept, Web Design</p></div></div></a></div><div data-w-id="c5da028d-6421-0295-f24b-19c6527d46c7" style="opacity:0" role="listitem" class="w-dyn-item"><a data-w-id="c5da028d-6421-0295-f24b-19c6527d46c8" href="clicks-and-magic.html" class="work-wrapper-first w-inline-block"><div class="circle-center"><div class="project-circle-text"><img width="125" loading="lazy" alt="" src="images/683d91777124b040c4a5b5db-683ef44092b10e0ef994bb9d_icons8-play-250%20(1).webp" class="play-icon"></div><img loading="eager" src="images/683d91777124b040c4a5b5f9-6840aa96c2dab521d1429ab3_Hand%20with%20Retro%20Radio.webp" alt="" sizes="100vw" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa96c2dab521d1429ab3_Hand%20with%20Retro%20Radio-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa96c2dab521d1429ab3_Hand%20with%20Retro%20Radio-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa96c2dab521d1429ab3_Hand%20with%20Retro%20Radio-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa96c2dab521d1429ab3_Hand%20with%20Retro%20Radio-p-1600.webp 1600w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa96c2dab521d1429ab3_Hand%20with%20Retro%20Radio-p-2000.webp 2000w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5f9/6840aa96c2dab521d1429ab3_Hand%20with%20Retro%20Radio.webp 2400w" class="work-photo-first"></div><div class="vertical-flex"><div class="title-line-wrapper"><h3 class="work-title-first">Clicks and Magic</h3><div class="line-overlay"><div class="line-title"></div></div></div><div><p class="category-title">Web Design, Marketing</p></div></div></a></div></div></div></div></div></div></section><section id="features" class="section"><div class="container"><div><div data-w-id="e4358cca-ecfb-23f4-0298-8ad0419166b1" style="opacity:0" class="max-w-width"><h2 class="display-1 _01">What sets <span class="other-font">Oski apart</span></h2><div class="margin-20"><p class="p-02">Two Laser-Focused Strengths Engineered to Elevate Medical Assessment</p></div></div><div class="margin-60"><div class="core-grid"><div id="w-node-_199213b2-4f29-f475-bb6c-ee8169bfb84c-c4a5b5cd" data-w-id="199213b2-4f29-f475-bb6c-ee8169bfb84c" style="opacity:0" class="core-card"><img src="images/683d91777124b040c4a5b5db-683f0802c2111b8ce7b802dd_shape-1.webp" loading="lazy" width="837" sizes="(max-width: 991px) 100vw, 837px" alt="" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0802c2111b8ce7b802dd_shape-1-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0802c2111b8ce7b802dd_shape-1-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0802c2111b8ce7b802dd_shape-1-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0802c2111b8ce7b802dd_shape-1.webp 1674w" class="icon-shape"><div><div class="card-flex"><h2 class="second-title _02">AI-Powered <span class="other-font _01">Precision Evaluation</span></h2><div class="margin-10"><p>Accurate, objective grading of clinical interactions using multimodal AI and LLMs. Adapts to diverse rubrics with zero-shot architecture.</p></div><div class="margin-20"><div class="button-flex"><a data-w-id="903706d4-a245-0d46-c30c-6474c77901ce" href="contact.html" class="button-first w-inline-block"><div class="txt-wrapper"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div></div></a></div></div></div></div><div class="shape second"></div><div class="shape first bottom"></div></div><div data-w-id="e6cf91af-d971-7aa5-1b95-d12996199bec" style="opacity:0" class="core-card"><img src="images/683d91777124b040c4a5b5db-683f0aa9ed4f9367dd6c8ff1_shape-2.webp" loading="lazy" width="837" sizes="(max-width: 991px) 100vw, 837px" alt="" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2.webp 1848w" class="icon-shape"><div><div class="card-flex"><h2 class="second-title _02">Contextual & <span class="other-font _01">Multimodal Understanding</span></h2><div class="margin-10"><p>Integrates audio and visual data for comprehensive scene understanding and nuanced behavior analysis.</p></div><div class="margin-20"><div class="button-flex"><a data-w-id="e6cf91af-d971-7aa5-1b95-d12996199bf9" href="contact.html" class="button-first w-inline-block"><div class="txt-wrapper"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div></div></a></div></div></div></div><div class="shape second"></div><div class="shape first bottom"></div></div></div></div></div><!-- Simulation Section -->
+<section class="section"><div class="container"><div><div data-w-id="sim-section-title" class="max-w-width" style="text-align: center;"><div class="top-text">Interactive Demo</div><h2 class="display-1 _01">Experience Oski's <span class="other-font">simulation platform</span></h2><div class="margin-20"><p class="p-02">Try our AI-powered medical assessment tools in real-time with our comprehensive OSCE evaluation system.</p></div></div><div class="margin-60"><div class="simulation-main-container"><div class="simulation-image-section"><img src="images/osce-2.png" loading="lazy" alt="OSCE Simulation Interface" class="simulation-main-image" onclick="openImageLightbox()" style="cursor: pointer;"></div><div class="simulation-text-section"><h2 class="simulation-main-title">Interactive <span class="other-font _01">OSCE Assessment</span></h2><p class="simulation-main-description">Upload videos and get instant AI-powered assessment with comprehensive scoring.</p><a data-w-id="sim-cta-button" href="simulation.html" class="button-first w-inline-block"><div class="txt-wrapper"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Try Simulation</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Try Simulation</div></div></a></div></div></div></div></div></section>
+
+<style>
+/* Large Rectangular Flexbox Container */
+.simulation-main-container {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  max-width: 1000px;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+.simulation-main-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+/* Image Section - Left Side */
+.simulation-image-section {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.simulation-main-image {
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.simulation-main-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Text Section - Right Side */
+.simulation-text-section {
+  flex: 1;
+  padding: 50px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.simulation-main-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 20px;
+  line-height: 1.3;
+}
+
+.simulation-main-description {
+  font-size: 1.1rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+/* Responsive Design */
+@media (max-width: 991px) {
+  .simulation-main-container {
+    flex-direction: column;
+    max-width: 600px;
+  }
+  
+  .simulation-image-section {
+    padding: 30px 30px 20px 30px;
+  }
+  
+  .simulation-text-section {
+    padding: 20px 30px 40px 30px;
+    text-align: center;
+  }
+  
+  .simulation-main-image {
+    max-width: 400px;
+  }
+  
+  .simulation-main-title {
+    font-size: 1.9rem;
+  }
+}
+
+/* Lightbox Styles */
+.lightbox-overlay {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease;
+}
+
+.lightbox-content {
+  position: relative;
+  margin: auto;
+  padding: 20px;
+  width: 90%;
+  max-width: 1200px;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  animation: zoomIn 0.3s ease;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 35px;
+  color: white;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 10000;
+  transition: all 0.3s ease;
+}
+
+.lightbox-close:hover {
+  color: #667eea;
+  transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 991px) {
+  .core-grid {
+    grid-template-columns: 1fr !important;
+    gap: 40px;
+  }
+  
+  .simulation-image-large {
+    max-width: 400px;
+  }
+  
+  .lightbox-close {
+    font-size: 30px;
+    top: 15px;
+    right: 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  .simulation-image-large {
+    max-width: 300px;
+  }
+}
+</style>
+
+<div id="pricing" class="margin-80"><div><div data-w-id="d37524dd-bfe5-2e35-9589-823af84777b6" style="opacity:0" class="max-w-width"><h2 class="display-1 _01">Prices adapt to <span class="other-font">your growth</span></h2><div class="margin-20"><p class="p-02">Plans built for every stage&mdash;from first launch to global scale</p></div></div></div>
+
+<style>
+.modern-pricing-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 50px 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-pricing-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #000000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modern-pricing-card:hover::before {
+  opacity: 1;
+}
+
+.modern-pricing-card:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+  border-color: #000000;
+}
+
+.pricing-content {
+  text-align: center;
+}
+
+.pricing-plan-price {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 20px;
+  letter-spacing: -0.025em;
+}
+
+.pricing-plan-description {
+  font-size: 1.1rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  padding: 0 20px;
+}
+
+.pricing-cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 18px 32px;
+  background: #000000;
+  color: white;
+  border: 2px solid #000000;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.pricing-cta-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.pricing-cta-button:hover::before {
+  left: 100%;
+}
+
+.pricing-cta-button:hover {
+  background: transparent;
+  color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.pricing-features {
+  margin-top: 30px;
+  padding-top: 30px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pricing-feature {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  color: #374151;
+  padding: 0 20px;
+}
+
+.pricing-feature-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 16px;
+  color: #000000;
+  flex-shrink: 0;
+}
+</style>
+
+<div class="margin-60">
+  <div class="modern-pricing-card">
+    <div class="pricing-content">
+      <h3 class="pricing-plan-price">Contact Us</h3>
+      <p class="pricing-plan-description">Tailored solutions for medical institutions and research programs.</p>
+      
+      <div class="pricing-features">
+        <div class="pricing-feature">
+          <svg class="pricing-feature-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          AI-powered assessment tools
+        </div>
+        <div class="pricing-feature">
+          <svg class="pricing-feature-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          Custom integration support
+        </div>
+        <div class="pricing-feature">
+          <svg class="pricing-feature-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          Personalized consultation
+        </div>
+      </div>
+      
+      <a href="mailto:support@oski.app" class="pricing-cta-button">Get Started</a>
+    </div>
+  </div>
+</div></div></section><section class="section" style="padding-top: 20px;"><div class="container"><div><div data-w-id="2739437d-7f73-2867-5c79-4cfe9dc77d94" style="opacity:0" class="max-w-width"><div class="top-text">Published Papers</div><h2 class="display-1 _01">Research <span class="other-font">Publications</span></h2><div class="margin-20"><p class="p-02">Peer-reviewed research advancing medical education assessment</p></div></div></div><style>
+.papers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.paper-card {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.paper-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.paper-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #dc2626, #ef4444, #dc2626);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.paper-card:hover::before {
+  transform: scaleX(1);
+}
+
+.paper-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.paper-journal {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #dc2626;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.paper-arrow {
+  width: 24px;
+  height: 24px;
+  color: #6b7280;
+  transition: all 0.3s ease;
+}
+
+.paper-card:hover .paper-arrow {
+  color: #dc2626;
+  transform: translateX(4px);
+}
+
+.paper-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+  margin-bottom: 16px;
+  transition: color 0.3s ease;
+}
+
+.paper-card:hover .paper-title {
+  color: #dc2626;
+}
+
+.paper-description {
+  font-size: 0.95rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.paper-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.paper-type {
+  font-weight: 500;
+}
+
+.paper-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+/* FAQ Section Styles */
+.faq-container {
+  max-width: 100%;
+}
+
+.faq-item {
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 0;
+  transition: all 0.3s ease;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.faq-question:hover {
+  color: #667eea;
+}
+
+.faq-question h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.5;
+  transition: color 0.3s ease;
+}
+
+.faq-question:hover h3 {
+  color: #667eea;
+}
+
+.faq-icon {
+  flex-shrink: 0;
+  margin-left: 1rem;
+  transition: transform 0.3s ease;
+  color: #6b7280;
+}
+
+.faq-item.active .faq-icon {
+  transform: rotate(180deg);
+  color: #667eea;
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.faq-item.active .faq-answer {
+  max-height: 200px;
+  padding-bottom: 2rem;
+}
+
+.faq-answer p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #6b7280;
+  margin: 0;
+  padding-right: 3rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .faq-question {
+    padding: 1.5rem 0;
+  }
+  
+  .faq-question h3 {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+  
+  .faq-answer p {
+    padding-right: 0;
+    font-size: 0.95rem;
+  }
+  
+  .faq-item.active .faq-answer {
+    padding-bottom: 1.5rem;
+  }
+}
+</style>
+
+<div class="margin-60">
+  <div class="papers-grid">
+    <!-- NEJM Paper -->
+    <a href="https://ai.nejm.org/doi/abs/10.1056/AIcs2400631" target="_blank" class="paper-link">
+      <div class="paper-card">
+        <div class="paper-header">
+          <span class="paper-journal">NEJM AI</span>
+          <svg class="paper-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        </div>
+        <h3 class="paper-title">Rubrics to Prompts: Assessing Medical Student Post-Encounter Notes with AI</h3>
+        <p class="paper-description">A groundbreaking study demonstrating how AI can transform traditional rubric-based assessment into automated, objective evaluation of clinical documentation.</p>
+        <div class="paper-footer">
+          <span class="paper-type">Peer-Reviewed</span>
+          <span>2024</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- medRxiv Paper -->
+    <a href="https://www.medrxiv.org/content/10.1101/2024.06.05.24308467v1" target="_blank" class="paper-link">
+      <div class="paper-card">
+        <div class="paper-header">
+          <span class="paper-journal">medRxiv</span>
+          <svg class="paper-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        </div>
+        <h3 class="paper-title">Zero-Shot Multimodal Question Answering for Assessment of Medical Student OSCE Physical Exam Videos</h3>
+        <p class="paper-description">Innovative research exploring multimodal AI capabilities for evaluating physical examination skills through video analysis without prior training data.</p>
+        <div class="paper-footer">
+          <span class="paper-type">Preprint</span>
+          <span>2024</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- arXiv Paper -->
+    <a href="https://arxiv.org/html/2410.12858v1" target="_blank" class="paper-link">
+      <div class="paper-card">
+        <div class="paper-header">
+          <span class="paper-journal">arXiv</span>
+          <svg class="paper-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        </div>
+        <h3 class="paper-title">Large Language Models for Medical OSCE Assessment: A Novel Approach to Transcript Analysis</h3>
+        <p class="paper-description">Comprehensive analysis of how large language models can revolutionize OSCE assessment through advanced transcript analysis and automated scoring.</p>
+        <div class="paper-footer">
+          <span class="paper-type">Preprint</span>
+          <span>2024</span>
+        </div>
+      </div>
+    </a>
+  </div>
+</div></div></section>
+
+<!-- FAQs Section -->
+<section class="section" style="padding: 80px 0;">
+  <div class="container">
+    <div class="max-w-width" style="max-width: 800px; margin: 0 auto;">
+      <!-- Section Header -->
+      <div style="text-align: center; margin-bottom: 4rem;">
+        <div class="top-text" style="opacity: 1;">Frequently Asked Questions</div>
+        <h2 class="display-1 _01" style="opacity: 1;">Common questions about <span class="other-font">Oski</span></h2>
+        <div class="margin-20">
+          <p class="p-02" style="opacity: 1;">Everything you need to know about our AI-powered assessment platform</p>
+        </div>
+      </div>
+
+      <!-- FAQ Items -->
+      <div class="faq-container">
+                 <div class="faq-item">
+           <div class="faq-question" onclick="toggleFAQ(this)">
+             <h3>How accurate is Oski's AI assessment compared to human graders?</h3>
+             <div class="faq-icon">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <polyline points="6 9 12 15 18 9"></polyline>
+               </svg>
+             </div>
+           </div>
+           <div class="faq-answer">
+             <p>Oski demonstrates high alignment with human graders, achieving over 95% accuracy and a Cohen's kappa of 0.88 for post-encounter note grading. This indicates strong agreement and reliability.</p>
+           </div>
+         </div>
+
+         <div class="faq-item">
+           <div class="faq-question" onclick="toggleFAQ(this)">
+             <h3>What video formats does Oski support for assessments?</h3>
+             <div class="faq-icon">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <polyline points="6 9 12 15 18 9"></polyline>
+               </svg>
+             </div>
+           </div>
+           <div class="faq-answer">
+             <p>Oski supports common video formats including MP4, AVI, and MOV for video uploads.</p>
+           </div>
+         </div>
+
+         <div class="faq-item">
+           <div class="faq-question" onclick="toggleFAQ(this)">
+             <h3>How long does it take to get assessment results?</h3>
+             <div class="faq-icon">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <polyline points="6 9 12 15 18 9"></polyline>
+               </svg>
+             </div>
+           </div>
+           <div class="faq-answer">
+             <p>Oski dramatically reduces turnaround time from weeks to just days.</p>
+           </div>
+         </div>
+
+         <div class="faq-item">
+           <div class="faq-question" onclick="toggleFAQ(this)">
+             <h3>Can Oski integrate with our existing learning management system?</h3>
+             <div class="faq-icon">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <polyline points="6 9 12 15 18 9"></polyline>
+               </svg>
+             </div>
+           </div>
+           <div class="faq-answer">
+             <p>Oski is designed for flexible integration; please contact us to discuss your specific LMS and API requirements.</p>
+           </div>
+         </div>
+
+         <div class="faq-item">
+           <div class="faq-question" onclick="toggleFAQ(this)">
+             <h3>Is student data secure and FERPA compliant?</h3>
+             <div class="faq-icon">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <polyline points="6 9 12 15 18 9"></polyline>
+               </svg>
+             </div>
+           </div>
+           <div class="faq-answer">
+             <p>Yes, Oski adheres to strict data protocols, including HIPAA and FERPA compliance, ensuring the safety and privacy of all student information.</p>
+           </div>
+         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-w-id="c406bd2e-a066-15b4-8717-9d5ba6e07a95" class="section for-cta"><div class="container"><div><div data-w-id="c406bd2e-a066-15b4-8717-9d5ba6e07a98" class="cta-wrapper"><img src="images/683d91777124b040c4a5b5db-68404c0a23237cff59d02608_shape-5.webp" loading="lazy" width="1024" sizes="100vw" alt="" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404c0a23237cff59d02608_shape-5-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404c0a23237cff59d02608_shape-5-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404c0a23237cff59d02608_shape-5-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404c0a23237cff59d02608_shape-5-p-1600.webp 1600w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404c0a23237cff59d02608_shape-5.webp 2367w" class="cta-shape right"><img src="images/683d91777124b040c4a5b5db-68404b15f8d643f55d79e958_shape-4.webp" loading="lazy" width="1024" sizes="100vw" alt="" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404b15f8d643f55d79e958_shape-4-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404b15f8d643f55d79e958_shape-4-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404b15f8d643f55d79e958_shape-4-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/68404b15f8d643f55d79e958_shape-4.webp 1782w" class="cta-shape left"><div class="max-w-width _04"><div data-w-id="5d211a45-f942-f0a6-dac6-9f6a1aca85df" class="top-text">Get Started</div><h1 data-w-id="5d211a45-f942-f0a6-dac6-9f6a1aca85e1" class="display-1 _03">Elevate evaluations with Oski: <span class="other-font">the future.</span></h1><div data-w-id="5d211a45-f942-f0a6-dac6-9f6a1aca85e9" class="margin-40"><div class="button-flex center-mobile"><a data-w-id="1144425a-d85e-fd8c-a50a-d088b5f5399d" href="#pricing" class="button-first w-inline-block"><div class="txt-wrapper"><div class="button-txt">Get Started</div><div class="button-txt">Get Started</div></div></a><a data-w-id="5d211a45-f942-f0a6-dac6-9f6a1aca85eb" href="#features" class="button-main first w-inline-block"><div class="button-text">Learn more</div><div class="button-icon-wrapper"><div class="button-arrow hover w-embed"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div><div class="button-arrow w-embed"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div></div></a></div></div></div></div></div></div></section><div id="footer-container"></div></div><script src="js/js-jquery-3.5.1.min.dc5e7f18c8.js" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script><script src="js/js-webflow.schunk.36b8fb49256177c8.js" type="text/javascript"></script><script src="js/js-webflow.schunk.4bcee8dc3a55ab3d.js" type="text/javascript"></script><script src="js/js-webflow.965f2b6a.2a699015d3217d92.js" type="text/javascript"></script><script src="js/header.js" type="text/javascript"></script><script src="js/footer.js" type="text/javascript"></script>
+
+<!-- Image Lightbox Modal -->
+<div id="imageLightbox" class="lightbox-overlay" onclick="closeImageLightbox()">
+  <div class="lightbox-content">
+    <span class="lightbox-close" onclick="closeImageLightbox()">&times;</span>
+    <img id="lightboxImage" src="images/osce-2.png" alt="OSCE Simulation Interface - Full View">
+  </div>
+</div>
+
+<!-- Enhanced Interactive Effects for Simulation Section -->
+<script>
+// Lightbox functionality
+function openImageLightbox() {
+  document.getElementById('imageLightbox').style.display = 'block';
+  document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeImageLightbox() {
+  document.getElementById('imageLightbox').style.display = 'none';
+  document.body.style.overflow = 'auto'; // Restore scrolling
+}
+
+// Close lightbox when pressing Escape key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeImageLightbox();
+  }
+});
+
+// Prevent closing when clicking on the image itself
+document.getElementById('lightboxImage').addEventListener('click', function(event) {
+  event.stopPropagation();
+});
+
+// FAQ Toggle Function
+function toggleFAQ(element) {
+  const faqItem = element.parentElement;
+  const isActive = faqItem.classList.contains('active');
+  
+  // Close all FAQ items
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  // If this item wasn't active, open it
+  if (!isActive) {
+    faqItem.classList.add('active');
+  }
+}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Smooth scroll for simulation CTA
+  document.querySelectorAll('a[href="simulation.html"]').forEach(link => {
+    link.addEventListener('click', function(e) {
+      // Add a subtle loading animation
+      this.style.opacity = '0.8';
+      setTimeout(() => {
+        this.style.opacity = '1';
+      }, 200);
+    });
+  });
+});
+</script>
+
+</body></html>

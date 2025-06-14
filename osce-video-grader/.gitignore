@@ -1,0 +1,11 @@
+osce_grader_object_store_data 
+.env 
+sample_osce_videos 
+.venv  
+*.png 
+*.pyc 
+*.db 
+__pycache__ 
+*.mp4 
+*.wav 
+.ipynb_checkpoints 

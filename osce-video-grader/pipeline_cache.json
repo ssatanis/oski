@@ -1,0 +1,893 @@
+{
+    "temporal_action_segmenter_outputs": {
+        "46dc4868-15e9-4f27-b277-726bf9f0023c": [
+            {
+                "action_label": "explaining_procedure",
+                "start_time": 0.0,
+                "end_time": 14.61
+            },
+            {
+                "action_label": "history_taking",
+                "start_time": 12.61,
+                "end_time": 27.21
+            },
+            {
+                "action_label": "hand_hygiene",
+                "start_time": 25.21,
+                "end_time": 39.82
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 37.82,
+                "end_time": 52.43
+            },
+            {
+                "action_label": "inspecting_hands_or_nails",
+                "start_time": 50.43,
+                "end_time": 65.03
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 63.03,
+                "end_time": 77.64
+            },
+            {
+                "action_label": "inspecting_general_body_region",
+                "start_time": 75.64,
+                "end_time": 90.24
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 88.24,
+                "end_time": 102.85
+            },
+            {
+                "action_label": "palpating_abdomen",
+                "start_time": 100.85,
+                "end_time": 115.46
+            },
+            {
+                "action_label": "inspecting_eyes",
+                "start_time": 113.46,
+                "end_time": 128.06
+            },
+            {
+                "action_label": "inspecting_mouth",
+                "start_time": 126.06,
+                "end_time": 140.67
+            },
+            {
+                "action_label": "applying_blood_pressure_cuff",
+                "start_time": 138.67,
+                "end_time": 153.28
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 151.28,
+                "end_time": 165.88
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 163.88,
+                "end_time": 178.49
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 176.49,
+                "end_time": 191.1
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 189.1,
+                "end_time": 203.7
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 201.7,
+                "end_time": 216.31
+            },
+            {
+                "action_label": "using_thermometer",
+                "start_time": 214.31,
+                "end_time": 228.92
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 226.92,
+                "end_time": 241.52
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 239.52,
+                "end_time": 254.13
+            },
+            {
+                "action_label": "palpating_limbs_for_edema",
+                "start_time": 252.13,
+                "end_time": 266.73
+            },
+            {
+                "action_label": "positioning_patient",
+                "start_time": 264.73,
+                "end_time": 279.34
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 277.34,
+                "end_time": 291.95
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 289.95,
+                "end_time": 304.55
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 302.55,
+                "end_time": 317.16
+            }
+        ],
+        "e3adc29f-2f09-4c2c-9eef-6ae419ee043b": [
+            {
+                "action_label": "explaining_procedure",
+                "start_time": 0.0,
+                "end_time": 14.61
+            },
+            {
+                "action_label": "history_taking",
+                "start_time": 12.61,
+                "end_time": 27.21
+            },
+            {
+                "action_label": "hand_hygiene",
+                "start_time": 25.21,
+                "end_time": 39.82
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 37.82,
+                "end_time": 52.43
+            },
+            {
+                "action_label": "inspecting_hands_or_nails",
+                "start_time": 50.43,
+                "end_time": 65.03
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 63.03,
+                "end_time": 77.64
+            },
+            {
+                "action_label": "inspecting_general_body_region",
+                "start_time": 75.64,
+                "end_time": 90.24
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 88.24,
+                "end_time": 102.85
+            },
+            {
+                "action_label": "palpating_abdomen",
+                "start_time": 100.85,
+                "end_time": 115.46
+            },
+            {
+                "action_label": "inspecting_eyes",
+                "start_time": 113.46,
+                "end_time": 128.06
+            },
+            {
+                "action_label": "inspecting_mouth",
+                "start_time": 126.06,
+                "end_time": 140.67
+            },
+            {
+                "action_label": "applying_blood_pressure_cuff",
+                "start_time": 138.67,
+                "end_time": 153.28
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 151.28,
+                "end_time": 165.88
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 163.88,
+                "end_time": 178.49
+            },
+            {
+                "action_label": "using_stethoscope",
+                "start_time": 176.49,
+                "end_time": 191.1
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 189.1,
+                "end_time": 203.7
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 201.7,
+                "end_time": 216.31
+            },
+            {
+                "action_label": "using_thermometer",
+                "start_time": 214.31,
+                "end_time": 228.92
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 226.92,
+                "end_time": 241.52
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 239.52,
+                "end_time": 254.13
+            },
+            {
+                "action_label": "palpating_limbs_for_edema",
+                "start_time": 252.13,
+                "end_time": 266.73
+            },
+            {
+                "action_label": "positioning_patient",
+                "start_time": 264.73,
+                "end_time": 279.34
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 277.34,
+                "end_time": 291.95
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 289.95,
+                "end_time": 304.55
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 302.55,
+                "end_time": 317.16
+            }
+        ],
+        "07b6d861-cef7-492a-8432-80339fd2a5cd": [
+            {
+                "action_label": "explaining_procedure",
+                "start_time": 0.0,
+                "end_time": 14.61
+            },
+            {
+                "action_label": "history_taking",
+                "start_time": 12.61,
+                "end_time": 27.21
+            },
+            {
+                "action_label": "hand_hygiene",
+                "start_time": 25.21,
+                "end_time": 39.82
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 37.82,
+                "end_time": 52.43
+            },
+            {
+                "action_label": "inspecting_hands_or_nails",
+                "start_time": 50.43,
+                "end_time": 65.03
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 63.03,
+                "end_time": 77.64
+            },
+            {
+                "action_label": "inspecting_general_body_region",
+                "start_time": 75.64,
+                "end_time": 90.24
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 88.24,
+                "end_time": 102.85
+            },
+            {
+                "action_label": "palpating_abdomen",
+                "start_time": 100.85,
+                "end_time": 115.46
+            },
+            {
+                "action_label": "inspecting_eyes",
+                "start_time": 113.46,
+                "end_time": 128.06
+            },
+            {
+                "action_label": "inspecting_mouth",
+                "start_time": 126.06,
+                "end_time": 140.67
+            },
+            {
+                "action_label": "applying_blood_pressure_cuff",
+                "start_time": 138.67,
+                "end_time": 153.28
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 151.28,
+                "end_time": 165.88
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 163.88,
+                "end_time": 178.49
+            },
+            {
+                "action_label": "using_stethoscope",
+                "start_time": 176.49,
+                "end_time": 191.1
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 189.1,
+                "end_time": 203.7
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 201.7,
+                "end_time": 216.31
+            },
+            {
+                "action_label": "using_thermometer",
+                "start_time": 214.31,
+                "end_time": 228.92
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 226.92,
+                "end_time": 241.52
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 239.52,
+                "end_time": 254.13
+            },
+            {
+                "action_label": "palpating_limbs_for_edema",
+                "start_time": 252.13,
+                "end_time": 266.73
+            },
+            {
+                "action_label": "positioning_patient",
+                "start_time": 264.73,
+                "end_time": 279.34
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 277.34,
+                "end_time": 291.95
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 289.95,
+                "end_time": 304.55
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 302.55,
+                "end_time": 317.16
+            }
+        ],
+        "37a37bde-d1ba-43bc-92a4-d2e488065838": [
+            {
+                "action_label": "explaining_procedure",
+                "start_time": 0.0,
+                "end_time": 14.61
+            },
+            {
+                "action_label": "history_taking",
+                "start_time": 12.61,
+                "end_time": 27.21
+            },
+            {
+                "action_label": "hand_hygiene",
+                "start_time": 25.21,
+                "end_time": 39.82
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 37.82,
+                "end_time": 52.43
+            },
+            {
+                "action_label": "inspecting_hands_or_nails",
+                "start_time": 50.43,
+                "end_time": 65.03
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 63.03,
+                "end_time": 77.64
+            },
+            {
+                "action_label": "inspecting_general_body_region",
+                "start_time": 75.64,
+                "end_time": 90.24
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 88.24,
+                "end_time": 102.85
+            },
+            {
+                "action_label": "palpating_abdomen",
+                "start_time": 100.85,
+                "end_time": 115.46
+            },
+            {
+                "action_label": "inspecting_eyes",
+                "start_time": 113.46,
+                "end_time": 128.06
+            },
+            {
+                "action_label": "inspecting_mouth",
+                "start_time": 126.06,
+                "end_time": 140.67
+            },
+            {
+                "action_label": "applying_blood_pressure_cuff",
+                "start_time": 138.67,
+                "end_time": 153.28
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 151.28,
+                "end_time": 165.88
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 163.88,
+                "end_time": 178.49
+            },
+            {
+                "action_label": "using_stethoscope",
+                "start_time": 176.49,
+                "end_time": 191.1
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 189.1,
+                "end_time": 203.7
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 201.7,
+                "end_time": 216.31
+            },
+            {
+                "action_label": "using_thermometer",
+                "start_time": 214.31,
+                "end_time": 228.92
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 226.92,
+                "end_time": 241.52
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 239.52,
+                "end_time": 254.13
+            },
+            {
+                "action_label": "palpating_limbs_for_edema",
+                "start_time": 252.13,
+                "end_time": 266.73
+            },
+            {
+                "action_label": "positioning_patient",
+                "start_time": 264.73,
+                "end_time": 279.34
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 277.34,
+                "end_time": 291.95
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 289.95,
+                "end_time": 304.55
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 302.55,
+                "end_time": 317.16
+            }
+        ],
+        "588cd86a-b70d-4858-86cb-cd64224192f2": [
+            {
+                "action_label": "explaining_procedure",
+                "start_time": 0.0,
+                "end_time": 14.61
+            },
+            {
+                "action_label": "history_taking",
+                "start_time": 12.61,
+                "end_time": 27.21
+            },
+            {
+                "action_label": "hand_hygiene",
+                "start_time": 25.21,
+                "end_time": 39.82
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 37.82,
+                "end_time": 52.43
+            },
+            {
+                "action_label": "inspecting_hands_or_nails",
+                "start_time": 50.43,
+                "end_time": 65.03
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 63.03,
+                "end_time": 77.64
+            },
+            {
+                "action_label": "inspecting_general_body_region",
+                "start_time": 75.64,
+                "end_time": 90.24
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 88.24,
+                "end_time": 102.85
+            },
+            {
+                "action_label": "palpating_abdomen",
+                "start_time": 100.85,
+                "end_time": 115.46
+            },
+            {
+                "action_label": "inspecting_eyes",
+                "start_time": 113.46,
+                "end_time": 128.06
+            },
+            {
+                "action_label": "inspecting_mouth",
+                "start_time": 126.06,
+                "end_time": 140.67
+            },
+            {
+                "action_label": "applying_blood_pressure_cuff",
+                "start_time": 138.67,
+                "end_time": 153.28
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 151.28,
+                "end_time": 165.88
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 163.88,
+                "end_time": 178.49
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 176.49,
+                "end_time": 191.1
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 189.1,
+                "end_time": 203.7
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 201.7,
+                "end_time": 216.31
+            },
+            {
+                "action_label": "using_thermometer",
+                "start_time": 214.31,
+                "end_time": 228.92
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 226.92,
+                "end_time": 241.52
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 239.52,
+                "end_time": 254.13
+            },
+            {
+                "action_label": "palpating_limbs_for_edema",
+                "start_time": 252.13,
+                "end_time": 266.73
+            },
+            {
+                "action_label": "positioning_patient",
+                "start_time": 264.73,
+                "end_time": 279.34
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 277.34,
+                "end_time": 291.95
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 289.95,
+                "end_time": 304.55
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 302.55,
+                "end_time": 317.16
+            }
+        ],
+        "d4304151-9167-47c0-ba97-42a2b88f5a3e": [
+            {
+                "action_label": "explaining_procedure",
+                "start_time": 0.0,
+                "end_time": 14.61
+            },
+            {
+                "action_label": "history_taking",
+                "start_time": 12.61,
+                "end_time": 27.21
+            },
+            {
+                "action_label": "hand_hygiene",
+                "start_time": 25.21,
+                "end_time": 39.82
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 37.82,
+                "end_time": 52.43
+            },
+            {
+                "action_label": "inspecting_hands_or_nails",
+                "start_time": 50.43,
+                "end_time": 65.03
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 63.03,
+                "end_time": 77.64
+            },
+            {
+                "action_label": "inspecting_general_body_region",
+                "start_time": 75.64,
+                "end_time": 90.24
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 88.24,
+                "end_time": 102.85
+            },
+            {
+                "action_label": "palpating_abdomen",
+                "start_time": 100.85,
+                "end_time": 115.46
+            },
+            {
+                "action_label": "inspecting_eyes",
+                "start_time": 113.46,
+                "end_time": 128.06
+            },
+            {
+                "action_label": "inspecting_mouth",
+                "start_time": 126.06,
+                "end_time": 140.67
+            },
+            {
+                "action_label": "applying_blood_pressure_cuff",
+                "start_time": 138.67,
+                "end_time": 153.28
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 151.28,
+                "end_time": 165.88
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 163.88,
+                "end_time": 178.49
+            },
+            {
+                "action_label": "using_stethoscope",
+                "start_time": 176.49,
+                "end_time": 191.1
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 189.1,
+                "end_time": 203.7
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 201.7,
+                "end_time": 216.31
+            },
+            {
+                "action_label": "using_thermometer",
+                "start_time": 214.31,
+                "end_time": 228.92
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 226.92,
+                "end_time": 241.52
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 239.52,
+                "end_time": 254.13
+            },
+            {
+                "action_label": "palpating_limbs_for_edema",
+                "start_time": 252.13,
+                "end_time": 266.73
+            },
+            {
+                "action_label": "positioning_patient",
+                "start_time": 264.73,
+                "end_time": 279.34
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 277.34,
+                "end_time": 291.95
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 289.95,
+                "end_time": 304.55
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 302.55,
+                "end_time": 317.16
+            }
+        ],
+        "4ce99e87-cc07-42ae-b727-be6547304c3a": [
+            {
+                "action_label": "explaining_procedure",
+                "start_time": 0.0,
+                "end_time": 14.61
+            },
+            {
+                "action_label": "history_taking",
+                "start_time": 12.61,
+                "end_time": 27.21
+            },
+            {
+                "action_label": "hand_hygiene",
+                "start_time": 25.21,
+                "end_time": 39.82
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 37.82,
+                "end_time": 52.43
+            },
+            {
+                "action_label": "inspecting_hands_or_nails",
+                "start_time": 50.43,
+                "end_time": 65.03
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 63.03,
+                "end_time": 77.64
+            },
+            {
+                "action_label": "inspecting_general_body_region",
+                "start_time": 75.64,
+                "end_time": 90.24
+            },
+            {
+                "action_label": "palpating_pulses",
+                "start_time": 88.24,
+                "end_time": 102.85
+            },
+            {
+                "action_label": "palpating_abdomen",
+                "start_time": 100.85,
+                "end_time": 115.46
+            },
+            {
+                "action_label": "inspecting_eyes",
+                "start_time": 113.46,
+                "end_time": 128.06
+            },
+            {
+                "action_label": "inspecting_mouth",
+                "start_time": 126.06,
+                "end_time": 140.67
+            },
+            {
+                "action_label": "applying_blood_pressure_cuff",
+                "start_time": 138.67,
+                "end_time": 153.28
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 151.28,
+                "end_time": 165.88
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 163.88,
+                "end_time": 178.49
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 176.49,
+                "end_time": 191.1
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 189.1,
+                "end_time": 203.7
+            },
+            {
+                "action_label": "using_sphygmomanometer",
+                "start_time": 201.7,
+                "end_time": 216.31
+            },
+            {
+                "action_label": "using_thermometer",
+                "start_time": 214.31,
+                "end_time": 228.92
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 226.92,
+                "end_time": 241.52
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 239.52,
+                "end_time": 254.13
+            },
+            {
+                "action_label": "palpating_limbs_for_edema",
+                "start_time": 252.13,
+                "end_time": 266.73
+            },
+            {
+                "action_label": "positioning_patient",
+                "start_time": 264.73,
+                "end_time": 279.34
+            },
+            {
+                "action_label": "background_or_transition",
+                "start_time": 277.34,
+                "end_time": 291.95
+            },
+            {
+                "action_label": "using_pulse_oximeter",
+                "start_time": 289.95,
+                "end_time": 304.55
+            },
+            {
+                "action_label": "palpating_neck_lymph_nodes_thyroid",
+                "start_time": 302.55,
+                "end_time": 317.16
+            }
+        ]
+    }
+}

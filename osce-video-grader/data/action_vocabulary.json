@@ -1,0 +1,55 @@
+{
+    "greeting_patient":
+        "Provider orients body and gaze towards patient, often with open posture, initiating interaction. May involve visible handshake. Scene typically shows provider and patient establishing initial contact.",
+    "history_taking":
+        "Provider and patient face each other, engaged in apparent dialogue. Provider may gesture or look at notes/screen intermittently. Patient's facial expressions suggest speaking/listening. No physical examination or tool use visible.",
+    "hand_hygiene":
+        "Provider's hands are in motion, rubbing together, often near a wall-mounted dispenser or sink area. Foaming or liquid may be visible on hands. Distinctive, repetitive hand movements.",
+    "explaining_procedure":
+        "Provider faces patient, using hand gestures to indicate body areas or illustrate actions. Patient's gaze is typically directed at provider. No tools are actively being used on the patient.",
+    "inspecting_eyes":
+        "Close visual focus on patient's eye region. Provider's hands may gently manipulate patient's eyelids. Patient's gaze may be directed by provider. No optical instruments are visually engaged with the eye.",
+    "inspecting_mouth":
+        "Provider visually examines patient's open mouth. Patient's tongue or teeth are visible. Provider's head is often close to patient's face. A light source might be directed, but not a specific dental/oral tool.",
+    "inspecting_ears_external":
+        "Provider visually examines the outer ear structure (pinna, external meatus). May involve provider gently pulling or touching the pinna to get a better view. No otoscope visible in use.",
+    "inspecting_hands_or_nails":
+        "Provider's gaze is focused on patient's hands. Patient's hands are often held out or manipulated by provider. Close view may show fingers, palms, nails. Provider may point to or touch specific areas on hand.",
+    "inspecting_general_body_region":
+        "Provider visually scans a broader, exposed area of the patient's body (e.g., skin of torso, neck, limbs) from a short distance. Provider may be looking for rashes, swelling, or general appearance.",
+    "palpating_pulses":
+        "Provider's fingertips (typically 2-3 fingers) are pressed gently onto a specific arterial point on patient's wrist, neck, or foot. Provider's gaze might be on a watch or looking at patient while feeling.",
+    "palpating_abdomen":
+        "Patient is typically supine. Provider's hands (one or both) systematically press onto different areas of the patient's exposed abdomen. Visual cues include hand pressure and patient's reaction if visible.",
+    "palpating_neck_lymph_nodes_thyroid":
+        "Provider's fingertips gently move over anterior, posterior, or supraclavicular regions of patient's neck. Patient's head might be slightly tilted or flexed, guided by provider.",
+    "palpating_limbs_for_edema":
+        "Provider presses fingers firmly into patient's lower leg (shin) or ankle area. A visible indentation (pitting) might be observed upon release if edema is present.",
+    "applying_blood_pressure_cuff":
+        "Provider is seen wrapping the fabric cuff of a sphygmomanometer around patient's upper arm. Velcro or clasps may be visible during fastening. Tubing connects cuff to a gauge/bulb.",
+    "using_sphygmomanometer":
+        "Cuff is inflated on patient's arm. Provider manipulates bulb to inflate/deflate and observes the pressure gauge. If auscultatory, stethoscope is also positioned on arm under cuff edge.",
+    "using_thermometer":
+        "Provider holds a thermometer and inserts its tip into patient's ear, mouth, or axilla. Device is held in place for a short period. Digital display may be visible.",
+    "using_otoscope":
+        "Provider holds distinctive otoscope instrument, positions speculum at patient's ear canal opening, and looks through eyepiece. Provider's other hand may stabilize patient's head or pull pinna.",
+    "using_ophthalmoscope":
+        "Provider holds distinctive ophthalmoscope instrument close to their own eye, then aligns it with patient's eye, often in a dimly lit scene. Both provider and patient are relatively still, focused.",
+    "using_pulse_oximeter":
+        "A small clip-like device (pulse oximeter) is attached to patient's fingertip (or sometimes earlobe). Device often emits a visible light (red). Digital display on device shows readings.",
+    "using_reflex_hammer":
+        "Provider holds a reflex hammer and strikes a specific tendon on patient's limb (e.g., knee, elbow). A quick, visible muscle contraction or limb movement is the expected outcome.",
+    "using_stethoscope":
+        "Provider has stethoscope earpieces in ears and places the chest piece (diaphragm or bell) firmly on patient's exposed skin (chest, back, or abdomen). Provider is typically still, appearing to listen.",
+    "positioning_patient":
+        "Visible change in patient's posture or location, often guided by provider's hands or verbal cues (though verbal cues aren't visual, the resulting movement is). E.g., patient sitting up, lying down, turning.",
+    "active_listening":
+        "Provider maintains direct eye contact and orientation towards a speaking patient. Provider's facial expression is attentive. Minimal provider movement, focus is on receiving visual cues from patient.",
+    "background_or_transition":
+        "Scene shows provider moving without specific tool use or direct patient examination, or a period of little to no relevant clinical activity. May involve interaction with environment (e.g., trolley).",
+    "documenting_notes":
+        "Provider's gaze is directed downwards at a clipboard, paper, or laptop/tablet screen. Hand movements consistent with writing or typing are visible.",
+    "discussing_findings_with_patient":
+        "Provider and patient are typically facing each other, engaged in apparent dialogue. Provider may use gestures. Scene often at conclusion of physical examination steps, no tools in active use on patient.", 
+    "no_action": "No discernible, goal-oriented human action, or the scene is static with no activity."
+}
