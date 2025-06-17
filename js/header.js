@@ -13,6 +13,7 @@ function loadHeader() {
                 <a href="index.html#features" class="navbar-link w-nav-link">Features</a>
                 <a href="index.html#pricing" class="navbar-link w-nav-link">Pricing</a>
                 <a href="simulation.html" class="navbar-link w-nav-link">Simulation</a>
+                <a href="promptgen.html" class="navbar-link w-nav-link">PromptGen</a>
               </div>
             </div>
           </nav>
@@ -55,6 +56,8 @@ function setActiveNavLink() {
     
     // Check if this link matches the current page
     if (currentPage === 'simulation.html' && link.getAttribute('href') === 'simulation.html') {
+      link.classList.add('w--current');
+    } else if (currentPage === 'promptgen.html' && link.getAttribute('href') === 'promptgen.html') {
       link.classList.add('w--current');
     } else if (currentPage === 'index.html' || currentPage === '') {
       // For index page, don't add w--current to any nav links since we removed Home

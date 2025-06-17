@@ -36,6 +36,10 @@ function loadFooter() {
                           <div class="button-line-flex"><div>Simulation</div></div>
                           <div class="line-horizontal"></div>
                         </a>
+                        <a href="promptgen.html" class="button-first-line w-inline-block">
+                          <div class="button-line-flex"><div>PromptGen</div></div>
+                          <div class="line-horizontal"></div>
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -99,6 +103,8 @@ function setActiveFooterLink() {
     
     // Check if this link matches the current page
     if (currentPage === 'simulation.html' && link.getAttribute('href') === 'simulation.html') {
+      link.classList.add('w--current');
+    } else if (currentPage === 'promptgen.html' && link.getAttribute('href') === 'promptgen.html') {
       link.classList.add('w--current');
     } else if ((currentPage === 'index.html' || currentPage === '') && link.getAttribute('href') === 'index.html') {
       link.classList.add('w--current');
