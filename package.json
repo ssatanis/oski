@@ -1,0 +1,33 @@
+{
+  "name": "oski-complete-suite",
+  "version": "1.0.0",
+  "description": "Complete Oski application suite with PromptGen and OSCE Video Grader",
+  "scripts": {
+    "dev": "./start-all-services.sh",
+    "start": "./start-all-services.sh",
+    "start:all": "./start-all-services.sh",
+    "start:promptgen": "cd rubrics-to-prompts && ./start-all.sh",
+    "start:osce": "cd osce-video-grader && echo 'Starting OSCE Video Grader...' && cd web && npm run dev -- --port 3001",
+    "install:all": "npm run install:promptgen && npm run install:osce",
+    "install:promptgen": "cd rubrics-to-prompts/frontend && npm install && cd ../backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
+    "install:osce": "cd osce-video-grader/web && npm install",
+    "clean": "rm -rf logs && rm -rf rubrics-to-prompts/frontend/node_modules && rm -rf rubrics-to-prompts/backend/venv && rm -rf osce-video-grader/web/node_modules",
+    "health": "curl -s http://localhost:3000 && curl -s http://localhost:8000/docs && curl -s http://localhost:3001 && curl -s http://localhost:8001/docs"
+  },
+  "keywords": [
+    "oski",
+    "medical",
+    "osce",
+    "ai",
+    "rubrics",
+    "prompts",
+    "yaml",
+    "ocr"
+  ],
+  "author": "Sahaj Satani & Aarash Zakeri",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+} 

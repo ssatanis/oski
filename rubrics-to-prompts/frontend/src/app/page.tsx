@@ -9,7 +9,6 @@ import {
   Download, 
   Edit3, 
   CheckCircle, 
-  AlertCircle, 
   RefreshCw,
   Eye,
   Zap,
@@ -32,7 +31,7 @@ interface ProcessingStatus {
 interface ProcessingResult {
   original_text: string;
   yaml_content: string;
-  parsed_yaml: any;
+  parsed_yaml: Record<string, unknown>;
   filename: string;
 }
 
@@ -94,8 +93,11 @@ export default function RubricsToPrompts() {
       
       // Start polling for status
       pollStatus(task_id);
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Upload failed');
+    } catch (error) {
+      const errorMessage = axios.isAxiosError(error) && error.response?.data?.detail 
+        ? error.response.data.detail 
+        : 'Upload failed';
+      toast.error(errorMessage);
     }
   };
 
@@ -122,7 +124,7 @@ export default function RubricsToPrompts() {
         // Continue polling
         setTimeout(() => pollStatus(id), 2000);
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to get processing status');
     }
   };
@@ -146,7 +148,7 @@ export default function RubricsToPrompts() {
       URL.revokeObjectURL(url);
       
       toast.success('YAML file downloaded successfully!');
-    } catch (error) {
+    } catch {
       toast.error('Download failed');
     }
   };
@@ -169,8 +171,11 @@ export default function RubricsToPrompts() {
           yaml_content: editedYaml
         });
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Failed to save changes');
+    } catch (error) {
+      const errorMessage = axios.isAxiosError(error) && error.response?.data?.detail 
+        ? error.response.data.detail 
+        : 'Failed to save changes';
+      toast.error(errorMessage);
     }
   };
 
@@ -338,7 +343,6 @@ export default function RubricsToPrompts() {
                 ].map((step, index) => {
                   const isActive = processingStatus?.step === step.id;
                   const isCompleted = processingStatus?.completed || (result && step.id === 'completed');
-                  const isPending = !processingStatus || (processingStatus && !isActive && !isCompleted);
                   
                   return (
                     <motion.div

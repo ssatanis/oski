@@ -1,0 +1,6 @@
+INFO:     Will watch for changes in these directories: ['/Users/sahajsatani/Documents/Oski/rubrics-to-prompts/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [24754] using StatReload
+INFO:     Started server process [24763]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
