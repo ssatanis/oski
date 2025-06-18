@@ -1,110 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html data-wf-domain="tenet-template.webflow.io" data-wf-page="683d91777124b040c4a5b5cd" data-wf-site="683d91777124b040c4a5b5db" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PromptGen - Oski</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100;200;300;400;500;600;700;800;900&family=Prata:wght@400&display=swap" rel="stylesheet">
+    <meta charset="utf-8">
+    <title>PromptGen | Oski</title>
+    <meta content="Transform OSCE rubrics into AI-ready prompts with intelligent OCR processing and automated YAML generation." name="description">
+    <meta content="PromptGen - Oski" property="og:title">
+    <meta content="Transform OSCE rubrics into AI-ready prompts with intelligent OCR processing and automated YAML generation." property="og:description">
+    <meta content="images/OskiPreview.png" property="og:image">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     
-    <!-- Include header and footer JS -->
-    <script src="js/header.js" defer></script>
-    <script src="js/footer.js" defer></script>
+    <!-- Oski CSS Framework -->
+    <link href="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/css/tenet-template.webflow.shared.40365d26e.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous">
+    <script src="js/1.6.26-webfont.js" type="text/javascript"></script>
+    <script type="text/javascript">WebFont.load({  google: {    families: ["Geist:100,200,300,regular,500,600,700,800,900","Prata:regular"]  }});</script>
+    <script type="text/javascript">!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
+
+    <!-- Dynamic Favicon -->
+    <script>
+    function setFavicon() {
+      const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const favicon = document.querySelector('link[rel="shortcut icon"]') || document.createElement('link');
+      favicon.rel = 'shortcut icon';
+      favicon.type = 'image/svg+xml';
+      favicon.href = isDarkMode ? 'favicons/White.svg' : 'favicons/Black.svg';
+      if (!document.querySelector('link[rel="shortcut icon"]')) {
+        document.head.appendChild(favicon);
+      }
+    }
+    setFavicon();
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setFavicon);
+    </script>
+
+    <link href="favicons/683d91777124b040c4a5b5db-683d91777124b040c4a5b63e_logo.png" rel="apple-touch-icon">
     
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-400: #9ca3af;
-            --gray-500: #6b7280;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
-            --gray-800: #1f2937;
-            --gray-900: #111827;
-            --primary-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            --accent-gradient: linear-gradient(135deg, #000000 0%, #374151 100%);
-            --border-radius: 25px;
-            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
-            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
-            --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.15);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --font-primary: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
-            --font-accent: 'Prata', serif;
+        /* Hide Webflow badge */
+        .w-webflow-badge {
+            display: none !important;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: var(--font-primary);
-            background: var(--primary-gradient);
-            color: var(--black);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        /* Main Container */
-        .main-container {
+        /* PromptGen Specific Styles */
+        .promptgen-section {
+            padding: 80px 0 120px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
-        .content-wrapper {
-            flex: 1;
-            padding: 80px 20px 120px;
+        .promptgen-container {
             max-width: 1200px;
             margin: 0 auto;
-            width: 100%;
+            padding: 0 20px;
         }
 
-        /* Header Section */
-        .header-section {
+        .promptgen-header {
             text-align: center;
             margin-bottom: 60px;
         }
 
-        .breadcrumb {
+        .breadcrumb-nav {
             display: inline-flex;
             align-items: center;
             gap: 8px;
             font-size: 14px;
-            color: var(--gray-600);
+            color: #6b7280;
             margin-bottom: 20px;
             text-decoration: none;
-            transition: var(--transition);
+            transition: all 0.3s ease;
+            font-family: "Geist", sans-serif;
         }
 
-        .breadcrumb:hover {
-            color: var(--black);
+        .breadcrumb-nav:hover {
+            color: #000000;
         }
 
-        .page-title {
-            font-family: var(--font-accent);
+        .promptgen-title {
+            font-family: "Prata", serif;
             font-size: clamp(2.5rem, 5vw, 4rem);
             font-weight: 400;
-            color: var(--black);
+            color: #000000;
             margin-bottom: 20px;
             letter-spacing: -0.025em;
         }
 
-        .page-subtitle {
+        .promptgen-subtitle {
             font-size: 1.25rem;
-            color: var(--gray-600);
+            color: #6b7280;
             max-width: 600px;
             margin: 0 auto;
             line-height: 1.6;
+            font-family: "Geist", sans-serif;
         }
 
-        /* Main Content Area */
         .content-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -114,18 +102,19 @@
         }
 
         /* Upload Section */
-        .upload-section {
-            background: var(--white);
-            border-radius: var(--border-radius);
+        .upload-card {
+            background: #ffffff;
+            border-radius: 20px;
             padding: 50px;
-            box-shadow: var(--shadow-soft);
-            border: 2px dashed var(--gray-300);
-            transition: var(--transition);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 2px dashed #e5e7eb;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
-        .upload-section::before {
+        .upload-card::before {
             content: '';
             position: absolute;
             top: 0;
@@ -136,15 +125,15 @@
             transition: left 0.6s ease;
         }
 
-        .upload-section:hover::before {
+        .upload-card:hover::before {
             left: 100%;
         }
 
-        .upload-section.dragover {
-            border-color: var(--black);
-            background: var(--gray-50);
+        .upload-card.dragover {
+            border-color: #000000;
+            background: #f9fafb;
             transform: scale(1.02);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
         }
 
         .upload-content {
@@ -156,31 +145,33 @@
             height: 80px;
             margin: 0 auto 30px;
             padding: 20px;
-            background: var(--gray-100);
+            background: #f3f4f6;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: var(--transition);
+            transition: all 0.3s ease;
         }
 
-        .upload-section:hover .upload-icon {
-            background: var(--black);
-            color: var(--white);
+        .upload-card:hover .upload-icon {
+            background: #000000;
+            color: #ffffff;
             transform: scale(1.1);
         }
 
         .upload-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: var(--black);
+            color: #000000;
             margin-bottom: 10px;
+            font-family: "Geist", sans-serif;
         }
 
         .upload-description {
-            color: var(--gray-600);
+            color: #6b7280;
             margin-bottom: 30px;
             font-size: 1rem;
+            font-family: "Geist", sans-serif;
         }
 
         .file-input {
@@ -192,17 +183,18 @@
             align-items: center;
             gap: 12px;
             padding: 16px 32px;
-            background: var(--black);
-            color: var(--white);
+            background: #000000;
+            color: #ffffff;
             border: none;
-            border-radius: var(--border-radius);
+            border-radius: 25px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             position: relative;
             overflow: hidden;
+            font-family: "Geist", sans-serif;
         }
 
         .upload-button::before {
@@ -222,22 +214,22 @@
 
         .upload-button:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
 
         /* Processing Section */
-        .processing-section {
-            background: var(--white);
-            border-radius: var(--border-radius);
+        .processing-card {
+            background: #ffffff;
+            border-radius: 20px;
             padding: 50px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--gray-200);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
             opacity: 0;
             transform: translateY(20px);
-            transition: var(--transition);
+            transition: all 0.5s ease;
         }
 
-        .processing-section.visible {
+        .processing-card.visible {
             opacity: 1;
             transform: translateY(0);
         }
@@ -248,16 +240,16 @@
             gap: 20px;
             margin-bottom: 30px;
             padding: 20px;
-            background: var(--gray-50);
+            background: #f9fafb;
             border-radius: 16px;
-            border: 1px solid var(--gray-200);
+            border: 1px solid #e5e7eb;
         }
 
         .file-icon {
             width: 50px;
             height: 50px;
-            background: var(--black);
-            color: var(--white);
+            background: #000000;
+            color: #ffffff;
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -267,13 +259,15 @@
 
         .file-info h3 {
             font-weight: 600;
-            color: var(--black);
+            color: #000000;
             margin-bottom: 5px;
+            font-family: "Geist", sans-serif;
         }
 
         .file-info p {
-            color: var(--gray-600);
+            color: #6b7280;
             font-size: 0.9rem;
+            font-family: "Geist", sans-serif;
         }
 
         .process-button {
@@ -281,19 +275,20 @@
             align-items: center;
             gap: 12px;
             padding: 18px 36px;
-            background: var(--accent-gradient);
-            color: var(--white);
+            background: linear-gradient(135deg, #000000 0%, #374151 100%);
+            color: #ffffff;
             border: none;
-            border-radius: var(--border-radius);
+            border-radius: 25px;
             font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             width: 100%;
             justify-content: center;
             margin-bottom: 20px;
+            font-family: "Geist", sans-serif;
         }
 
         .process-button::before {
@@ -313,7 +308,7 @@
 
         .process-button:hover {
             transform: translateY(-3px);
-            box-shadow: var(--shadow-strong);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
         }
 
         .process-button:disabled {
@@ -333,7 +328,8 @@
             font-weight: 500;
             opacity: 0;
             transform: translateY(10px);
-            transition: var(--transition);
+            transition: all 0.3s ease;
+            font-family: "Geist", sans-serif;
         }
 
         .status-message.visible {
@@ -343,17 +339,17 @@
 
         .status-message.processing {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: var(--white);
+            color: #ffffff;
         }
 
         .status-message.success {
             background: linear-gradient(135deg, #10b981, #059669);
-            color: var(--white);
+            color: #ffffff;
         }
 
         .status-message.error {
             background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: var(--white);
+            color: #ffffff;
         }
 
         /* Loading Animation */
@@ -362,7 +358,7 @@
             height: 20px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            border-top-color: var(--white);
+            border-top-color: #ffffff;
             animation: spin 1s ease-in-out infinite;
         }
 
@@ -370,38 +366,74 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Results Section */
-        .results-section {
-            background: var(--white);
-            border-radius: var(--border-radius);
+        /* Dashboard Section */
+        .dashboard-card {
+            background: #ffffff;
+            border-radius: 20px;
             padding: 50px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--gray-200);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
             opacity: 0;
             transform: translateY(20px);
-            transition: var(--transition);
+            transition: all 0.5s ease;
         }
 
-        .results-section.visible {
+        .dashboard-card.visible {
             opacity: 1;
             transform: translateY(0);
         }
 
-        .results-header {
+        .dashboard-header {
             text-align: center;
             margin-bottom: 40px;
         }
 
-        .results-title {
+        .dashboard-title {
+            font-family: "Prata", serif;
             font-size: 2rem;
-            font-weight: 700;
-            color: var(--black);
+            font-weight: 400;
+            color: #000000;
             margin-bottom: 10px;
         }
 
-        .results-description {
-            color: var(--gray-600);
+        .dashboard-description {
+            color: #6b7280;
             font-size: 1.1rem;
+            font-family: "Geist", sans-serif;
+        }
+
+        .rubric-info {
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .rubric-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 10px;
+            font-family: "Geist", sans-serif;
+        }
+
+        .rubric-description {
+            color: #6b7280;
+            margin-bottom: 15px;
+            font-family: "Geist", sans-serif;
+        }
+
+        .total-points {
+            display: inline-flex;
+            align-items: center;
+            background: #f3f4f6;
+            border-radius: 25px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #000000;
+            font-family: "Geist", sans-serif;
         }
 
         .export-options {
@@ -417,38 +449,39 @@
             justify-content: center;
             gap: 12px;
             padding: 16px 24px;
-            background: var(--white);
-            color: var(--black);
-            border: 2px solid var(--gray-300);
-            border-radius: var(--border-radius);
+            background: #ffffff;
+            color: #000000;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
+            font-family: "Geist", sans-serif;
         }
 
         .export-button:hover {
-            border-color: var(--black);
-            background: var(--black);
-            color: var(--white);
+            border-color: #000000;
+            background: #000000;
+            color: #ffffff;
             transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            .content-wrapper {
-                padding: 40px 15px 80px;
+            .promptgen-container {
+                padding: 0 15px;
             }
 
-            .upload-section,
-            .processing-section,
-            .results-section {
+            .upload-card,
+            .processing-card,
+            .dashboard-card {
                 padding: 30px 20px;
             }
 
-            .page-title {
+            .promptgen-title {
                 font-size: 2.5rem;
             }
 
@@ -489,9 +522,9 @@
             border-radius: 50%;
             display: block;
             stroke-width: 2;
-            stroke: var(--white);
+            stroke: #ffffff;
             stroke-miterlimit: 10;
-            box-shadow: inset 0px 0px 0px var(--white);
+            box-shadow: inset 0px 0px 0px #ffffff;
             animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
         }
 
@@ -500,7 +533,7 @@
             stroke-dashoffset: 166;
             stroke-width: 2;
             stroke-miterlimit: 10;
-            stroke: var(--white);
+            stroke: #ffffff;
             fill: none;
             animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
         }
@@ -529,113 +562,135 @@
 
         @keyframes fill {
             100% {
-                box-shadow: inset 0px 0px 0px 30px var(--white);
+                box-shadow: inset 0px 0px 0px 30px #ffffff;
             }
         }
     </style>
 </head>
+
 <body>
-    <!-- Header will be injected here -->
-    <div id="header-container"></div>
+    <div class="page-wrapper">
+        <!-- Header will be injected here -->
+        <div id="header-container"></div>
 
-    <div class="main-container">
-        <div class="content-wrapper">
-            <!-- Header Section -->
-            <div class="header-section fade-in">
-                <a href="index.html" class="breadcrumb">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Back to Oski
-                </a>
-                <h1 class="page-title">PromptGen</h1>
-                <p class="page-subtitle">Transform your rubrics into AI-powered assessment prompts with intelligent analysis and automated generation.</p>
-            </div>
-
-            <div class="content-grid">
-                <!-- Upload Section -->
-                <div class="upload-section slide-up" id="uploadSection">
-                    <div class="upload-content">
-                        <div class="upload-icon">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </div>
-                        <h2 class="upload-title">Upload Your Rubric</h2>
-                        <p class="upload-description">Drag and drop your rubric file here, or click to browse. Supports PDF, TXT, and image formats.</p>
-                        
-                        <input type="file" id="fileInput" class="file-input" accept=".pdf,.txt,.png,.jpg,.jpeg">
-                        <button class="upload-button" onclick="document.getElementById('fileInput').click()">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            Choose File
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Processing Section -->
-                <div class="processing-section" id="processingSection">
-                    <div id="filePreview" class="file-preview" style="display: none;">
-                        <div class="file-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                            </svg>
-                        </div>
-                        <div class="file-info">
-                            <h3 id="fileName">No file selected</h3>
-                            <p id="fileSize">Select a file to continue</p>
-                        </div>
-                    </div>
-
-                    <button class="process-button" id="processButton" disabled onclick="processRubric()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        <!-- PromptGen Section -->
+        <section class="promptgen-section">
+            <div class="promptgen-container">
+                <!-- Header -->
+                <div class="promptgen-header fade-in">
+                    <a href="index.html" class="breadcrumb-nav">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
-                        Process Rubric
-                    </button>
-
-                    <div id="statusMessages"></div>
+                        Back to Oski
+                    </a>
+                    <h1 class="promptgen-title">PromptGen</h1>
+                    <p class="promptgen-subtitle">Transform your rubrics into AI-powered assessment prompts with intelligent analysis and automated generation.</p>
                 </div>
 
-                <!-- Results Section -->
-                <div class="results-section" id="resultsSection">
-                    <div class="results-header">
-                        <h2 class="results-title">Processing Complete!</h2>
-                        <p class="results-description">Your rubric has been successfully analyzed and converted into AI prompts.</p>
+                <div class="content-grid">
+                    <!-- Upload Section -->
+                    <div class="upload-card slide-up" id="uploadSection">
+                        <div class="upload-content">
+                            <div class="upload-icon">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                            </div>
+                            <h2 class="upload-title">Upload Your Rubric</h2>
+                            <p class="upload-description">Drag and drop your rubric file here, or click to browse.<br>
+                            Supports: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, and image formats.</p>
+                            
+                            <input type="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.png,.jpg,.jpeg">
+                            <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Choose File
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="export-options">
-                        <a href="#" class="export-button" id="downloadYaml">
+                    <!-- Processing Section -->
+                    <div class="processing-card" id="processingSection">
+                        <div id="filePreview" class="file-preview" style="display: none;">
+                            <div class="file-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            </div>
+                            <div class="file-info">
+                                <h3 id="fileName">No file selected</h3>
+                                <p id="fileSize">Select a file to continue</p>
+                            </div>
+                        </div>
+
+                        <button class="process-button" id="processButton" disabled onclick="processRubric()">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
                             </svg>
-                            Download YAML
-                        </a>
-                        <a href="#" class="export-button" id="downloadJson">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Download JSON
-                        </a>
+                            Process Rubric
+                        </button>
+
+                        <div id="statusMessages"></div>
+                    </div>
+
+                    <!-- Dashboard Section -->
+                    <div class="dashboard-card" id="dashboardSection">
+                        <div class="dashboard-header">
+                            <h2 class="dashboard-title">Processing Complete!</h2>
+                            <p class="dashboard-description">Your rubric has been successfully analyzed and converted into AI prompts.</p>
+                        </div>
+
+                        <div class="rubric-info" id="rubricInfo">
+                            <h3 class="rubric-title" id="rubricTitle">OSCE Assessment Rubric</h3>
+                            <p class="rubric-description" id="rubricDescription">Your rubric has been successfully processed and is ready for export.</p>
+                            <div class="total-points">
+                                Total Points: <span id="totalPoints">0</span>
+                            </div>
+                        </div>
+
+                        <div class="export-options">
+                            <a href="#" class="export-button" id="downloadYaml">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Download YAML
+                            </a>
+                            <a href="#" class="export-button" id="downloadJson">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Download JSON
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Footer will be injected here -->
+        <div id="footer-container"></div>
     </div>
 
-    <!-- Footer will be injected here -->
-    <div id="footer-container"></div>
+    <!-- Oski JavaScript Framework -->
+    <script src="js/js-jquery-3.5.1.min.dc5e7f18c8.js" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="js/js-webflow.schunk.36b8fb49256177c8.js" type="text/javascript"></script>
+    <script src="js/js-webflow.schunk.4bcee8dc3a55ab3d.js" type="text/javascript"></script>
+    <script src="js/js-webflow.965f2b6a.2a699015d3217d92.js" type="text/javascript"></script>
+    <script src="js/header.js" type="text/javascript"></script>
+    <script src="js/footer.js" type="text/javascript"></script>
 
+    <!-- PromptGen JavaScript -->
     <script>
         let currentFile = null;
         let processedData = null;
@@ -648,12 +703,7 @@
 
         function setupFileUpload() {
             const fileInput = document.getElementById('fileInput');
-            const filePreview = document.getElementById('filePreview');
-            const fileName = document.getElementById('fileName');
-            const fileSize = document.getElementById('fileSize');
-            const processButton = document.getElementById('processButton');
-            const processingSection = document.getElementById('processingSection');
-
+            
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (file) {
@@ -663,21 +713,21 @@
         }
 
         function setupDragAndDrop() {
-            const uploadSection = document.getElementById('uploadSection');
+            const uploadCard = document.getElementById('uploadSection');
 
-            uploadSection.addEventListener('dragover', function(e) {
+            uploadCard.addEventListener('dragover', function(e) {
                 e.preventDefault();
-                uploadSection.classList.add('dragover');
+                uploadCard.classList.add('dragover');
             });
 
-            uploadSection.addEventListener('dragleave', function(e) {
+            uploadCard.addEventListener('dragleave', function(e) {
                 e.preventDefault();
-                uploadSection.classList.remove('dragover');
+                uploadCard.classList.remove('dragover');
             });
 
-            uploadSection.addEventListener('drop', function(e) {
+            uploadCard.addEventListener('drop', function(e) {
                 e.preventDefault();
-                uploadSection.classList.remove('dragover');
+                uploadCard.classList.remove('dragover');
                 
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
@@ -781,34 +831,50 @@
                 // Step 3: Success
                 showStatus('success', 'Processing complete!', false);
                 
-                // Show results section
-                const resultsSection = document.getElementById('resultsSection');
-                resultsSection.classList.add('visible');
-                
-                // Setup download buttons
-                setupDownloadButtons();
-                
-                // Smooth scroll to results
-                setTimeout(() => {
-                    resultsSection.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center' 
-                    });
-                }, 500);
+                // Show dashboard section
+                showDashboard(processedData);
 
             } catch (error) {
                 console.error('Error processing rubric:', error);
                 showStatus('error', `Error: ${error.message}`);
-            } finally {
+                
                 // Reset button
+                processButton.disabled = false;
                 processButton.innerHTML = `
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
                     Process Rubric
                 `;
-                // Keep button disabled to prevent reprocessing
             }
+        }
+
+        function showDashboard(data) {
+            const dashboardSection = document.getElementById('dashboardSection');
+            const rubricTitle = document.getElementById('rubricTitle');
+            const rubricDescription = document.getElementById('rubricDescription');
+            const totalPoints = document.getElementById('totalPoints');
+            
+            // Update dashboard content
+            if (data.parsed_yaml && data.parsed_yaml.rubric_info) {
+                rubricTitle.textContent = data.parsed_yaml.rubric_info.title || 'OSCE Assessment Rubric';
+                rubricDescription.textContent = data.parsed_yaml.rubric_info.description || 'Your rubric has been successfully processed and is ready for export.';
+                totalPoints.textContent = data.parsed_yaml.rubric_info.total_points || '0';
+            }
+            
+            // Show dashboard section
+            dashboardSection.classList.add('visible');
+            
+            // Setup download buttons
+            setupDownloadButtons();
+            
+            // Smooth scroll to dashboard
+            setTimeout(() => {
+                dashboardSection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }, 500);
         }
 
         function showStatus(type, message, withSpinner = false) {
@@ -902,7 +968,7 @@
             document.getElementById('processButton').disabled = true;
             document.getElementById('statusMessages').innerHTML = '';
             document.getElementById('processingSection').classList.remove('visible');
-            document.getElementById('resultsSection').classList.remove('visible');
+            document.getElementById('dashboardSection').classList.remove('visible');
         }
 
         // Add keyboard shortcuts
