@@ -1118,8 +1118,147 @@
         }
     </style>
 
+    <!-- Authentication Loading Screen -->
+    <style>
+        /* Completely hide body content initially */
+        body {
+            visibility: hidden;
+            background: #ffffff;
+        }
+        
+        body.loading {
+            visibility: visible;
+        }
+        
+        body.authenticated {
+            visibility: visible;
+        }
+        
+        #auth-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            backdrop-filter: blur(10px);
+        }
+        
+        .auth-logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeInScale 0.8s ease-out 0.2s forwards;
+        }
+        
+        .auth-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeInScale {
+            0% { 
+                opacity: 0; 
+                transform: scale(0.8);
+            }
+            100% { 
+                opacity: 1; 
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .auth-text {
+            color: #64748b;
+            font-size: 16px;
+            font-weight: 500;
+            opacity: 0;
+            animation: fadeIn 0.6s ease-out 0.5s forwards;
+        }
+        
+        .auth-subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 400;
+            margin-top: 8px;
+            opacity: 0;
+            animation: fadeIn 0.6s ease-out 0.7s forwards;
+        }
+        
+        /* Hide main content until authenticated */
+        body:not(.authenticated) .page-wrapper {
+            display: none !important;
+        }
+        
+        body.authenticated #auth-loading {
+            animation: fadeOutUp 0.5s ease-in forwards;
+        }
+        
+        @keyframes fadeOutUp {
+            0% { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateY(-20px);
+                pointer-events: none;
+            }
+        }
+        
+        /* Smooth content reveal */
+        body.authenticated .page-wrapper {
+            animation: fadeInContent 0.6s ease-out 0.3s both;
+        }
+        
+        @keyframes fadeInContent {
+            0% { 
+                opacity: 0; 
+                transform: translateY(20px);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+    </style>
+
     <!-- Authentication Check Script -->
     <script>
+        // Set initial loading state
+        document.body.classList.add('loading');
+        
+        // Show loading screen immediately
+        document.body.innerHTML = `
+            <div id="auth-loading">
+                <img src="images/Oski.png" alt="Oski" class="auth-logo">
+                <div class="auth-spinner"></div>
+                <div class="auth-text">Verifying access permissions</div>
+                <div class="auth-subtitle">Ensuring secure authentication</div>
+            </div>
+        ` + document.body.innerHTML;
+
         // Supabase configuration
         const SUPABASE_URL = 'https://yqioyjcriynhtirluyxb.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxaW95amNyaXluaHRpcmx1eXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNzk3NjEsImV4cCI6MjA2NTg1NTc2MX0.VOUimS9zIE1eIYIs_8taFF124qi943xRVxT8dqOnCkM';
@@ -1134,18 +1273,29 @@
                 
                 if (error) {
                     console.error('Auth error:', error);
-                    window.location.href = 'login.html';
+                    window.location.replace('login.html');
                     return;
                 }
                 
                 if (!session || !session.user) {
-                    // No active session, redirect to login
-                    window.location.href = 'login.html';
+                    // No active session, redirect to login immediately
+                    window.location.replace('login.html');
                     return;
                 }
                 
-                // User is authenticated, allow access
-                console.log('User authenticated:', session.user.email);
+                // User is authenticated, show content with smooth transition
+                setTimeout(() => {
+                    document.body.classList.add('authenticated');
+                    console.log('User authenticated:', session.user.email);
+                    
+                    // Remove loading screen after animation completes
+                    setTimeout(() => {
+                        const loadingElement = document.getElementById('auth-loading');
+                        if (loadingElement) {
+                            loadingElement.remove();
+                        }
+                    }, 800);
+                }, 600); // Small delay to ensure smooth loading experience
                 
                 // Add logout functionality
                 window.logout = async function() {
@@ -1153,12 +1303,12 @@
                     if (error) {
                         console.error('Logout error:', error);
                     }
-                    window.location.href = 'login.html';
+                    window.location.replace('login.html');
                 };
                 
             } catch (error) {
                 console.error('Authentication check failed:', error);
-                window.location.href = 'login.html';
+                window.location.replace('login.html');
             }
         }
 
@@ -1168,7 +1318,7 @@
         // Listen for auth state changes
         supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
-                window.location.href = 'login.html';
+                window.location.replace('login.html');
             }
         });
     </script>
