@@ -117,11 +117,15 @@ export default function RubricsToPrompts() {
         setEditedYaml(data.result.yaml_content);
         toast.success('Processing completed successfully!');
       } else if (data.status === 'error') {
-        toast.error(data.error || 'Processing failed');
+        toast.error(data.error || data.message || 'Processing failed');
         setProcessingStatus(null);
-      } else {
+      } else if (data.status === 'processing') {
         // Continue polling
         setTimeout(() => pollStatus(id), 2000);
+      } else {
+        // Handle any other status
+        toast.error('Unknown processing status');
+        setProcessingStatus(null);
       }
     } catch {
       toast.error('Failed to get processing status');

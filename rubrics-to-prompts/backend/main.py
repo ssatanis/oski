@@ -14,10 +14,12 @@ import aiofiles
 from pydantic import BaseModel, ValidationError
 from dotenv import load_dotenv
 from openai import AzureOpenAI
-from azure.core.credentials import AzureKeyCredential
 from models import RubricPrompt, RubricSection, RubricItem
 import tempfile
 import logging
+import PyPDF2
+from docx import Document
+import openpyxl
 
 # Load environment variables
 load_dotenv()
@@ -29,9 +31,12 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Rubrics to Prompts API", version="1.0.0")
 
 # Configure CORS
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+allowed_origins = [origin.strip() for origin in allowed_origins]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8080", "http://127.0.0.1:8080"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,13 +44,23 @@ app.add_middleware(
 
 # Initialize Azure OpenAI client
 azure_openai_client = None
-if os.getenv("AZURE_OPENAI_KEY"):
-    azure_openai_client = AzureOpenAI(
-        api_version="2024-12-01-preview",
-        azure_endpoint="https://interns-summer-2025.openai.azure.com/",
-        azure_ad_token_provider=None,
-        api_key=os.getenv("AZURE_OPENAI_KEY")
-    )
+azure_openai_key = os.getenv("AZURE_OPENAI_KEY")
+azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+azure_openai_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+
+if azure_openai_key and azure_openai_endpoint:
+    try:
+        azure_openai_client = AzureOpenAI(
+            api_version="2024-12-01-preview",
+            azure_endpoint=azure_openai_endpoint,
+            api_key=azure_openai_key
+        )
+        logger.info("Azure OpenAI client initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize Azure OpenAI client: {e}")
+        azure_openai_client = None
+else:
+    logger.warning("Azure OpenAI configuration missing. Key or endpoint not found.")
 
 # Initialize EasyOCR reader (lazy loading)
 ocr_reader = None
@@ -79,24 +94,30 @@ async def extract_text_from_file(file_path: str, file_type: str) -> str:
             # Tesseract OCR
             try:
                 if file_type.lower() == 'pdf':
-                    # For PDF, convert to image first (simplified approach)
-                    # In production, use pdf2image library
-                    image = Image.open(file_path).convert('RGB')
+                    # For PDF files, we can't directly open as image
+                    # Skip Tesseract for PDF and rely on EasyOCR
+                    logger.info("PDF detected, skipping Tesseract OCR")
+                    tesseract_text = ""
                 else:
-                    image = Image.open(file_path)
-                
-                tesseract_text = pytesseract.image_to_string(image, config='--psm 6')
-                logger.info(f"Tesseract extracted {len(tesseract_text)} characters")
+                    image = Image.open(file_path).convert('RGB')
+                    tesseract_config = os.getenv('TESSERACT_CONFIG', '--psm 6')
+                    tesseract_text = pytesseract.image_to_string(image, config=tesseract_config)
+                    logger.info(f"Tesseract extracted {len(tesseract_text)} characters")
             except Exception as e:
                 logger.warning(f"Tesseract OCR failed: {e}")
                 tesseract_text = ""
             
             # EasyOCR
             try:
-                reader = get_ocr_reader()
-                easyocr_results = reader.readtext(file_path)
-                easyocr_text = ' '.join([result[1] for result in easyocr_results])
-                logger.info(f"EasyOCR extracted {len(easyocr_text)} characters")
+                if file_type.lower() == 'pdf':
+                    # For PDF files, skip EasyOCR as it expects image files
+                    logger.info("PDF detected, skipping EasyOCR")
+                    easyocr_text = ""
+                else:
+                    reader = get_ocr_reader()
+                    easyocr_results = reader.readtext(file_path)
+                    easyocr_text = ' '.join([result[1] for result in easyocr_results])
+                    logger.info(f"EasyOCR extracted {len(easyocr_text)} characters")
             except Exception as e:
                 logger.warning(f"EasyOCR failed: {e}")
                 easyocr_text = ""
@@ -110,19 +131,98 @@ async def extract_text_from_file(file_path: str, file_type: str) -> str:
                 logger.info("Using Tesseract result")
         
         elif file_type.lower() in ['txt', 'csv']:
-            # Read text files directly
-            async with aiofiles.open(file_path, mode='r', encoding='utf-8') as f:
-                extracted_text = await f.read()
-        
-        elif file_type.lower() in ['doc', 'docx', 'xls', 'xlsx']:
-            # For now, treat as text (in production, use python-docx, openpyxl)
+            # Read text files directly with encoding fallback
             try:
-                async with aiofiles.open(file_path, mode='r', encoding='utf-8', errors='ignore') as f:
+                async with aiofiles.open(file_path, mode='r', encoding='utf-8') as f:
                     extracted_text = await f.read()
-            except:
-                # Fallback to OCR for complex documents
-                image = Image.open(file_path)
-                extracted_text = pytesseract.image_to_string(image)
+            except UnicodeDecodeError:
+                # Try with different encodings
+                for encoding in ['latin-1', 'cp1252', 'iso-8859-1']:
+                    try:
+                        async with aiofiles.open(file_path, mode='r', encoding=encoding) as f:
+                            extracted_text = await f.read()
+                        logger.info(f"Successfully read file with {encoding} encoding")
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                else:
+                    raise ValueError("Could not decode text file with any supported encoding")
+        
+        elif file_type.lower() == 'pdf':
+            # Extract text from PDF using PyPDF2
+            try:
+                with open(file_path, 'rb') as file:
+                    pdf_reader = PyPDF2.PdfReader(file)
+                    extracted_text = ""
+                    
+                    for page_num in range(len(pdf_reader.pages)):
+                        page = pdf_reader.pages[page_num]
+                        page_text = page.extract_text()
+                        extracted_text += page_text + "\n"
+                    
+                    # Check if we extracted meaningful text
+                    if len(extracted_text.strip()) < 50:
+                        raise ValueError("PDF appears to be image-based or contains no extractable text")
+                    
+                    logger.info(f"Extracted {len(extracted_text)} characters from PDF")
+            except Exception as e:
+                logger.warning(f"PDF text extraction failed: {e}")
+                raise ValueError("Could not extract text from PDF. Please ensure it's a text-based PDF or convert to image format.")
+        
+        elif file_type.lower() in ['docx']:
+            # Extract text from Word documents using python-docx
+            try:
+                doc = Document(file_path)
+                extracted_text = ""
+                
+                for paragraph in doc.paragraphs:
+                    extracted_text += paragraph.text + "\n"
+                
+                # Also extract text from tables
+                for table in doc.tables:
+                    for row in table.rows:
+                        for cell in row.cells:
+                            extracted_text += cell.text + "\t"
+                        extracted_text += "\n"
+                
+                if len(extracted_text.strip()) < 10:
+                    raise ValueError("No meaningful text found in Word document")
+                
+                logger.info(f"Extracted {len(extracted_text)} characters from Word document")
+            except Exception as e:
+                logger.warning(f"Word document processing failed: {e}")
+                raise ValueError("Could not process Word document. Please save as PDF or text format.")
+        
+        elif file_type.lower() in ['xlsx', 'xls']:
+            # Extract text from Excel files using openpyxl
+            try:
+                if file_type.lower() == 'xlsx':
+                    workbook = openpyxl.load_workbook(file_path)
+                    extracted_text = ""
+                    
+                    for sheet_name in workbook.sheetnames:
+                        sheet = workbook[sheet_name]
+                        extracted_text += f"Sheet: {sheet_name}\n"
+                        
+                        for row in sheet.iter_rows(values_only=True):
+                            row_text = "\t".join([str(cell) if cell is not None else "" for cell in row])
+                            if row_text.strip():
+                                extracted_text += row_text + "\n"
+                    
+                    if len(extracted_text.strip()) < 10:
+                        raise ValueError("No meaningful text found in Excel file")
+                    
+                    logger.info(f"Extracted {len(extracted_text)} characters from Excel file")
+                else:
+                    # For .xls files, we'd need xlrd library
+                    raise ValueError("Legacy Excel (.xls) format not supported. Please save as .xlsx")
+            except Exception as e:
+                logger.warning(f"Excel file processing failed: {e}")
+                raise ValueError("Could not process Excel file. Please save as PDF or text format.")
+        
+        elif file_type.lower() in ['doc']:
+            # For legacy Word documents, provide helpful error
+            raise ValueError("Legacy Word (.doc) format not supported. Please save as .docx, PDF, or text format.")
         
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
@@ -249,7 +349,7 @@ response_config:
             )
             
             response = azure_openai_client.chat.completions.create(
-                model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4"),
+                model=azure_openai_deployment or "2024-12-01-preview",
                 messages=[
                     {"role": "system", "content": "You are an expert at converting medical assessment rubrics into structured YAML formats."},
                     {"role": "user", "content": prompt}
@@ -400,10 +500,11 @@ async def process_rubric_background(file_content: bytes, filename: str, task_id:
     
     except Exception as e:
         logger.error(f"Background processing failed: {e}")
-        task_storage[task_id]['error'] = str(e)
+        error_message = f"Load failed: {str(e)}"
+        task_storage[task_id]['error'] = error_message
         task_storage[task_id]['status'] = ProcessingStatus(
             step="error",
-            message=f"Processing failed: {str(e)}",
+            message=error_message,
             progress=0.0
         )
 
@@ -418,7 +519,10 @@ async def get_processing_status(task_id: str):
     if task_data.get('error'):
         return {
             "status": "error",
-            "error": task_data['error']
+            "error": task_data['error'],
+            "step": "error",
+            "message": task_data['error'],
+            "progress": 0.0
         }
     
     status = task_data['status']
