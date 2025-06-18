@@ -69,6 +69,36 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', set
     color: #ffffff !important;
 }
 
+/* Center the Get Started button properly */
+.button-flex.center-mobile {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    width: 100% !important;
+}
+
+/* Ensure proper centering on all devices */
+@media (max-width: 991px) {
+    .button-flex.center-mobile {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+}
+
+@media (max-width: 479px) {
+    .button-flex.center-mobile {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    
+    .button-first {
+        width: 100% !important;
+        max-width: 200px !important;
+        text-align: center !important;
+    }
+}
+
 
 </style>
 </head><body><div class="page-wrapper"><div id="header-container"></div><section class="hero" id="hero"><div class="container"><div class="max-w-width" style="margin-top: 120px;"><div data-w-id="cc4bc4b9-3fd8-9621-1de2-e0b7a0bf1285" style="opacity:0" class="top-text">Welcome to Oski</div><h1 data-w-id="6b4f9255-2b7e-e6bc-76d5-b0e49087b85c" style="opacity:0" class="display-1">Turning <span class="other-font">interactions</span> into clinical excellence.</h1><div class="margin-20"><p data-w-id="b90b02c7-115c-c062-22d1-a988e276c1cf" style="opacity:0" class="p-02">Complexity in, precise insights out.</p></div><div data-w-id="4c25a1b6-df10-f474-31b4-08ca1d59a136" style="opacity:0" class="margin-30"><div class="button-flex center-mobile"><a data-w-id="808f99a7-6144-0b76-f91d-d0f0d0481c64" href="#pricing" class="button-first w-inline-block"><div class="txt-wrapper"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-txt">Get Started</div></div></a><a data-w-id="808f99a7-6144-0b76-f91d-d0f0d0481c6a" href="#features" class="button-main first w-inline-block"><div class="button-text">Learn more</div><div class="button-icon-wrapper"><div style="-webkit-transform:translate3d(-16%, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(-16%, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(-16%, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(-16%, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="button-arrow hover w-embed"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div><div class="button-arrow w-embed"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div></div></a></div></div>
