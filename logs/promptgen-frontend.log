@@ -9,3 +9,9 @@
 
  ✓ Starting...
  ✓ Ready in 771ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1968ms
+ GET / 200 in 2247ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 274.4s
+ GET /health 404 in 274515ms

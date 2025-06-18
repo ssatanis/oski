@@ -285,8 +285,11 @@ async def upload_rubric(background_tasks: BackgroundTasks, file: UploadFile = Fi
         task_storage[task_id]['error'] = f"Unsupported file type: {file_extension}"
         raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}")
     
+    # Read file content before background processing
+    file_content = await file.read()
+    
     # Start background processing
-    background_tasks.add_task(process_rubric_background, file, task_id, file_extension)
+    background_tasks.add_task(process_rubric_background, file_content, file.filename, task_id, file_extension)
     
     return ProcessingResponse(
         task_id=task_id,
@@ -294,7 +297,7 @@ async def upload_rubric(background_tasks: BackgroundTasks, file: UploadFile = Fi
         message="File uploaded successfully. Processing started."
     )
 
-async def process_rubric_background(file: UploadFile, task_id: str, file_extension: str):
+async def process_rubric_background(file_content: bytes, filename: str, task_id: str, file_extension: str):
     """Background task to process the rubric file"""
     try:
         # Update status: File processing
@@ -306,8 +309,7 @@ async def process_rubric_background(file: UploadFile, task_id: str, file_extensi
         
         # Save uploaded file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as temp_file:
-            content = await file.read()
-            temp_file.write(content)
+            temp_file.write(file_content)
             temp_file_path = temp_file.name
         
         try:
@@ -342,7 +344,7 @@ async def process_rubric_background(file: UploadFile, task_id: str, file_extensi
                 'original_text': extracted_text,
                 'yaml_content': result['yaml_content'],
                 'parsed_yaml': result['parsed_yaml'],
-                'filename': file.filename
+                'filename': filename
             }
             
         finally:

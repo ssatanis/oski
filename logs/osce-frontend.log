@@ -7,3 +7,15 @@
 
  ✓ Starting...
  ✓ Ready in 1102ms
+ ○ Compiling /_not-found ...
+Failed to load font file: /Users/sahajsatani/Documents/Oski/osce-video-grader/web/app/fonts/GeistVF.woff
+Error: Unknown font format
+Failed to load font file: /Users/sahajsatani/Documents/Oski/osce-video-grader/web/app/fonts/GeistMonoVF.woff
+Error: Unknown font format
+Failed to load font file: /Users/sahajsatani/Documents/Oski/osce-video-grader/web/app/fonts/GeistVF.woff
+Error: Unknown font format
+Failed to load font file: /Users/sahajsatani/Documents/Oski/osce-video-grader/web/app/fonts/GeistMonoVF.woff
+Error: Unknown font format
+ ✓ Compiled /_not-found in 8.3s (570 modules)
+ GET /health 404 in 8570ms
+ ✓ Compiled in 140ms (287 modules)
