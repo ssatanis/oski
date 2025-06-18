@@ -15,253 +15,209 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { extracted_text } = req.body;
+    const { extracted_text, filename, dashboard_criteria } = req.body;
     
-    if (!extracted_text) {
-      return res.status(400).json({ error: 'Missing extracted_text in request body' });
+    if (!extracted_text && !dashboard_criteria) {
+      return res.status(400).json({ error: 'Missing extracted_text or dashboard_criteria in request body' });
     }
 
-    console.log('Processing extracted text for prompt generation...');
+    console.log('Processing request for YAML generation...');
     
-    // Enhanced parsing to handle comprehensive medical rubrics
-    const lines = extracted_text.split('\n').filter(line => line.trim());
-    const criteria = [];
+    let criteria = [];
     let examsList = [];
-    let stationName = 'Medical_Assessment';
 
-    // Extract station/title name if present
-    const titleLine = lines.find(line => 
-      line.toLowerCase().includes('osce') || 
-      line.toLowerCase().includes('assessment') ||
-      line.toLowerCase().includes('medical') ||
-      line.toLowerCase().includes('examination') ||
-      line.toLowerCase().includes('rubric')
-    );
-    if (titleLine) {
-      stationName = titleLine.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-    }
-
-    // Parse domain-based medical rubrics (Excel-style format)
-    const domainPattern = /^(.+?)\s*\(([A-Z]{1,3})\),\s*\d+,\s*(\d+),\s*(.+?),"(.+?)"$/;
-    const domainMatches = lines.filter(line => domainPattern.test(line));
-    
-    if (domainMatches.length > 0) {
-      console.log('Found domain-based medical rubric format');
-      
-      domainMatches.forEach(line => {
-        const match = line.match(domainPattern);
-        if (match) {
-          const [, domainName, domainCode, points, description, examples] = match;
-          
-          // Split examples by common delimiters
-          const exampleList = examples.split(/[,;]/).map(ex => ex.trim().replace(/^"|"$/g, '')).filter(ex => ex);
-          
-          const examId = domainName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-          examsList.push(examId);
-          
-          criteria.push({
-            examId: examId,
-            name: domainName,
-            max_points: parseInt(points),
-            examples: exampleList
-          });
-        }
-      });
+    // If dashboard criteria is provided, use it (for YAML downloads)
+    if (dashboard_criteria && dashboard_criteria.length > 0) {
+      console.log('Using dashboard criteria for YAML generation');
+      criteria = dashboard_criteria.map(criterion => ({
+        examId: criterion.examId || criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'),
+        name: criterion.name,
+        max_points: parseInt(criterion.max_points) || 1,
+        examples: Array.isArray(criterion.examples) ? criterion.examples : []
+      }));
+      examsList = criteria.map(c => c.examId);
     } else {
-      // Parse detailed criteria format (structured format)
-      console.log('Parsing detailed criteria format');
+      // Use AI analyzer for initial processing
+      console.log('Using AI analyzer for criteria extraction');
       
-      let currentDomain = null;
-      let domainPoints = 0;
-      
-      lines.forEach((line, index) => {
-        // Look for domain headers
-        const domainMatch = line.match(/^\d+\.\s*(.+?)\s*\(Total:\s*(\d+)\s*points?\)/i);
-        if (domainMatch) {
-          currentDomain = domainMatch[1].trim();
-          domainPoints = parseInt(domainMatch[2]);
-          
-          const examId = currentDomain.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-          examsList.push(examId);
-          
-          // Look for sub-criteria under this domain
-          const subCriteria = [];
-          const subExamples = [];
-          
-          for (let i = index + 1; i < lines.length; i++) {
-            const nextLine = lines[i];
-            
-            // Stop if we hit another domain
-            if (nextLine.match(/^\d+\.\s*(.+?)\s*\(Total:\s*\d+\s*points?\)/i)) {
-              break;
-            }
-            
-            // Look for sub-criteria
-            const subCriteriaMatch = nextLine.match(/^\s*-\s*(.+?)\s*\((\d+)\s*points?\)/);
-            if (subCriteriaMatch) {
-              subCriteria.push(subCriteriaMatch[1].trim());
-            }
-            
-            // Look for examples
-            const exampleMatch = nextLine.match(/Examples:\s*(.+)/i);
-            if (exampleMatch) {
-              const examples = exampleMatch[1].split(/[,;]/).map(ex => ex.trim().replace(/^"|"$/g, '')).filter(ex => ex);
-              subExamples.push(...examples);
-            }
-          }
-          
-          // Create criteria for this domain
-          criteria.push({
-            examId: examId,
-            name: currentDomain,
-            max_points: domainPoints,
-            examples: subExamples.length > 0 ? subExamples : [
-              `I'm going to assess your ${currentDomain.toLowerCase()}`,
-              `Let me evaluate your ${currentDomain.toLowerCase()}`,
-              `I need to examine your ${currentDomain.toLowerCase()}`
-            ]
-          });
-        }
-      });
-      
-      // If no structured format found, try to extract from pattern-based text
-      if (criteria.length === 0) {
-        console.log('Trying pattern-based extraction');
-        
-        // Look for "History Taking", "Physical Examination", "Diagnostic Accuracy", etc.
-        const medicalDomains = [
-          { pattern: /history.{0,20}taking/i, name: 'History Taking', points: 27 },
-          { pattern: /physical.{0,20}exam/i, name: 'Physical Examination', points: 11 },
-          { pattern: /diagnostic.{0,20}accuracy/i, name: 'Diagnostic Accuracy', points: 9 },
-          { pattern: /diagnostic.{0,20}reasoning/i, name: 'Diagnostic Reasoning', points: 5 },
-          { pattern: /management/i, name: 'Management', points: 4 }
-        ];
-        
-        const textContent = extracted_text.toLowerCase();
-        
-        medicalDomains.forEach(domain => {
-          if (domain.pattern.test(textContent)) {
-            const examId = domain.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-            examsList.push(examId);
-            
-            // Extract examples for this domain
-            let examples = [];
-            if (domain.name.toLowerCase().includes('history')) {
-              examples = [
-                "Can you tell me about your symptoms?",
-                "When did this start?",
-                "What makes it better or worse?",
-                "Do you have any allergies?",
-                "What medications are you taking?",
-                "Any family history of this condition?"
-              ];
-            } else if (domain.name.toLowerCase().includes('physical')) {
-              examples = [
-                "I'm going to examine you now",
-                "I'm going to listen to your heart",
-                "I'm going to check your blood pressure",
-                "Let me examine your abdomen",
-                "I'm going to test your reflexes"
-              ];
-            } else if (domain.name.toLowerCase().includes('diagnostic')) {
-              examples = [
-                "Based on your symptoms and examination",
-                "The most likely diagnosis is",
-                "I need to consider several possibilities",
-                "The findings suggest",
-                "This is consistent with"
-              ];
-            } else if (domain.name.toLowerCase().includes('management')) {
-              examples = [
-                "I recommend",
-                "We should follow up",
-                "You should take",
-                "I'm going to refer you to",
-                "The treatment plan includes"
-              ];
-            }
-            
-            criteria.push({
-              examId: examId,
-              name: domain.name,
-              max_points: domain.points,
-              examples: examples
-            });
-          }
+      try {
+        // Call the adaptive OCR analyzer first
+        const adaptiveResponse = await fetch('http://localhost:3000/api/adaptive-ocr-analyzer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileContent: extracted_text,
+            fileName: filename
+          })
         });
+
+        if (adaptiveResponse.ok) {
+          const adaptiveData = await adaptiveResponse.json();
+          criteria = adaptiveData.criteria || [];
+          examsList = criteria.map(c => c.examId);
+          console.log(`Adaptive OCR extracted ${criteria.length} criteria`);
+        } else {
+          // Fallback to regular AI analyzer
+          const aiResponse = await fetch('http://localhost:3000/api/ai-rubric-analyzer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              extracted_text: extracted_text,
+              filename: filename
+            })
+          });
+
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            criteria = aiData.criteria || [];
+            examsList = criteria.map(c => c.examId);
+            console.log(`Fallback AI extracted ${criteria.length} criteria`);
+          } else {
+            throw new Error('Both adaptive OCR and AI analyzer failed');
+          }
+        }
+      } catch (aiError) {
+        console.warn('Advanced analyzers unavailable, using basic parsing:', aiError.message);
+        
+        // Fallback to basic parsing
+        const fallbackCriteria = await basicCriteriaExtraction(extracted_text, filename);
+        criteria = fallbackCriteria;
+        examsList = criteria.map(c => c.examId);
       }
     }
 
-    // Default criteria if still nothing found
     if (criteria.length === 0) {
-      console.log('No criteria found, using comprehensive medical defaults');
-      const defaultCriteria = [
-        {
-          name: "History Taking",
-          points: 27,
-          examples: [
-            "Can you tell me about your symptoms?",
-            "When did this start?",
-            "What makes it better or worse?",
-            "Do you have any allergies?",
-            "What medications are you taking?"
-          ]
-        },
-        {
-          name: "Physical Examination", 
-          points: 11,
-          examples: [
-            "I'm going to examine you now",
-            "I'm going to listen to your heart",
-            "I'm going to check your blood pressure",
-            "Let me examine your abdomen"
-          ]
-        },
-        {
-          name: "Diagnostic Accuracy",
-          points: 9,
-          examples: [
-            "Based on your symptoms and examination",
-            "The most likely diagnosis is",
-            "I need to consider several possibilities"
-          ]
-        },
-        {
-          name: "Diagnostic Reasoning",
-          points: 5,
-          examples: [
-            "The reason I think this is",
-            "This diagnosis fits because",
-            "The evidence includes"
-          ]
-        },
-        {
-          name: "Management",
-          points: 4,
-          examples: [
-            "I recommend",
-            "The treatment includes",
-            "We should follow up"
-          ]
-        }
-      ];
-      
-      defaultCriteria.forEach(criterion => {
-        const examId = criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-        examsList.push(examId);
-        criteria.push({
-          examId: examId,
-          name: criterion.name,
-          max_points: criterion.points,
-          examples: criterion.examples
-        });
-      });
+      return res.status(400).json({ error: 'No criteria could be extracted from the document' });
     }
 
-    console.log(`Generated ${criteria.length} criteria:`, criteria.map(c => c.name));
+    console.log(`Generating YAML for ${criteria.length} criteria:`, criteria.map(c => c.name));
 
-    // Generate the YAML content in the exact format of abdominal_pain.yaml
-    const yamlContent = `system_message: |
+    // Generate the YAML content in the exact format of your training examples
+    const yamlContent = generateYAMLContent(criteria, examsList);
+
+    // Create parsed structure for the dashboard
+    const parsedYaml = {
+      system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+      user_message: `Your task is to identify the start and end times of specific medical assessments...`,
+      criteria: criteria,
+      exams_list: examsList,
+      response_config: {
+        structured_output: true
+      }
+    };
+
+    console.log('YAML generation complete');
+
+    res.status(200).json({
+      message: 'Prompt generated successfully',
+      yaml_content: yamlContent,
+      parsed_yaml: parsedYaml,
+      validation_success: true,
+      criteria_count: criteria.length,
+      generated_from: dashboard_criteria ? 'dashboard' : 'ai_extraction'
+    });
+
+  } catch (error) {
+    console.error('Prompt generation failed:', error);
+    res.status(500).json({ 
+      error: `Failed to generate prompt: ${error.message}` 
+    });
+  }
+}
+
+async function basicCriteriaExtraction(extracted_text, filename) {
+  console.log('Using basic criteria extraction as fallback');
+  
+  const criteria = [];
+  const lines = extracted_text.split('\n').filter(line => line.trim());
+  
+  // Look for common medical examination patterns
+  const medicalPatterns = [
+    { pattern: /history.{0,20}taking/i, name: 'History Taking', points: 25 },
+    { pattern: /physical.{0,20}exam/i, name: 'Physical Examination', points: 15 },
+    { pattern: /diagnostic.{0,20}accuracy/i, name: 'Diagnostic Accuracy', points: 10 },
+    { pattern: /diagnostic.{0,20}reasoning/i, name: 'Diagnostic Reasoning', points: 8 },
+    { pattern: /management/i, name: 'Management', points: 5 },
+    { pattern: /abdomen/i, name: 'Abdominal Examination', points: 8 },
+    { pattern: /heart|cardiac/i, name: 'Cardiovascular Examination', points: 8 },
+    { pattern: /lung|respiratory/i, name: 'Respiratory Examination', points: 8 },
+    { pattern: /skin|rash/i, name: 'Skin Examination', points: 6 },
+    { pattern: /neuro/i, name: 'Neurological Examination', points: 10 }
+  ];
+  
+  const textContent = extracted_text.toLowerCase();
+  
+  for (const pattern of medicalPatterns) {
+    if (pattern.pattern.test(textContent)) {
+      const examId = pattern.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      
+      let examples = [];
+      if (pattern.name.toLowerCase().includes('history')) {
+        examples = [
+          "Can you tell me about your symptoms?",
+          "When did this start?",
+          "What makes it better or worse?",
+          "Do you have any allergies?"
+        ];
+      } else if (pattern.name.toLowerCase().includes('physical')) {
+        examples = [
+          "I'm going to examine you now",
+          "I'm going to listen to your heart",
+          "I'm going to check your blood pressure"
+        ];
+      } else if (pattern.name.toLowerCase().includes('diagnostic')) {
+        examples = [
+          "Based on your symptoms and examination",
+          "The most likely diagnosis is",
+          "I need to consider several possibilities"
+        ];
+      } else if (pattern.name.toLowerCase().includes('management')) {
+        examples = [
+          "I recommend",
+          "The treatment includes",
+          "We should follow up"
+        ];
+      } else {
+        examples = [`I'm going to examine your ${pattern.name.toLowerCase()}`];
+      }
+      
+      criteria.push({
+        examId: examId,
+        name: pattern.name,
+        max_points: pattern.points,
+        examples: examples
+      });
+    }
+  }
+  
+  // If no patterns found, use generic defaults
+  if (criteria.length === 0) {
+    criteria.push(
+      {
+        examId: 'Patient_History',
+        name: 'Patient History',
+        max_points: 5,
+        examples: ["Can you tell me about your symptoms?", "What brings you in today?"]
+      },
+      {
+        examId: 'Physical_Examination',
+        name: 'Physical Examination',
+        max_points: 4,
+        examples: ["I'm going to examine you now", "Let me check your vital signs"]
+      }
+    );
+  }
+  
+  return criteria;
+}
+
+function generateYAMLContent(criteria, examsList) {
+  // Generate YAML in the exact format of your training examples
+  const yamlContent = `system_message: |
    You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
    
 user_message: |
@@ -300,30 +256,5 @@ ${criteria.map((criterion, index) => `   	 ${index + 1}. ${criterion.examId}: Di
 response_config:
   structured_output: True`;
 
-    // Create parsed structure for the dashboard
-    const parsedYaml = {
-      system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-      user_message: `Your task is to identify the start and end times of specific physical exams within the conversation...`,
-      criteria: criteria,
-      exams_list: examsList,
-      response_config: {
-        structured_output: true
-      }
-    };
-
-    console.log('YAML generation complete');
-
-    res.status(200).json({
-      message: 'Prompt generated successfully',
-      yaml_content: yamlContent,
-      parsed_yaml: parsedYaml,
-      validation_success: true
-    });
-
-  } catch (error) {
-    console.error('Prompt generation failed:', error);
-    res.status(500).json({ 
-      error: `Failed to generate prompt: ${error.message}` 
-    });
-  }
+  return yamlContent;
 } 

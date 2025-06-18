@@ -44,8 +44,65 @@
         /* PromptGen Specific Styles */
         .promptgen-section {
             padding: 120px 0 20px;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            background: #f3f4f6;
             min-height: calc(100vh - 200px);
+        }
+
+        /* Fix footer and navigation link styling */
+        .footer a, .footer .button-first-line {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        .footer a:hover, .footer .button-first-line:hover {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        /* Ensure Navigation and Useful Links sections have no underlines */
+        .navigation-grid a {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        .navigation-grid a:hover {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        /* Header navigation link styling */
+        .navbar-link {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        .navbar-link:hover {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        /* Make header logo bigger */
+        .logotype {
+            width: 120px !important;
+            height: auto !important;
+        }
+
+        /* Make footer adaptive to content */
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .promptgen-section {
+            flex: 1;
+        }
+
+        .footer {
+            margin-top: auto;
+            background: #f3f4f6;
         }
 
         /* GLOBAL BUTTON CENTERING - AFFECTS ALL PAGES */
@@ -1233,8 +1290,8 @@
 
                 const uploadResult = await uploadResponse.json();
                 
-                // Step 2: Process the rubric
-                showStatus('processing', 'Analyzing rubric structure...', true);
+                // Step 2: Process the rubric with Adaptive AI OCR
+                showStatus('processing', '🔍 Adaptive AI analyzing document structure...', true);
                 
                 const processResponse = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
                     method: 'POST',
@@ -1242,7 +1299,8 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        extracted_text: uploadResult.extracted_text
+                        extracted_text: uploadResult.extracted_text,
+                        filename: currentFile.name
                     })
                 });
 
@@ -1253,7 +1311,7 @@
                     } catch (e) {
                         errorText = 'Unknown server error';
                     }
-                    throw new Error(`Processing failed (${processResponse.status}): ${errorText}`);
+                    throw new Error(`Adaptive AI processing failed (${processResponse.status}): ${errorText}`);
                 }
 
                 processedData = await processResponse.json();
@@ -1261,7 +1319,10 @@
                 console.log('Parsed YAML criteria:', processedData.parsed_yaml?.criteria);
                 
                 // Step 3: Success
-                showStatus('success', 'Processing complete!', false);
+                const analysisType = processedData.generated_from || 'adaptive_ai';
+                const criteriaCount = processedData.criteria_count || processedData.parsed_yaml?.criteria?.length || 0;
+                
+                showStatus('success', `✅ Document analyzed successfully! Extracted ${criteriaCount} unique criteria using ${analysisType.replace('_', ' ')} analysis.`, false);
                 
                 // Show dashboard section
                 showDashboard(processedData);
@@ -1572,12 +1633,71 @@ and the schema:
 }`;
         }
 
-        function downloadYaml() {
-            const yamlContent = generateCurrentYaml();
-            downloadFile(yamlContent, 'rubric-prompts.yaml', 'text/yaml');
+        async function downloadYaml() {
+            console.log('Generating YAML from current dashboard content...');
+            
+            // Get current dashboard criteria
+            const dashboardCriteria = getCurrentDashboardCriteria();
+            
+            if (dashboardCriteria.length === 0) {
+                alert('No criteria available for download. Please add some assessment criteria first.');
+                return;
+            }
+            
+            try {
+                // Generate YAML content from current dashboard state
+                const response = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dashboard_criteria: dashboardCriteria
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to generate YAML: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const yamlContent = data.yaml_content;
+                
+                downloadFile(yamlContent, 'assessment-rubric.yaml', 'text/yaml');
+                console.log('YAML downloaded successfully');
+                
+            } catch (error) {
+                console.error('Error generating YAML:', error);
+                alert('Failed to generate YAML file. Please try again.');
+            }
         }
 
-
+        function getCurrentDashboardCriteria() {
+            const container = document.getElementById('criteriaContainer');
+            const criteria = [];
+            
+            Array.from(container.children).forEach((item, index) => {
+                const nameInput = item.querySelector('.criterion-name');
+                const pointsInput = item.querySelector('.criterion-points');
+                const exampleInputs = item.querySelectorAll('.example-input');
+                
+                const examples = Array.from(exampleInputs)
+                    .map(input => input.value.trim())
+                    .filter(value => value);
+                
+                if (nameInput.value.trim()) {
+                    const examId = nameInput.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+                    criteria.push({
+                        examId: examId,
+                        name: nameInput.value.trim(),
+                        max_points: parseInt(pointsInput.value) || 1,
+                        examples: examples.length > 0 ? examples : [`I'm going to assess your ${nameInput.value.trim().toLowerCase()}`]
+                    });
+                }
+            });
+            
+            return criteria;
+        }
 
         function generateCurrentYaml() {
             const systemMessage = document.getElementById('systemMessage').value || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
