@@ -7,3 +7,7 @@
 
  ✓ Starting...
  ✓ Ready in 1449ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1033ms (552 modules)
+ GET /health 404 in 1230ms
+ ✓ Compiled in 213ms (287 modules)

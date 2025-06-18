@@ -5,3 +5,4 @@ INFO:main:Azure OpenAI client initialized successfully
 INFO:     Started server process [50938]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+INFO:     127.0.0.1:57531 - "GET /health HTTP/1.1" 200 OK

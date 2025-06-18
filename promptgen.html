@@ -41,33 +41,118 @@
             display: none !important;
         }
 
-        /* PromptGen Specific Styles */
+        /* PromptGen Specific Styles - Beautiful White with Animated Rainbow Gradient */
         .promptgen-section {
             padding: 120px 0 20px;
-            background: #f3f4f6;
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
             min-height: calc(100vh - 200px);
+            position: relative;
+            overflow: hidden;
         }
 
-        /* Fix footer and navigation link styling */
+        /* Animated Rainbow Gradient Overlay */
+        .promptgen-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, 
+                #ff6b6b 0%, 
+                #4ecdc4 14%, 
+                #45b7d1 28%, 
+                #96ceb4 42%, 
+                #ffeaa7 56%, 
+                #fab1a0 70%, 
+                #fd79a8 84%, 
+                #fdcb6e 100%
+            );
+            background-size: 200% 100%;
+            animation: rainbowMove 8s ease-in-out infinite;
+            opacity: 0.8;
+            z-index: 1;
+        }
+
+        /* Subtle animated gradient background for depth */
+        .promptgen-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 107, 107, 0.02) 0%,
+                rgba(78, 205, 196, 0.02) 25%,
+                rgba(69, 183, 209, 0.02) 50%,
+                rgba(150, 206, 180, 0.02) 75%,
+                rgba(255, 234, 167, 0.02) 100%
+            );
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Ensure content appears above the gradient */
+        .promptgen-container {
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes rainbowMove {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Fix footer and navigation link styling - Remove underlines but keep bold */
         .footer a, .footer .button-first-line {
             text-decoration: none !important;
             border-bottom: none !important;
+            font-weight: 600 !important;
         }
 
         .footer a:hover, .footer .button-first-line:hover {
             text-decoration: none !important;
             border-bottom: none !important;
+            font-weight: 600 !important;
         }
 
-        /* Ensure Navigation and Useful Links sections have no underlines */
+        /* Ensure Navigation and Useful Links sections have no underlines but stay bold */
         .navigation-grid a {
             text-decoration: none !important;
             border-bottom: none !important;
+            font-weight: 600 !important;
         }
 
         .navigation-grid a:hover {
             text-decoration: none !important;
             border-bottom: none !important;
+            font-weight: 600 !important;
+        }
+
+        /* Override any conflicting styles */
+        .footer .button-line-flex div {
+            text-decoration: none !important;
+            border-bottom: none !important;
+            font-weight: 600 !important;
         }
 
         /* Header navigation link styling */
@@ -102,7 +187,8 @@
 
         .footer {
             margin-top: auto;
-            background: #f3f4f6;
+            background: #ffffff;
+            border-top: 1px solid #e5e7eb;
         }
 
         /* GLOBAL BUTTON CENTERING - AFFECTS ALL PAGES */
@@ -206,17 +292,36 @@
             margin-bottom: 50px;
         }
 
-        /* Upload Section */
+        /* Upload Section - Enhanced with subtle rainbow accent */
         .upload-card {
             background: #ffffff;
             border-radius: 20px;
             padding: 50px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
             border: 2px dashed #e5e7eb;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             cursor: pointer;
+        }
+
+        .upload-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                rgba(255, 107, 107, 0.3) 0%, 
+                rgba(78, 205, 196, 0.3) 25%, 
+                rgba(69, 183, 209, 0.3) 50%, 
+                rgba(150, 206, 180, 0.3) 75%, 
+                rgba(255, 234, 167, 0.3) 100%
+            );
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
         }
 
         .upload-card::before {
@@ -234,11 +339,16 @@
             left: 100%;
         }
 
+        .upload-card:hover::after,
+        .upload-card.dragover::after {
+            opacity: 1;
+        }
+
         .upload-card.dragover {
-            border-color: #000000;
-            background: #f9fafb;
+            border-color: #96ceb4;
+            background: #ffffff;
             transform: scale(1.02);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 8px 30px rgba(150, 206, 180, 0.15), 0 4px 6px rgba(150, 206, 180, 0.1);
         }
 
         .upload-content {
@@ -327,11 +437,32 @@
             background: #ffffff;
             border-radius: 20px;
             padding: 50px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f1f3f4;
             opacity: 0;
             transform: translateY(20px);
             transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .processing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                rgba(255, 107, 107, 0.4) 0%, 
+                rgba(78, 205, 196, 0.4) 25%, 
+                rgba(69, 183, 209, 0.4) 50%, 
+                rgba(150, 206, 180, 0.4) 75%, 
+                rgba(255, 234, 167, 0.4) 100%
+            );
+            background-size: 200% 100%;
+            animation: rainbowMove 3s ease-in-out infinite;
+            opacity: 1;
         }
 
         .processing-card.visible {
@@ -471,21 +602,45 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Dashboard Section */
+        /* Dashboard Section - Enhanced with subtle rainbow accent */
         .dashboard-card {
             background: #ffffff;
             border-radius: 20px;
             padding: 50px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f1f3f4;
             opacity: 0;
             transform: translateY(20px);
             transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                rgba(255, 107, 107, 0.3) 0%, 
+                rgba(78, 205, 196, 0.3) 25%, 
+                rgba(69, 183, 209, 0.3) 50%, 
+                rgba(150, 206, 180, 0.3) 75%, 
+                rgba(255, 234, 167, 0.3) 100%
+            );
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .dashboard-card.visible {
             opacity: 1;
             transform: translateY(0);
+        }
+
+        .dashboard-card.visible::before {
+            opacity: 1;
         }
 
         .dashboard-header {
