@@ -12,3 +12,5 @@
  ○ Compiling / ...
  ✓ Compiled / in 1888ms
  GET / 200 in 2164ms
+ ✓ Compiled /_not-found/page in 408ms
+ GET /health 404 in 436ms

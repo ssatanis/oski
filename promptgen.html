@@ -43,9 +43,9 @@
 
         /* PromptGen Specific Styles */
         .promptgen-section {
-            padding: 120px 0 40px;
+            padding: 120px 0 20px;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            min-height: calc(100vh - 160px);
+            min-height: calc(100vh - 200px);
         }
 
         .promptgen-container {
@@ -593,13 +593,26 @@
             <div class="promptgen-container">
                                  <!-- Header -->
                  <div class="promptgen-header fade-in">
-                     <h2 class="promptgen-title">📝 PromptGen System</h2>
-                     <p class="promptgen-subtitle">AI-Powered Rubric to Assessment Prompt Generator</p>
+                     <div class="top-text">Interactive Demo</div>
+                     <h1 class="display-1">Experience Oski's <span class="other-font">PromptGen</span> platform.</h1>
+                     <div class="margin-20">
+                         <p class="p-02">AI-Powered Rubric to Assessment Prompt Generator</p>
+                     </div>
+                     <div class="margin-30">
+                         <div class="button-flex center-mobile">
+                             <a href="#upload" class="button-first w-inline-block">
+                                 <div class="txt-wrapper">
+                                     <div class="button-txt">Get Started</div>
+                                     <div class="button-txt">Get Started</div>
+                                 </div>
+                             </a>
+                         </div>
+                     </div>
                  </div>
 
                 <div class="content-grid">
                     <!-- Upload Section -->
-                    <div class="upload-card slide-up" id="uploadSection">
+                    <div class="upload-card slide-up" id="upload">
                         <div class="upload-content">
                             <div class="upload-icon">
                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -722,7 +735,7 @@
         }
 
         function setupDragAndDrop() {
-            const uploadCard = document.getElementById('uploadSection');
+            const uploadCard = document.getElementById('upload');
 
             uploadCard.addEventListener('dragover', function(e) {
                 e.preventDefault();
