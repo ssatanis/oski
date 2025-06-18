@@ -41,8 +41,25 @@ app = FastAPI(title="Rubrics to Prompts API", version="1.0.0")
 if os.getenv("DEBUG", "False").lower() == "true":
     allowed_origins = ["*"]
 else:
-    allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
-    allowed_origins = [origin.strip() for origin in allowed_origins]
+    # Default origins for production deployment
+    default_origins = [
+        "http://localhost:3000",
+        "http://localhost:8000", 
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+        "https://oski-vert.vercel.app",  # Add your Vercel domain
+        "https://*.vercel.app",  # Allow all Vercel apps
+        "https://*.netlify.app",  # Allow Netlify deployments
+        "https://*.github.io",   # Allow GitHub Pages
+    ]
+    
+    # Get custom origins from environment
+    env_origins = os.getenv("ALLOWED_ORIGINS", "")
+    if env_origins:
+        custom_origins = [origin.strip() for origin in env_origins.split(",")]
+        allowed_origins = default_origins + custom_origins
+    else:
+        allowed_origins = default_origins
 
 app.add_middleware(
     CORSMiddleware,
@@ -709,4 +726,5 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    port = int(os.environ.get("PORT", 8000))  # Use PORT from environment, default to 8000 for local
+    uvicorn.run(app, host="0.0.0.0", port=port) 
