@@ -33,7 +33,7 @@ function loadFooter() {
                           <div class="line-horizontal"></div>
                         </a>
                         <a href="simulation.html" class="button-first-line w-inline-block">
-                          <div class="button-line-flex"><div>Simulation</div></div>
+                          <div class="button-line-flex"><div>OSCESim</div></div>
                           <div class="line-horizontal"></div>
                         </a>
                         <a href="promptgen.html" class="button-first-line w-inline-block">

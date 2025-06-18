@@ -1,0 +1,9 @@
+Station 1A - Physical Examination Rubric
+
+The student should perform the following examinations:
+1. General Inspection (2 points) - Student observes patient's general appearance
+2. Heart Auscultation (3 points) - Student listens to heart sounds at appropriate locations  
+3. Lung Auscultation (3 points) - Student listens to lung sounds systematically
+4. Abdominal Examination (2 points) - Student palpates abdomen appropriately
+
+Total: 10 points 

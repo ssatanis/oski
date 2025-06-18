@@ -1,0 +1,49 @@
+system_message: You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+   
+user_message: 
+  |
+   Your task is to identify the start and end times of specific physical exams within the conversation and provide the reasoning behind your choices. Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam. This station consists of the following physical exams: Finger_Abduction, Finger_Adduction, Finger_Extension, Finger_Flexion, Finger_Extension, Finger_Abduction, Hand_Grip_Evaluation, Joint_Palpation
+   
+   Important Instructions:  
+   - When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the `start_time` and `end_time` over phrases where the doctor states their own actions (e.g., "I'm going to look at your nose and eyes").
+   - Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam.
+   - Always pay close attention to surrounding context and related physical examinations mentioned.
+   
+   You need to identify the following physical exams from this transcript: 
+   	 1. Finger_Abduction: Did the doctor ask the patient to spread their fingers apart? 
+   	 - Examples: Can you spread your fingers apart?
+   
+   	 2. Finger_Adduction: Did the doctor ask the patient to bring their fingers together? 
+   	 - Examples: Can you bring your fingers together? 
+   
+   	 3. Finger_Extension: Did the doctor ask the patient to extend or open their fingers? 
+   	 - Examples: Can you spread your hands?, Can you open your fingers up? 
+   
+   	 4. Finger_Flexion: Did the doctor ask the patient to make a fist? 
+   	 - Examples: Can you make a fist?
+   
+   	 5. Hand_Grip_Evaluation: Did the doctor assess the patient's hand grip strength? 
+   	 - Examples: Can you squeeze my fingers?, Can you squeeze this? 
+   
+   	 6. Joint_Palpation: Did the doctor examine the joints in the patient's hands? 
+   	 - Examples: I'm going to palpate the joints in your hands, I'm going to feel for the joints in your hands 
+
+   If no exam is detected, you can say "No exam was performed", start_time: "nan", end_time: "nan", score: 0.
+   
+   ### Formatting Instructions
+   
+   - Ensure strict adherence to JSON formatting.
+   - Do not use double quotes for multiple statements within a single field.
+   - Use commas, single quotes, or other appropriate delimiters for multiple statements.
+   - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+   Please provide a response in the following format with keys: Finger_Abduction, Finger_Adduction, Finger_Extension, Finger_Flexion, Hand_Grip_Evaluation, Joint_Palpation
+   
+   and the schema: 
+   {
+        "statement": "statement extracted from the transcript that supports this specific exam",
+        "start_time": "timepoint for start of the exam (NUMBER only)",
+        "end_time": "timepoint for end of the exam (NUMBER only)",
+        "rationale": "reasoning behind scoring the physical exam",
+        "score": "score of the exam (0 or 1)"
+   }

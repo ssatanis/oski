@@ -1,0 +1,77 @@
+system_message: You are an AI assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+user_message: |
+  Your goal is to assess and score the medical student's communication skills in several key areas. You should do this by identifying and extracting relevant statements from the transcript, providing a rationale for your assessment, and assigning a score for each of the described skills.
+  
+   The key communication skills to identify are:
+   
+    ## CS_1. Introduced themselves 
+   	 The student should introduce themselves at the begining of the encounter with their name and role.
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not mention either name or role
+   	 - score 1: Student announced either name or role but not both
+   	 - score 2: Student announced both name and role
+   
+   
+   ## CS_2. Allowed patient to speak without interruption 
+   	 The student must not interrupt the patient. They should allow the patient to complete their sentences or thoughts. For evaluating this skill - extract statements that CLEARLY show the student interrupting the patient and not allowing them to complete their sentences. If there are NO such interruptions, then return ["None"]. 
+    
+   	 Scoring criteria:
+   	 - score 0: Student interrupted the patient 3 or more times
+   	 - score 1: Student interrupted the patient once or twice
+   	 - score 2: Student never interrupted the patient, always allowing them to complete their thoughts
+   
+   
+   ## CS_3. Used statements of understanding and emotional support 
+   	 The student must use supportive language throughout the interaction.
+   For example, they may say things like things like
+   - "I can't imagine how difficult that must have been"
+   - "We are going to get you through this"
+   - "That must have been difficult"
+    
+   	 Scoring criteria:
+   	 - score 0: Student neglected to use any statements of emotional support
+   	 - score 1: Student used only one statement of emotional support
+   	 - score 2: Student used 2 or more statements of emotional support
+   	 - score 3: Student used 3 or more statements of emotional support
+    
+    For each of these skills:
+    - List ALL relevant statements from the transcript that demonstrate the skill being evaluated
+    - Identify the start and end time stamps for each statement
+    - Provide a rationale that explains your reasoning for why each extracted statement demonstrates the skill or lack thereof
+    - Count the total number of instances (where applicable) and assign the appropriate score based on the criteria above
+    - If no relevant statements exist in the transcript, use "None" for the statement field and explain why in the rationale
+    - Your assessments should be based only on information provided in the transcript. Do not make inferences or assumptions beyond what is directly stated. 
+    - Consider both the skill description as well as scoring criteria in your rationale and final decisions.
+   
+    # Formatting instructions
+   
+    - Ensure strict adherence to JSON formatting.
+    - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+    Format your analysis of each skill in the following JSON format:
+    {
+    "CS_x": {
+      "statements": [
+        {
+          "text": "statement 1 extracted from transcript",
+          "start_time": "start time stamp of statement (NUM ONLY)",
+          "end_time": "end time stamp of statement (NUM ONLY)",
+          "rationale": "explanation for why this statement demonstrates the relevant skill"
+        },
+        {
+          "text": "statement 2 extracted from transcript",,
+          "start_time": "start time stamp of statement (NUM ONLY)",
+          "end_time": "end time stamp of statement (NUM ONLY)",
+          "rationale": "explanation for why this statement demonstrates the relevant skill"
+        }, ...
+      ],
+      "total_count": "number of such statements identified",
+      "rationale": "overall rationale for score based on scoring criteria and extracted statements",
+      "score": "score obtained by student"
+    },
+   
+    }
+response_config:
+  structured_output: True
+  schema: prompts.data_models.FRResponse

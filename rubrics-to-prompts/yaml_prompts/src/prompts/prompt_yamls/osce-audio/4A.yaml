@@ -1,0 +1,78 @@
+key: 
+  4A
+system_message: 
+  |
+   You are a helpful assistant tasked with analyzing and scoring a conversation of a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+   
+user_message: 
+  |
+   
+   
+   Important Instruction:
+   When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the `start_time` and `end_time` over phrases where the doctor states their own actions (e.g., "I'm going to look at your nose and eyes").
+      
+   You need to identify the following physical exams from this conversation: 
+   1: Finger_Abduction: Did the doctor ask the patient to spread their fingers apart? 
+    - Examples: 
+    	 - Can you spread your fingers apart? 
+    
+   2: Joint_Palpation: Did the doctor examine the joints in the patient's hands? 
+    - Examples: 
+    	 - I'm going to palpate the joints in your hands 
+    	 - I'm going to feel for the joints in your hands 
+    - Wrong Examples: (these are NOT examples of the correct physical exam) 
+    	 - Try opening my fingers 
+    	 - Can you press against me? 
+    
+   3: Wrist_Flexion: Did the doctor test the patient's range of motion in each wrist by having the patient flex their wrist? 
+    - Examples: 
+    	 - Can you bend your wrist forward, like you're trying to touch your palm to your forearm? 
+    	 - Try bending your wrist down like you're pointing your fingers toward the floor 
+    	 - Now bend your wrist the other way, bringing your palm toward your forearm. 
+    
+   4: Finger_Extension: Did the doctor ask the patient to extend or open their fingers? 
+    - Examples: 
+    	 - Can you spread your hands? 
+    	 - Can you open your fingers up? 
+    
+   5: Finger_Flexion: Did the doctor ask the patient to make a fist? 
+    - Examples: 
+    	 - Can you make a fist? 
+    
+   6: Wrist_Extension: Did the doctor test the patient's range of motion in each wrist by having the patient extend their wrist? 
+    - Examples: 
+    	 - Can you extend your wrist like this, as if you're pushing against a wall? Try to bring your hand back as far as you can 
+    	 - Please lift your hand up at the wrist while keeping your fingers straight. Let me know if you feel any pain or stiffness 
+    	 - I’m going to apply some resistance while you extend your wrist. Try to keep it up against my hand 
+    	 - Try bringing your wrist back as far as you can 
+    	 - Now straighten your wrist upward 
+    
+   7: Finger_Adduction: Did the doctor ask the patient to bring their fingers together? 
+    - Examples: 
+    	 - Can you bring your fingers together? 
+    
+   
+   
+   If there is any part in the conversation where the medical student is listening to something but you cannot tell what specific organ it is, look at the conversation before and after to find what type of exam that was. Pay close attention to surrounding context and related physical examinations mentioned.
+   
+   If no exam is detected, you can say "No exam was performed", start_time: "nan", end_time: "nan", score: 0.
+        
+   # Formatting instructions
+   
+   - Ensure strict adherence to JSON formatting.
+   - Do not use double quotes for multiple statements within a single field.
+   - Use commas, single quotes, or other appropriate delimiters for multiple statements.
+   - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+   Please provide a response in the following format with keys: Finger_Abduction, Joint_Palpation, Wrist_Flexion, Finger_Extension, Finger_Flexion, Wrist_Extension, Finger_Adduction
+   
+   and the schema: 
+   {
+        "statement": "statement extracted from the conversation that supports this specific exam",
+        "start_time": "timepoint for start of the exam (ONLY 1 decimal pt)",
+        "end_time": "timepoint for end of the exam (ONLY 1 decimal pt)",
+        "rationale": "reasoning behind scoring the physical exam",
+        "score": "score of the exam (0 or 1)"
+   }
+response_config:
+  structured_output: True

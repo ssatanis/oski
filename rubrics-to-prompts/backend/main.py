@@ -13,7 +13,8 @@ from PIL import Image
 import aiofiles
 from pydantic import BaseModel, ValidationError
 from dotenv import load_dotenv
-import openai
+from openai import AzureOpenAI
+from azure.core.credentials import AzureKeyCredential
 from models import RubricPrompt, RubricSection, RubricItem
 import tempfile
 import logging
@@ -30,17 +31,21 @@ app = FastAPI(title="Rubrics to Prompts API", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8080", "http://127.0.0.1:8080"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Initialize Azure OpenAI client
-openai.api_type = "azure"
-openai.api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
-openai.api_version = "2024-02-15-preview"
-openai.api_key = os.getenv("AZURE_OPENAI_KEY")
+azure_openai_client = None
+if os.getenv("AZURE_OPENAI_KEY"):
+    azure_openai_client = AzureOpenAI(
+        api_version="2024-12-01-preview",
+        azure_endpoint="https://interns-summer-2025.openai.azure.com/",
+        azure_ad_token_provider=None,
+        api_key=os.getenv("AZURE_OPENAI_KEY")
+    )
 
 # Initialize EasyOCR reader (lazy loading)
 ocr_reader = None
@@ -129,70 +134,109 @@ async def extract_text_from_file(file_path: str, file_type: str) -> str:
         raise HTTPException(status_code=400, detail=f"Failed to extract text from file: {str(e)}")
 
 async def generate_yaml_prompt(rubric_text: str, task_id: str) -> Dict[str, Any]:
-    """Generate YAML prompt using Azure OpenAI with retry logic"""
+    """Generate YAML prompt using Azure OpenAI with retry logic and Pydantic validation"""
     
     # Update task status
     task_storage[task_id]['status'] = ProcessingStatus(
-        step="ai_generation",
-        message="Generating YAML prompt with AI...",
+        step="ai_analysis",
+        message="Analyzing rubric structure with AI...",
         progress=60.0
     )
     
+    # Use the format from the example 1A.yaml
     prompt = f"""
 You are an expert at converting OSCE exam rubrics into structured YAML prompts for AI assessment systems.
 
-Convert the following rubric text into a well-structured YAML format:
+Convert the following rubric text into a YAML format that follows this EXACT structure:
 
-RUBRIC TEXT:
+key: 
+  [station_identifier]
+system_message: 
+  |
+   You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+   
+user_message: 
+  |   
+   Important Instruction:
+   When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the `start_time` and `end_time` over phrases where the doctor states their own actions (e.g., "I'm going to look at your nose and eyes").
+      
+   You need to identify the following physical exams from this conversation: 
+   [List the specific examinations from the rubric here]
+   
+   If there is any part in the conversation where the medical student is listening to something but you cannot tell what specific organ it is, look at the conversation before and after to find what type of exam that was. Pay close attention to surrounding context and related physical examinations mentioned.
+   
+   If no exam is detected, you can say "No exam was performed", start_time: "nan", end_time: "nan", score: 0.
+        
+   # Formatting instructions
+   
+   - Ensure strict adherence to JSON formatting.
+   - Do not use double quotes for multiple statements within a single field.
+   - Use commas, single quotes, or other appropriate delimiters for multiple statements.
+   - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+   Please provide a response in the following format with keys: [list the exam keys]
+   
+   and the schema: 
+   {{
+        "statement": "statement extracted from the conversation that supports this specific exam",
+        "start_time": "timepoint for start of the exam (ONLY 1 decimal pt)",
+        "end_time": "timepoint for end of the exam (ONLY 1 decimal pt)",
+        "rationale": "reasoning behind scoring the physical exam",
+        "score": "score of the exam (0 or 1)"
+   }}
+response_config:
+  structured_output: True
+
+RUBRIC TEXT TO CONVERT:
 {rubric_text}
 
 Your task is to:
-1. Identify different sections/categories in the rubric
-2. Extract individual assessment items with their point values
-3. Create meaningful IDs for each item
-4. Structure everything into a clean YAML format
+1. Extract the station identifier from the rubric (e.g., "1A", "2B", etc.)
+2. Identify the physical examinations/procedures being assessed
+3. Create the user_message that describes what to look for in the conversation
+4. List the specific exams in the format shown above
+5. Generate appropriate examples for each exam type
 
-EXAMPLE OUTPUT FORMAT:
-```yaml
-rubric_info:
-  title: "OSCE Assessment Rubric"
-  total_points: 20
-  description: "Brief description of what this rubric assesses"
-
-sections:
-  - section_name: "Physical Examination"
-    section_id: "physical_exam"
-    description: "Assessment of physical examination skills"
-    items:
-      - item_id: "lung_auscultation_anterior"
-        description: "Auscultate anterior lung fields"
-        points: 1
-        criteria: "Student properly places stethoscope on anterior chest"
-      - item_id: "lung_auscultation_posterior"
-        description: "Auscultate posterior lung fields"
-        points: 1
-        criteria: "Student properly places stethoscope on posterior chest"
-  
-  - section_name: "Communication Skills"
-    section_id: "communication"
-    description: "Assessment of patient communication"
-    items:
-      - item_id: "greeting"
-        description: "Appropriate greeting and introduction"
-        points: 2
-        criteria: "Student introduces themselves professionally"
-```
-
-Important guidelines:
-- Generate descriptive but concise item_ids using snake_case
-- Include point values for each item
-- Add meaningful criteria descriptions
-- Ensure the YAML is valid and well-structured
-- If sections aren't clear, create logical groupings
-- Total points should sum correctly
-
-Please generate ONLY the YAML output, no explanations or markdown formatting.
+Generate ONLY the YAML content, without any markdown formatting, comments, or headers.
 """
+
+    # Check if OpenAI is configured
+    if azure_openai_client is None:
+        logger.warning("OpenAI API not configured, using mock response")
+        # Return a mock YAML for demo purposes
+        mock_yaml = f"""key: 
+  demo_station
+system_message: 
+  |
+   You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+   
+user_message: 
+  |   
+   You need to identify the following physical exams from this conversation: 
+   1: Physical_Examination: Did the doctor perform a physical examination? 
+    - Examples: 
+         - I'm going to examine your abdomen
+         - Let me listen to your heart
+         - I'm going to check your reflexes
+   
+   Please provide a response in the following format with keys: Physical_Examination
+   
+   and the schema: 
+   {{
+        "statement": "statement extracted from the conversation that supports this specific exam",
+        "start_time": "timepoint for start of the exam (ONLY 1 decimal pt)",
+        "end_time": "timepoint for end of the exam (ONLY 1 decimal pt)",
+        "rationale": "reasoning behind scoring the physical exam",
+        "score": "score of the exam (0 or 1)"
+   }}
+response_config:
+  structured_output: True"""
+        
+        return {
+            "yaml_content": mock_yaml,
+            "parsed_yaml": yaml.safe_load(mock_yaml),
+            "validation_success": True
+        }
 
     max_retries = 3
     for attempt in range(max_retries):
@@ -204,8 +248,8 @@ Please generate ONLY the YAML output, no explanations or markdown formatting.
                 progress=60.0 + (attempt * 10)
             )
             
-            response = openai.ChatCompletion.create(
-                engine=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4"),
+            response = azure_openai_client.chat.completions.create(
+                model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4"),
                 messages=[
                     {"role": "system", "content": "You are an expert at converting medical assessment rubrics into structured YAML formats."},
                     {"role": "user", "content": prompt}

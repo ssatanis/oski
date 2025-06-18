@@ -95,6 +95,10 @@ class PipelineInput(BaseModel):
     rubric_question: str = Field(..., min_length=5, description="The rubric question to assess.")
     video_id: str = Field(..., description="The unique ID of the pre-indexed video.")
 
+class PipelineYAMLInput(BaseModel):
+    yaml_content: str = Field(..., min_length=10, description="The YAML rubric content to assess.")
+    video_id: str = Field(..., description="The unique ID of the pre-indexed video.")
+
 class ToolOutputSchema(BaseModel):
     tool_name: str
     output: Any 
@@ -538,6 +542,191 @@ async def assess_video_pipeline(
     # Prepare the final response using Pydantic models for validation and structure
     final_response = PipelineAssessmentResult(
         rubric_question=payload.rubric_question,
+        video_id=payload.video_id,
+        tools_used=[tool.TOOL_NAME for tool in tool_repository] if use_all_tools else planner_selected_tool_names,
+        planner_output=planner_selected_tool_names,
+        executor_output=executor_output if executor_output else {},
+        scorer_output=ScorerOutput(**scorer_result_dict) if scorer_result_dict else None,
+        reflector_output=ReflectorOutput(**reflector_result_dict) if reflector_result_dict else None
+    )
+
+    return final_response
+
+
+@router.post(
+    "/assess_video_yaml",
+    response_model=PipelineAssessmentResult
+)
+async def assess_video_with_yaml_pipeline(
+    request: Request,
+    payload: PipelineYAMLInput,
+    use_all_tools: bool = Query(False, description="If true, bypass Planner and run Executor with all available tools."),
+    minio_client: MinIOClient = Depends(get_minio_client_dependency), 
+    qdrant_client: QdrantClient = Depends(get_qdrant_client_dependency), 
+    gemini_client: genai.Client = Depends(get_gemini_client_dependency)
+):
+    """
+    Runs the full multi-agent assessment pipeline using YAML rubric content and video ID.
+    """
+    import yaml
+    
+    start_pipeline_time = time.time()
+    print(f"\n--- Starting YAML Assessment Pipeline for video_id: {payload.video_id} ---")
+    
+    # Parse YAML content to extract assessment criteria
+    try:
+        yaml_data = yaml.safe_load(payload.yaml_content)
+        
+        # Extract key components from YAML
+        station_key = yaml_data.get('key', 'Unknown Station')
+        system_message = yaml_data.get('system_message', '').strip()
+        user_message = yaml_data.get('user_message', '').strip()
+        
+        # Construct comprehensive rubric question from YAML
+        if user_message:
+            # Extract exam types or assessment criteria from user_message
+            rubric_question = f"Station {station_key}: {user_message[:200]}..."
+        elif system_message:
+            rubric_question = f"Station {station_key}: {system_message[:200]}..."
+        else:
+            rubric_question = f"Assess performance for Station {station_key} based on the provided YAML criteria."
+        
+        print(f"Extracted Rubric Question: {rubric_question}")
+        print(f"Station Key: {station_key}")
+        
+    except Exception as e:
+        print(f"Error parsing YAML content: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid YAML content: {str(e)}")
+
+    # --- Retrieve necessary clients and models from app.state ---
+    clap_model = request.app.state.models["clap_model"]
+    clap_processor = request.app.state.models["clap_processor"]
+    clip_model = request.app.state.models["clip_model"]
+    clip_processor = request.app.state.models["clip_processor"]
+    sentence_transformers_model = request.app.state.models["sentence_transformer"]
+
+    # Initialize the agents 
+    planner_agent = Planner(
+        gemini_client=gemini_client,
+        tool_repository=tool_repository
+    )
+
+    executor_agent = Executor(
+        gemini_client=gemini_client,
+        minio_client=minio_client,
+        qdrant_client=qdrant_client,
+        clap_model=clap_model,
+        clap_processor=clap_processor,
+        clip_model=clip_model,
+        clip_processor=clip_processor,
+        sentence_transformers_model=sentence_transformers_model,
+        tool_repository=tool_repository,
+    )
+
+    scorer_agent = Scorer(gemini_client=gemini_client)
+
+    reflector_agent = Reflector(
+        gemini_client=gemini_client,
+        scorer_formatter_func=scorer_agent._format_evidence_for_prompt
+    )
+
+    # Run the Planner with the extracted rubric question
+    print("\n1. Running Planner...")
+    selected_tools: Optional[List[Tool]] = None
+    planner_selected_tool_names: List[str] = []
+    try:
+        selected_tools = planner_agent.run(rubric_question=rubric_question)
+        if selected_tools:
+            planner_selected_tool_names = [tool.TOOL_NAME for tool in selected_tools]
+            print(f"Planner selected tools: {planner_selected_tool_names}")
+        else:
+            print("Planner did not select any tools or encountered an error.")
+    except Exception as e:
+        print(f"Error during Planner execution: {e}")
+        traceback.print_exc()
+        selected_tools = []
+
+    if not selected_tools:
+        print("Warning: No tools selected by Planner. Executor will likely produce no evidence.")
+        selected_tools = []
+
+    # Run the Executor
+    print("\n2. Running Executor...")
+    executor_output: Dict[str, Any] = {}
+    action_vocab_for_executor: Optional[Dict[str, str]] = request.app.state.action_vocabulary 
+
+    try:
+        if use_all_tools:
+            executor_output = executor_agent.run(
+                rubric_question=rubric_question,
+                selected_tools=tool_repository,
+                video_id=payload.video_id,
+                action_vocabulary=action_vocab_for_executor,
+                video_file_path="./sample_osce_videos/testvideo.mp4"
+            )
+        else:
+            executor_output = executor_agent.run(
+                rubric_question=rubric_question,
+                selected_tools=selected_tools,
+                video_id=payload.video_id,
+                action_vocabulary=action_vocab_for_executor,
+                video_file_path="./sample_osce_videos/testvideo.mp4"
+            )
+        print(f"Executor output: {json.dumps(executor_output, indent=2, default=str)}")
+    except Exception as e:
+        print(f"Error during Executor execution: {e}")
+        traceback.print_exc()
+
+    # Run the Scorer
+    print("\n3. Running Scorer...")
+    scorer_result_dict: Optional[Dict] = None
+    try:
+        if executor_output:
+            scorer_result_dict = scorer_agent.run(
+                rubric_question=rubric_question,
+                evidence_from_executor=executor_output
+            )
+            if scorer_result_dict:
+                print(f"Scorer output: {scorer_result_dict}")
+            else:
+                print("Scorer did not produce an output.")
+        else:
+            print("Skipping Scorer as Executor produced no output.")
+            scorer_result_dict = ScorerOutput(
+                grade=0,
+                rationale="No evidence was generated by the executor for this rubric question."
+            ).model_dump()
+    except Exception as e:
+        print(f"Error during Scorer execution: {e}")
+        traceback.print_exc()
+
+    # Run Reflector
+    print("\n4. Running Reflector...")
+    reflector_result_dict: Optional[Dict] = None
+    try:
+        if scorer_result_dict: 
+            reflector_result_dict = reflector_agent.run(
+                rubric_question=rubric_question,
+                evidence_from_executor=executor_output,
+                scorer_output=scorer_result_dict
+            )
+            if reflector_result_dict:
+                print(f"Reflector output: {reflector_result_dict}")
+            else:
+                print("Reflector did not produce an output.")
+        else:
+            print("Skipping Reflector as Scorer produced no output.")
+    except Exception as e:
+        print(f"Error during Reflector execution: {e}")
+        traceback.print_exc()
+
+    end_pipeline_time = time.time()
+    total_pipeline_time = end_pipeline_time - start_pipeline_time
+    print(f"YAML Assessment Pipeline Completed in {total_pipeline_time:.2f} seconds")
+
+    # Prepare the final response
+    final_response = PipelineAssessmentResult(
+        rubric_question=f"YAML Station {station_key}: {rubric_question}",
         video_id=payload.video_id,
         tools_used=[tool.TOOL_NAME for tool in tool_repository] if use_all_tools else planner_selected_tool_names,
         planner_output=planner_selected_tool_names,

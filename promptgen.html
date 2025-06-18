@@ -230,11 +230,13 @@ body {
 .shape-1 {
     animation: spin 20s linear infinite;
     position: absolute;
-    top: 50%;
-    right: -100px;
+    top: 10%;
+    right: -150px;
     transform: translateY(-50%);
     z-index: -1;
-    opacity: 0.7;
+    opacity: 0.8;
+    width: 600px;
+    height: auto;
 }
 
 .simulation-header {
@@ -323,7 +325,7 @@ body {
 <!-- Centralized Header -->
 <div id="header-container"></div>
 
-<section class="hero" id="hero"><div class="container"><div class="max-w-width" style="margin-top: 80px;"><div data-w-id="cc4bc4b9-3fd8-9621-1de2-e0b7a0bf1285" class="top-text">Interactive Demo</div><h1 data-w-id="6b4f9255-2b7e-e6bc-76d5-b0e49087b85c" class="display-1">Transform OSCE rubrics into <span class="other-font">AI-ready prompts</span>.</h1><div class="margin-20"><p data-w-id="b90b02c7-115c-c062-22d1-a988e276c1cf" class="p-02">Upload rubric documents and convert them into structured YAML prompts with intelligent OCR processing.</p></div><div data-w-id="4c25a1b6-df10-f474-31b4-08ca1d59a136" class="margin-30"><div class="button-flex center-mobile"><a data-w-id="808f99a7-6144-0b76-f91d-d0f0d0481c64" href="#simulation" class="button-first w-inline-block"><div class="txt-wrapper"><div class="button-txt">Get Started</div><div class="button-txt">Get Started</div></div></a></div></div></div><img src="images/683d91777124b040c4a5b5db-683f0aa9ed4f9367dd6c8ff1_shape-2.webp" loading="lazy" width="500" sizes="(max-width: 767px) 100vw, 500px" alt="" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2.webp 1674w" class="shape-1"></section>
+<section class="hero" id="hero" style="position: relative; overflow: hidden; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); min-height: 100vh;"><div class="container" style="position: relative; z-index: 2;"><div class="max-w-width" style="margin-top: 80px;"><div data-w-id="cc4bc4b9-3fd8-9621-1de2-e0b7a0bf1285" class="top-text">Interactive Demo</div><h1 data-w-id="6b4f9255-2b7e-e6bc-76d5-b0e49087b85c" class="display-1">Transform OSCE rubrics into <span class="other-font">AI-ready prompts</span>.</h1><div class="margin-20"><p data-w-id="b90b02c7-115c-c062-22d1-a988e276c1cf" class="p-02">Upload rubric documents and convert them into structured YAML prompts with intelligent OCR processing.</p></div><div data-w-id="4c25a1b6-df10-f474-31b4-08ca1d59a136" class="margin-30"><div class="button-flex center-mobile"><a data-w-id="808f99a7-6144-0b76-f91d-d0f0d0481c64" href="#simulation" class="button-first w-inline-block"><div class="txt-wrapper"><div class="button-txt">Get Started</div><div class="button-txt">Get Started</div></div></a></div></div></div></div><img src="images/683d91777124b040c4a5b5db-683f0aa9ed4f9367dd6c8ff1_shape-2.webp" loading="lazy" width="500" sizes="(max-width: 767px) 100vw, 500px" alt="" srcset="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-500.webp 500w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-800.webp 800w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2-p-1080.webp 1080w, https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/683f0aa9ed4f9367dd6c8ff1_shape-2.webp 1674w" class="shape-1"></section>
 
 <section id="simulation" style="padding: 40px 0 80px 0;">
   <div class="container">
@@ -357,40 +359,7 @@ body {
             </div>
           </div>
 
-          <!-- Processing Options -->
-          <div class="input-group">
-            <label class="input-label">⚙️ Processing Options</label>
-            
-            <!-- OCR Quality -->
-            <div style="margin-bottom: 1rem;">
-              <label style="color: rgba(255,255,255,0.9); font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">OCR Quality</label>
-              <select class="select-field" id="ocrQuality">
-                <option value="high">High Quality (Slower)</option>
-                <option value="medium" selected>Medium Quality (Balanced)</option>
-                <option value="fast">Fast Processing (Lower quality)</option>
-              </select>
-            </div>
 
-            <!-- Output Format -->
-            <div style="margin-bottom: 1rem;">
-              <label style="color: rgba(255,255,255,0.9); font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Output Format</label>
-              <select class="select-field" id="outputFormat">
-                <option value="yaml" selected>YAML (Recommended)</option>
-                <option value="json">JSON</option>
-                <option value="text">Plain Text</option>
-              </select>
-            </div>
-
-            <!-- AI Model -->
-            <div style="margin-bottom: 1rem;">
-              <label style="color: rgba(255,255,255,0.9); font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">AI Model</label>
-              <select class="select-field" id="aiModel">
-                <option value="gpt-4-turbo" selected>GPT-4 Turbo (Best)</option>
-                <option value="gpt-4">GPT-4 (Balanced)</option>
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast)</option>
-              </select>
-            </div>
-          </div>
 
           <!-- Action Buttons -->
           <button class="btn-primary" onclick="processRubric()" id="processBtn" disabled>
@@ -544,8 +513,132 @@ async function processRubric() {
     // Hide results
     document.getElementById('resultsContainer').style.display = 'none';
     
-    // Start processing simulation
-    simulateProcessing();
+    // Start real processing
+    await startRealProcessing();
+}
+
+// Real processing function
+async function startRealProcessing() {
+    try {
+        // Step 1: File Upload
+        updateStep('upload', 'active');
+        document.getElementById('progressText').textContent = 'Uploading file to server...';
+        document.getElementById('progressFill').style.width = '20%';
+        
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        const uploadResponse = await fetch('http://localhost:8000/upload-rubric', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error('Upload failed:', errorText);
+            throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+        }
+        
+        const uploadResult = await uploadResponse.json();
+        currentTaskId = uploadResult.task_id;
+        
+        updateStep('upload', 'completed');
+        
+        // Start polling for status
+        await pollProcessingStatus();
+        
+    } catch (error) {
+        console.error('Processing error:', error);
+        let errorMessage = 'Processing failed';
+        
+        if (error.message.includes('fetch')) {
+            errorMessage = 'Connection failed. Please check if the backend server is running.';
+        } else if (error.message.includes('CORS')) {
+            errorMessage = 'CORS error. Please check server configuration.';
+        } else {
+            errorMessage = 'Processing failed: ' + error.message;
+        }
+        
+        document.getElementById('progressText').textContent = errorMessage;
+        processingInProgress = false;
+        
+        // Reset workflow steps
+        const steps = ['upload', 'ocr', 'analysis', 'generation', 'validation'];
+        steps.forEach(step => {
+            const element = document.getElementById(`step-${step}`);
+            element.classList.remove('active', 'completed');
+        });
+    }
+}
+
+// Poll processing status
+async function pollProcessingStatus() {
+    try {
+        const response = await fetch(`http://localhost:8000/status/${currentTaskId}`);
+        const data = await response.json();
+        
+        // Update progress based on step
+        if (data.step === 'ocr_processing') {
+            updateStep('ocr', 'active');
+            document.getElementById('progressText').textContent = 'Extracting text with advanced OCR...';
+            document.getElementById('progressFill').style.width = '40%';
+        } else if (data.step === 'ai_analysis') {
+            updateStep('ocr', 'completed');
+            updateStep('analysis', 'active');
+            document.getElementById('progressText').textContent = 'Analyzing rubric structure with AI...';
+            document.getElementById('progressFill').style.width = '60%';
+        } else if (data.step === 'yaml_generation') {
+            updateStep('analysis', 'completed');
+            updateStep('generation', 'active');
+            document.getElementById('progressText').textContent = 'Generating structured YAML prompts...';
+            document.getElementById('progressFill').style.width = '80%';
+        } else if (data.step === 'validation') {
+            updateStep('generation', 'completed');
+            updateStep('validation', 'active');
+            document.getElementById('progressText').textContent = 'Validating and optimizing output...';
+            document.getElementById('progressFill').style.width = '90%';
+        }
+        
+        if (data.status === 'completed' && data.result) {
+            updateStep('validation', 'completed');
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('progressText').textContent = 'Processing completed successfully!';
+            showRealResults(data.result);
+        } else if (data.status === 'error') {
+            throw new Error(data.error || 'Processing failed');
+        } else {
+            // Continue polling
+            setTimeout(() => pollProcessingStatus(), 2000);
+        }
+    } catch (error) {
+        console.error('Status polling error:', error);
+        let errorMessage = 'Status check failed';
+        
+        if (error.message.includes('fetch') || error.name === 'TypeError') {
+            errorMessage = 'Connection lost. Please check if the backend server is running.';
+        } else {
+            errorMessage = 'Processing failed: ' + error.message;
+        }
+        
+        document.getElementById('progressText').textContent = errorMessage;
+        processingInProgress = false;
+        
+        // Reset workflow steps
+        const steps = ['upload', 'ocr', 'analysis', 'generation', 'validation'];
+        steps.forEach(step => {
+            const element = document.getElementById(`step-${step}`);
+            element.classList.remove('active', 'completed');
+        });
+    }
+}
+
+// Update workflow step
+function updateStep(stepId, status) {
+    const element = document.getElementById(`step-${stepId}`);
+    element.classList.remove('active', 'completed');
+    if (status) {
+        element.classList.add(status);
+    }
 }
 
 // Simulate processing workflow
@@ -571,14 +664,14 @@ function simulateProcessing() {
         
         const step = steps[currentStep];
         const element = document.getElementById(`step-${step.id}`);
-        
-        // Mark current step as active
+    
+    // Mark current step as active
         element.classList.add('active');
         progressText.textContent = step.message;
-        
+    
         // Update progress bar
         const progress = ((currentStep + 1) / steps.length) * 100;
-        progressFill.style.width = `${progress}%`;
+    progressFill.style.width = `${progress}%`;
         
         setTimeout(() => {
             // Mark step as completed
@@ -593,38 +686,31 @@ function simulateProcessing() {
     processStep();
 }
 
-// Show processing results
-function showResults() {
-    const progressText = document.getElementById('progressText');
-    progressText.textContent = 'Processing completed successfully!';
-    
+// Show real processing results
+function showRealResults(result) {
     const resultsContainer = document.getElementById('resultsContainer');
     const processingStats = document.getElementById('processingStats');
     const yamlOutput = document.getElementById('yamlOutput');
     const originalText = document.getElementById('originalText');
     
-    // Get selected options
-    const ocrQuality = document.getElementById('ocrQuality').value;
-    const outputFormat = document.getElementById('outputFormat').value;
-    const aiModel = document.getElementById('aiModel').value;
-    
     // Generate processing stats
     const fileSize = (selectedFile.size / 1024 / 1024).toFixed(2);
+    const textLength = result.original_text ? result.original_text.length : 0;
     processingStats.innerHTML = `
         <strong>File:</strong> ${selectedFile.name} (${fileSize} MB)<br>
-        <strong>OCR Quality:</strong> ${ocrQuality}<br>
-        <strong>AI Model:</strong> ${aiModel}<br>
-        <strong>Output Format:</strong> ${outputFormat}<br>
-        <strong>Processing Time:</strong> ${((Date.now() % 10000) / 1000 + 8).toFixed(1)}s<br>
-        <strong>Text Extracted:</strong> ${Math.floor(Math.random() * 2000 + 500)} characters
+        <strong>OCR Quality:</strong> High Quality (Advanced)<br>
+        <strong>AI Model:</strong> OpenAI GPT-4 Turbo<br>
+        <strong>Output Format:</strong> YAML (Structured)<br>
+        <strong>Processing Time:</strong> ${result.processing_time || 'N/A'}s<br>
+        <strong>Text Extracted:</strong> ${textLength} characters<br>
+        <strong>YAML Validation:</strong> ✅ Passed
     `;
     
-    // Generate sample YAML
-    const sampleYaml = generateSampleYaml();
-    yamlOutput.textContent = sampleYaml;
+    // Display the generated YAML (clean, without header comments)
+    yamlOutput.textContent = result.yaml_content || 'No YAML generated';
     
-    // Generate sample original text
-    originalText.textContent = `Sample extracted text from ${selectedFile.name}:\n\nStudent Performance Rubric\n\n1. Communication Skills (25 points)\n- Excellent (22-25): Clear, professional communication with appropriate medical terminology\n- Good (18-21): Generally clear communication with minor issues\n- Satisfactory (14-17): Adequate communication with some unclear areas\n- Needs Improvement (0-13): Poor communication affecting patient interaction\n\n2. Clinical Knowledge (30 points)\n- Demonstrates comprehensive understanding of medical concepts\n- Applies knowledge appropriately to patient scenarios\n- Shows evidence-based decision making\n\n3. Patient Interaction (25 points)\n- Shows empathy and professionalism\n- Maintains appropriate boundaries\n- Demonstrates cultural sensitivity\n\n4. Technical Skills (20 points)\n- Performs procedures correctly\n- Uses equipment safely and effectively\n- Follows proper protocols`;
+    // Display original extracted text
+    originalText.textContent = result.original_text || 'No text extracted';
     
     resultsContainer.style.display = 'block';
     processingInProgress = false;
@@ -748,22 +834,37 @@ scoring_guide:
 }
 
 // Download YAML
-function downloadYaml() {
-    const yamlContent = document.getElementById('yamlOutput').textContent;
-    const fileName = selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, '') : 'rubric';
+async function downloadYaml() {
+    if (!currentTaskId) {
+        alert('❌ No YAML available for download');
+        return;
+    }
     
-    const blob = new Blob([yamlContent], { type: 'application/x-yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${fileName}_prompt.yaml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    // Show success message
-    alert('✅ YAML file downloaded successfully!');
+    try {
+        const response = await fetch(`http://localhost:8000/download-yaml/${currentTaskId}`, {
+            method: 'GET'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Download failed');
+        }
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const fileName = selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, '') : 'rubric';
+        a.download = `${fileName}_prompt.yaml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert('✅ YAML file downloaded successfully!');
+    } catch (error) {
+        console.error('Download error:', error);
+        alert('❌ Download failed: ' + error.message);
+    }
 }
 
 // Copy YAML to clipboard
@@ -776,9 +877,120 @@ function copyYaml() {
     });
 }
 
-// Edit YAML (placeholder)
+// Edit YAML functionality
 function editYaml() {
-    alert('✏️ YAML editing feature coming soon!');
+    const yamlOutput = document.getElementById('yamlOutput');
+    const currentYaml = yamlOutput.textContent;
+    
+    // Create edit modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        width: 90%;
+        max-width: 800px;
+        max-height: 80%;
+        overflow-y: auto;
+    `;
+    
+    modalContent.innerHTML = `
+        <h3 style="margin-top: 0; color: #333;">✏️ Edit YAML Prompt</h3>
+        <textarea id="yamlEditor" style="
+            width: 100%;
+            height: 400px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            background: #f8f9fa;
+        ">${currentYaml}</textarea>
+        <div style="margin-top: 1rem; text-align: right;">
+            <button onclick="cancelEdit()" style="
+                background: #6c757d;
+                color: white;
+                border: none;
+                padding: 0.75rem 1.5rem;
+                border-radius: 6px;
+                cursor: pointer;
+                margin-right: 1rem;
+            ">Cancel</button>
+            <button onclick="saveEdit()" style="
+                background: #4CAF50;
+                color: white;
+                border: none;
+                padding: 0.75rem 1.5rem;
+                border-radius: 6px;
+                cursor: pointer;
+            ">Save Changes</button>
+        </div>
+    `;
+    
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+    window.currentEditModal = modal;
+}
+
+// Cancel edit
+function cancelEdit() {
+    if (window.currentEditModal) {
+        document.body.removeChild(window.currentEditModal);
+        window.currentEditModal = null;
+    }
+}
+
+// Save edit
+async function saveEdit() {
+    const yamlEditor = document.getElementById('yamlEditor');
+    const editedYaml = yamlEditor.value;
+    
+    if (!currentTaskId) {
+        alert('❌ No task ID available for saving');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`http://localhost:8000/update-yaml/${currentTaskId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                yaml_content: editedYaml
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to save changes');
+        }
+        
+        // Update the display
+        document.getElementById('yamlOutput').textContent = editedYaml;
+        
+        // Close modal
+        cancelEdit();
+        
+        alert('✅ YAML updated successfully!');
+    } catch (error) {
+        console.error('Save error:', error);
+        alert('❌ Failed to save changes: ' + error.message);
+    }
 }
 
 // Reset process

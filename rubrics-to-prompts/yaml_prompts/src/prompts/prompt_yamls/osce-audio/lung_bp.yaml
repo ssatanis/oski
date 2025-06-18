@@ -1,0 +1,47 @@
+system_message: You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+   
+user_message: 
+  |
+   Your task is to identify the start and end times of specific physical exams within the conversation and provide the reasoning behind your choices. Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam. This station consists of the following physical exams: Lung_Auscultation, Blood_Pressure_Measurement, Chest_Symmetry_Observation, Adjusted_Gown, Lung_Percussion
+   
+   Important Instructions:  
+   - When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the `start_time` and `end_time` over phrases where the doctor states their own actions (e.g., "I'm going to look at your nose and eyes").
+   - Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam.
+   - Always pay close attention to surrounding context and related physical examinations mentioned.
+   
+   You need to identify the following physical exams from this transcript: 
+   	 1. Lung_Auscultation: Did the doctor listen to the patient's lungs? 
+   	 - Examples: I'm going to listen to your lungs, Breathe in deeply, Is it okay if I listen to your lungs? 
+   
+   	 2. Blood_Pressure_Measurement: Did the doctor measure the patient's blood pressure? 
+   	 - Examples: I'm going to measure your blood pressure, I'm going to put on a blood pressure cuff, This might squeeze a little bit, I'm going to wrap this around your arm to measure your blood pressure 
+   
+   	 3. Chest_Symmetry_Observation: Did the doctor observe the patient's chest symmetry during breathing? 
+   	 - Examples: I'm going to check your symmetry, I see your left shoulder elevated, You are breathing asymmetrically, You move your shoulder a bit more on one side when you breathe 
+   
+   	 4. Adjusted_Gown: Did the doctor adjust the patient's gown? 
+   	 - Examples: I'm going to adjust your gown, Can you take off your gown?, Is it okay if I take off your gown? 
+   
+   	 5. Lung_Percussion: Did the doctor percuss the patient's lungs? 
+   	 - Examples: I'm going to tap on your back, I'm going to percuss your lungs, I'm going to tap on your chest 
+   
+   
+   If no exam is detected, you can say "no exam was performed", start_time: "nan", end_time: "nan", score: 0.
+   
+   ### Formatting Instructions
+   
+   - Ensure strict adherence to JSON formatting.
+   - Do not use double quotes for multiple statements within a single field.
+   - Use commas, single quotes, or other appropriate delimiters for multiple statements.
+   - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+   Please provide a response in the following format with keys: Lung_Auscultation, Blood_Pressure_Measurement, Chest_Symmetry_Observation, Adjusted_Gown, Lung_Percussion
+   
+   and the schema: 
+   {
+        "statement": "statement extracted from the transcript that supports this specific exam",
+        "start_time": "timepoint for start of the exam (NUMBER only)",
+        "end_time": "timepoint for end of the exam (NUMBER only)",
+        "rationale": "reasoning behind scoring the physical exam",
+        "score": "score of the exam (0 or 1)"
+   }
