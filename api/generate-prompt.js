@@ -21,98 +21,134 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing extracted_text in request body' });
     }
 
-    // Demo AI processing - generates structured YAML from rubric text
-    // In production, this would call Azure OpenAI API
-    const demoYamlContent = `rubric_info:
-  title: "OSCE Assessment Rubric"
-  description: "Structured rubric for clinical assessment"
-  total_points: 10
-  format: "structured_assessment"
+    // Parse the extracted text to identify criteria and generate proper YAML
+    const lines = extracted_text.split('\n').filter(line => line.trim());
+    const criteria = [];
+    let rubricTitle = 'OSCE Assessment Rubric';
+    let totalPoints = 0;
 
-criteria:
-  - criterion_id: "greeting_introduction"
-    name: "Patient Greeting and Introduction"
-    description: "Assessment of professional greeting and self-introduction"
-    max_points: 2
-    scale:
-      - score: 0
-        description: "No greeting or introduction"
-        indicators:
-          - "Student does not acknowledge patient"
-          - "No verbal greeting provided"
-      - score: 1
-        description: "Basic greeting only"
-        indicators:
-          - "Simple hello or similar greeting"
-          - "Minimal interaction"
-      - score: 2
-        description: "Professional greeting with name and role introduction"
-        indicators:
-          - "Clear introduction with name"
-          - "States role (medical student, etc.)"
-          - "Professional demeanor"
+    // Extract rubric title if present
+    const titleLine = lines.find(line => 
+      line.toLowerCase().includes('rubric') || 
+      line.toLowerCase().includes('assessment') ||
+      line.toLowerCase().includes('osce')
+    );
+    if (titleLine) {
+      rubricTitle = titleLine.trim();
+    }
 
-  - criterion_id: "history_taking"
-    name: "History Taking"
-    description: "Systematic gathering of patient history"
-    max_points: 3
-    scale:
-      - score: 0
-        description: "No relevant history obtained"
-        indicators:
-          - "No questions asked"
-          - "Does not gather patient information"
-      - score: 1
-        description: "Limited history with major gaps"
-        indicators:
-          - "Few relevant questions"
-          - "Important details missed"
-      - score: 2
-        description: "Adequate history with minor gaps"
-        indicators:
-          - "Covers main presenting complaint"
-          - "Some systematic approach"
-      - score: 3
-        description: "Comprehensive and systematic history"
-        indicators:
-          - "Systematic questioning"
-          - "Covers all relevant areas"
-          - "Appropriate follow-up questions"
+    // Extract criteria from the text
+    lines.forEach((line, index) => {
+      const criteriaMatch = line.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)(.*?)(?:\((\d+)-(\d+)\s*points?\)|\((\d+)\s*points?\))?/i);
+      if (criteriaMatch) {
+        const name = criteriaMatch[1].trim();
+        const maxPoints = criteriaMatch[4] || criteriaMatch[3] || 2; // Default to 2 points
+        totalPoints += parseInt(maxPoints);
+        
+        // Look for examples in following lines
+        const examples = [];
+        for (let i = index + 1; i < Math.min(index + 5, lines.length); i++) {
+          const nextLine = lines[i];
+          if (nextLine.includes('point') && nextLine.includes(':')) {
+            examples.push(nextLine.trim());
+          } else if (nextLine.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)/i)) {
+            break; // Hit next criteria
+          }
+        }
 
-assessment_guidelines:
-  - "Observe actual behavior and communication"
-  - "Look for specific indicators of each score level"
-  - "Consider context and patient interaction quality"
-  - "Document specific examples when possible"`;
+        criteria.push({
+          name: name,
+          max_points: parseInt(maxPoints),
+          examples: examples
+        });
+      }
+    });
 
-    const parsedYaml = {
-      rubric_info: {
-        title: "OSCE Assessment Rubric",
-        description: "Structured rubric for clinical assessment",
-        total_points: 10,
-        format: "structured_assessment"
-      },
-      criteria: [
+    // If no criteria found, create default ones
+    if (criteria.length === 0) {
+      criteria.push(
         {
-          criterion_id: "greeting_introduction",
           name: "Patient Greeting and Introduction",
-          description: "Assessment of professional greeting and self-introduction",
-          max_points: 2
+          max_points: 2,
+          examples: [
+            "0 points: No greeting or introduction",
+            "1 point: Basic greeting only", 
+            "2 points: Professional greeting with name and role introduction"
+          ]
         },
         {
-          criterion_id: "history_taking",
-          name: "History Taking",
-          description: "Systematic gathering of patient history", 
-          max_points: 3
+          name: "Clinical Assessment",
+          max_points: 3,
+          examples: [
+            "0 points: No assessment performed",
+            "1 point: Limited assessment with major gaps",
+            "2 points: Adequate assessment with minor gaps",
+            "3 points: Comprehensive and systematic assessment"
+          ]
         }
-      ]
+      );
+      totalPoints = 5;
+    }
+
+    // Generate the YAML content in the format of 1A.yaml
+    const yamlContent = `key: 
+  ${rubricTitle.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}
+system_message: 
+  |
+   You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+   
+user_message: 
+  |   
+   Important Instruction:
+   When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions (e.g., "I'm going to examine your...").
+      
+   You need to identify the following examinations from this conversation: 
+${criteria.map((criterion, index) => `   ${index + 1}: ${criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}: Did the doctor perform ${criterion.name.toLowerCase()}? 
+    - Examples: 
+${criterion.examples.map(example => `    	 - ${example.replace(/^\d+\s*points?:\s*/i, '')}`).join('\n')}
+`).join('\n')}   
+   
+   If there is any part in the conversation where the medical student is performing an examination but you cannot tell what specific type it is, look at the conversation before and after to find what type of exam that was. Pay close attention to surrounding context and related examinations mentioned.
+   
+   If no exam is detected, you can say "No exam was performed", start_time: "nan", end_time: "nan", score: 0.
+        
+   # Formatting instructions
+   
+   - Ensure strict adherence to JSON formatting.
+   - Do not use double quotes for multiple statements within a single field.
+   - Use commas, single quotes, or other appropriate delimiters for multiple statements.
+   - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+   Please provide a response in the following format with keys: ${criteria.map(criterion => criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')).join(', ')}
+   
+   and the schema: 
+   {
+        "statement": "statement extracted from the conversation that supports this specific exam",
+        "start_time": "timepoint for start of the exam (ONLY 1 decimal pt)",
+        "end_time": "timepoint for end of the exam (ONLY 1 decimal pt)",
+        "rationale": "reasoning behind scoring the examination",
+        "score": "score of the exam (0-${Math.max(...criteria.map(c => c.max_points))})"
+   }
+response_config:
+  structured_output: True`;
+
+    // Create parsed structure for the dashboard
+    const parsedYaml = {
+      key: rubricTitle.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
+      system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+      user_message: "Analysis instructions for medical examination assessment",
+      criteria: criteria,
+      total_points: totalPoints,
+      response_config: {
+        structured_output: true
+      }
     };
 
     const jsonContent = JSON.stringify(parsedYaml, null, 2);
 
     res.status(200).json({
       message: 'Prompt generated successfully',
-      yaml_content: demoYamlContent,
+      yaml_content: yamlContent,
       json_content: jsonContent,
       parsed_yaml: parsedYaml,
       validation_success: true

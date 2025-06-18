@@ -608,6 +608,271 @@
             }
         }
 
+        /* Rubric Editor Styles */
+        .rubric-editor-section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .editor-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: "Geist", sans-serif;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn-add-criterion {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: #000000;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add-criterion:hover {
+            background: #374151;
+            transform: translateY(-1px);
+        }
+
+        .criteria-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .criterion-item {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .criterion-item:hover {
+            border-color: #d1d5db;
+        }
+
+        .criterion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .criterion-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: #000000;
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn-remove-criterion {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-remove-criterion:hover {
+            background: #dc2626;
+        }
+
+        .criterion-examples {
+            margin-top: 15px;
+        }
+
+        .criterion-examples label {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .examples-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .example-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .example-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .btn-remove-example {
+            background: #f87171;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .btn-add-example {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #374151;
+        }
+
+        .btn-add-example:hover {
+            background: #e5e7eb;
+        }
+
+        .preview-box {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #374151;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .export-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .export-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .export-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .export-button.primary {
+            background: #000000;
+            color: white;
+        }
+
+        .export-button.primary:hover {
+            background: #374151;
+            transform: translateY(-1px);
+            border-color: #374151;
+        }
+
+        .export-button.secondary {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+
+        .export-button.secondary:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        .export-button.tertiary {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #d1d5db;
+        }
+
+        .export-button.tertiary:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+
         @keyframes fill {
             100% {
                 box-shadow: inset 0px 0px 0px 30px #ffffff;
@@ -698,35 +963,87 @@
                     <!-- Dashboard Section -->
                     <div class="dashboard-card" id="dashboardSection">
                         <div class="dashboard-header">
-                            <h2 class="dashboard-title">Processing Complete!</h2>
-                            <p class="dashboard-description">Your rubric has been successfully analyzed and converted into AI prompts.</p>
+                            <h2 class="dashboard-title">Rubric Editor</h2>
+                            <p class="dashboard-description">Review and edit your OSCE assessment criteria before exporting.</p>
                         </div>
 
-                        <div class="rubric-info" id="rubricInfo">
-                            <h3 class="rubric-title" id="rubricTitle">OSCE Assessment Rubric</h3>
-                            <p class="rubric-description" id="rubricDescription">Your rubric has been successfully processed and is ready for export.</p>
-                            <div class="total-points">
-                                Total Points: <span id="totalPoints">0</span>
+                        <!-- Rubric Basic Info -->
+                        <div class="rubric-editor-section">
+                            <div class="editor-header">
+                                <h3>Basic Information</h3>
+                            </div>
+                            <div class="input-group">
+                                <label for="rubricKey">Rubric Key:</label>
+                                <input type="text" id="rubricKey" class="form-input" placeholder="e.g., osce_assessment_rubric">
+                            </div>
+                            <div class="input-group">
+                                <label for="systemMessage">System Message:</label>
+                                <textarea id="systemMessage" class="form-textarea" rows="3" placeholder="You are a helpful assistant..."></textarea>
                             </div>
                         </div>
 
-                        <div class="export-options">
-                            <a href="#" class="export-button" id="downloadYaml">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                Download YAML
-                            </a>
-                            <a href="#" class="export-button" id="downloadJson">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                Download JSON
-                            </a>
+                        <!-- Criteria Editor -->
+                        <div class="rubric-editor-section">
+                            <div class="editor-header">
+                                <h3>Assessment Criteria</h3>
+                                <button class="btn-add-criterion" onclick="addNewCriterion()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add Criterion
+                                </button>
+                            </div>
+                            <div id="criteriaContainer" class="criteria-container">
+                                <!-- Criteria will be added dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- User Message Preview -->
+                        <div class="rubric-editor-section">
+                            <div class="editor-header">
+                                <h3>Generated User Message Preview</h3>
+                            </div>
+                            <div class="preview-box" id="userMessagePreview">
+                                <!-- Preview will be generated automatically -->
+                            </div>
+                        </div>
+
+                        <!-- Export Options -->
+                        <div class="export-section">
+                            <div class="export-header">
+                                <h3>Export Options</h3>
+                                <div class="total-points">
+                                    Total Points: <span id="totalPoints">0</span>
+                                </div>
+                            </div>
+                            <div class="export-buttons">
+                                <button class="export-button primary" onclick="downloadYaml()">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Download YAML
+                                </button>
+                                <button class="export-button secondary" onclick="downloadJson()">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Download JSON
+                                </button>
+                                <button class="export-button tertiary" onclick="resetUpload()">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                        <path d="M21 3v5h-5"></path>
+                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                        <path d="M3 21v-5h5"></path>
+                                    </svg>
+                                    Start Over
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -988,28 +1305,21 @@
             }
         }
 
+        let currentRubricData = null;
+
         function showDashboard(data) {
+            currentRubricData = data;
             const dashboardSection = document.getElementById('dashboardSection');
-            const rubricTitle = document.getElementById('rubricTitle');
-            const rubricDescription = document.getElementById('rubricDescription');
-            const totalPoints = document.getElementById('totalPoints');
             const contentGrid = document.querySelector('.content-grid');
             
-            // Update dashboard content
-            if (data.parsed_yaml && data.parsed_yaml.rubric_info) {
-                rubricTitle.textContent = data.parsed_yaml.rubric_info.title || 'OSCE Assessment Rubric';
-                rubricDescription.textContent = data.parsed_yaml.rubric_info.description || 'Your rubric has been successfully processed and is ready for export.';
-                totalPoints.textContent = data.parsed_yaml.rubric_info.total_points || '0';
-            }
+            // Initialize dashboard with data
+            initializeDashboard(data);
             
             // Show dashboard section
             dashboardSection.classList.add('visible');
             
             // Add maximum spacing for dashboard
             contentGrid.classList.add('dashboard-visible');
-            
-            // Setup download buttons
-            setupDownloadButtons();
             
             // Smooth scroll to dashboard
             setTimeout(() => {
@@ -1018,6 +1328,273 @@
                     block: 'center' 
                 });
             }, 500);
+        }
+
+        function initializeDashboard(data) {
+            // Set basic information
+            document.getElementById('rubricKey').value = data.parsed_yaml?.key || 'osce_assessment_rubric';
+            document.getElementById('systemMessage').value = data.parsed_yaml?.system_message || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
+            
+            // Load criteria
+            loadCriteria(data.parsed_yaml?.criteria || []);
+            
+            // Update total points
+            updateTotalPoints();
+            
+            // Update preview
+            updateUserMessagePreview();
+        }
+
+        function loadCriteria(criteria) {
+            const container = document.getElementById('criteriaContainer');
+            container.innerHTML = '';
+            
+            criteria.forEach((criterion, index) => {
+                addCriterionToDOM(criterion, index);
+            });
+            
+            // Add one empty criterion if none exist
+            if (criteria.length === 0) {
+                addNewCriterion();
+            }
+        }
+
+        function addNewCriterion() {
+            const criterion = {
+                name: '',
+                max_points: 1,
+                examples: ['']
+            };
+            const container = document.getElementById('criteriaContainer');
+            const index = container.children.length;
+            addCriterionToDOM(criterion, index);
+            updateTotalPoints();
+            updateUserMessagePreview();
+        }
+
+        function addCriterionToDOM(criterion, index) {
+            const container = document.getElementById('criteriaContainer');
+            const criterionDiv = document.createElement('div');
+            criterionDiv.className = 'criterion-item';
+            criterionDiv.dataset.index = index;
+            
+            criterionDiv.innerHTML = `
+                <div class="criterion-header">
+                    <div style="display: flex; align-items: center;">
+                        <span class="criterion-number">${index + 1}</span>
+                        <div style="flex: 1;">
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <input type="text" class="form-input criterion-name" placeholder="e.g., Patient Greeting and Introduction" value="${criterion.name || ''}" oninput="updateCriterion(${index})">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label>Max Points:</label>
+                                <input type="number" class="form-input criterion-points" min="1" max="10" value="${criterion.max_points || 1}" oninput="updateCriterion(${index})" style="width: 80px;">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-remove-criterion" onclick="removeCriterion(${index})">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="criterion-examples">
+                    <label>Examples:</label>
+                    <div class="examples-list">
+                        ${(criterion.examples || ['']).map((example, exampleIndex) => `
+                            <div class="example-item">
+                                <input type="text" class="example-input" placeholder="e.g., I'm going to examine your..." value="${example}" oninput="updateCriterion(${index})">
+                                <button class="btn-remove-example" onclick="removeExample(${index}, ${exampleIndex})">×</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="btn-add-example" onclick="addExample(${index})">+ Add Example</button>
+                </div>
+            `;
+            
+            container.appendChild(criterionDiv);
+        }
+
+        function updateCriterion(index) {
+            updateTotalPoints();
+            updateUserMessagePreview();
+        }
+
+        function removeCriterion(index) {
+            const container = document.getElementById('criteriaContainer');
+            const item = container.children[index];
+            if (item) {
+                item.remove();
+                reindexCriteria();
+                updateTotalPoints();
+                updateUserMessagePreview();
+            }
+        }
+
+        function addExample(criterionIndex) {
+            const container = document.getElementById('criteriaContainer');
+            const criterionItem = container.children[criterionIndex];
+            const examplesList = criterionItem.querySelector('.examples-list');
+            const exampleIndex = examplesList.children.length;
+            
+            const exampleDiv = document.createElement('div');
+            exampleDiv.className = 'example-item';
+            exampleDiv.innerHTML = `
+                <input type="text" class="example-input" placeholder="e.g., I'm going to examine your..." oninput="updateCriterion(${criterionIndex})">
+                <button class="btn-remove-example" onclick="removeExample(${criterionIndex}, ${exampleIndex})">×</button>
+            `;
+            
+            examplesList.appendChild(exampleDiv);
+        }
+
+        function removeExample(criterionIndex, exampleIndex) {
+            const container = document.getElementById('criteriaContainer');
+            const criterionItem = container.children[criterionIndex];
+            const examplesList = criterionItem.querySelector('.examples-list');
+            const exampleItem = examplesList.children[exampleIndex];
+            if (exampleItem) {
+                exampleItem.remove();
+                updateCriterion(criterionIndex);
+            }
+        }
+
+        function reindexCriteria() {
+            const container = document.getElementById('criteriaContainer');
+            Array.from(container.children).forEach((item, index) => {
+                item.dataset.index = index;
+                const numberSpan = item.querySelector('.criterion-number');
+                if (numberSpan) numberSpan.textContent = index + 1;
+                
+                // Update onclick handlers
+                item.innerHTML = item.innerHTML
+                    .replace(/updateCriterion\(\d+\)/g, `updateCriterion(${index})`)
+                    .replace(/removeCriterion\(\d+\)/g, `removeCriterion(${index})`)
+                    .replace(/addExample\(\d+\)/g, `addExample(${index})`)
+                    .replace(/removeExample\(\d+,\s*\d+\)/g, (match) => {
+                        const exampleIndex = match.split(',')[1].replace(/\D/g, '');
+                        return `removeExample(${index}, ${exampleIndex})`;
+                    });
+            });
+        }
+
+        function updateTotalPoints() {
+            const container = document.getElementById('criteriaContainer');
+            let total = 0;
+            
+            Array.from(container.children).forEach(item => {
+                const pointsInput = item.querySelector('.criterion-points');
+                if (pointsInput) {
+                    total += parseInt(pointsInput.value) || 0;
+                }
+            });
+            
+            document.getElementById('totalPoints').textContent = total;
+        }
+
+        function updateUserMessagePreview() {
+            const rubricKey = document.getElementById('rubricKey').value;
+            const container = document.getElementById('criteriaContainer');
+            const criteria = [];
+            
+            Array.from(container.children).forEach((item, index) => {
+                const nameInput = item.querySelector('.criterion-name');
+                const pointsInput = item.querySelector('.criterion-points');
+                const exampleInputs = item.querySelectorAll('.example-input');
+                
+                const examples = Array.from(exampleInputs)
+                    .map(input => input.value.trim())
+                    .filter(value => value);
+                
+                if (nameInput.value.trim()) {
+                    criteria.push({
+                        name: nameInput.value.trim(),
+                        max_points: parseInt(pointsInput.value) || 1,
+                        examples: examples
+                    });
+                }
+            });
+            
+            const userMessage = generateUserMessage(criteria);
+            document.getElementById('userMessagePreview').textContent = userMessage;
+        }
+
+        function generateUserMessage(criteria) {
+            return `Important Instruction:
+When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions (e.g., "I'm going to examine your...").
+   
+You need to identify the following examinations from this conversation: 
+${criteria.map((criterion, index) => `${index + 1}: ${criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}: Did the doctor perform ${criterion.name.toLowerCase()}? 
+ - Examples: 
+${criterion.examples.map(example => `    	 - ${example}`).join('\n')}
+`).join('\n')}
+
+If there is any part in the conversation where the medical student is performing an examination but you cannot tell what specific type it is, look at the conversation before and after to find what type of exam that was. Pay close attention to surrounding context and related examinations mentioned.
+
+If no exam is detected, you can say "No exam was performed", start_time: "nan", end_time: "nan", score: 0.
+     
+# Formatting instructions
+
+- Ensure strict adherence to JSON formatting.
+- Do not use double quotes for multiple statements within a single field.
+- Use commas, single quotes, or other appropriate delimiters for multiple statements.
+- Do not include any text before or after the JSON output. Provide ONLY the json response.
+
+Please provide a response in the following format with keys: ${criteria.map(criterion => criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')).join(', ')}
+
+and the schema: 
+{
+     "statement": "statement extracted from the conversation that supports this specific exam",
+     "start_time": "timepoint for start of the exam (ONLY 1 decimal pt)",
+     "end_time": "timepoint for end of the exam (ONLY 1 decimal pt)",
+     "rationale": "reasoning behind scoring the examination",
+     "score": "score of the exam (0-${Math.max(...criteria.map(c => c.max_points))})"
+}`;
+        }
+
+        function downloadYaml() {
+            const yamlContent = generateCurrentYaml();
+            downloadFile(yamlContent, 'rubric-prompts.yaml', 'text/yaml');
+        }
+
+        function downloadJson() {
+            const jsonContent = generateCurrentJson();
+            downloadFile(jsonContent, 'rubric-prompts.json', 'application/json');
+        }
+
+        function generateCurrentYaml() {
+            const rubricKey = document.getElementById('rubricKey').value || 'osce_assessment_rubric';
+            const systemMessage = document.getElementById('systemMessage').value || 'You are a helpful assistant...';
+            const userMessage = document.getElementById('userMessagePreview').textContent;
+            
+            return `key: 
+  ${rubricKey}
+system_message: 
+  |
+   ${systemMessage}
+   
+user_message: 
+  |   
+   ${userMessage}
+response_config:
+  structured_output: True`;
+        }
+
+        function generateCurrentJson() {
+            const rubricKey = document.getElementById('rubricKey').value || 'osce_assessment_rubric';
+            const systemMessage = document.getElementById('systemMessage').value || 'You are a helpful assistant...';
+            const userMessage = document.getElementById('userMessagePreview').textContent;
+            
+            const jsonData = {
+                key: rubricKey,
+                system_message: systemMessage,
+                user_message: userMessage,
+                response_config: {
+                    structured_output: true
+                }
+            };
+            
+            return JSON.stringify(jsonData, null, 2);
         }
 
         function showStatus(type, message, withSpinner = false) {
@@ -1061,28 +1638,15 @@
             }, 100);
         }
 
-        function setupDownloadButtons() {
-            const downloadYaml = document.getElementById('downloadYaml');
-            const downloadJson = document.getElementById('downloadJson');
-
-            downloadYaml.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (processedData && processedData.yaml_content) {
-                    downloadFile(processedData.yaml_content, 'rubric-prompts.yaml', 'text/yaml');
-                } else {
-                    showStatus('error', 'YAML data not available');
+        // Event listeners for editor updates
+        document.addEventListener('DOMContentLoaded', function() {
+            // Listen for changes in form inputs to update preview
+            document.addEventListener('input', function(e) {
+                if (e.target.matches('#rubricKey, #systemMessage')) {
+                    updateUserMessagePreview();
                 }
             });
-
-            downloadJson.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (processedData && processedData.json_content) {
-                    downloadFile(processedData.json_content, 'rubric-prompts.json', 'application/json');
-                } else {
-                    showStatus('error', 'JSON data not available');
-                }
-            });
-        }
+        });
 
         function downloadFile(content, filename, mimeType) {
             const blob = new Blob([content], { type: mimeType });
