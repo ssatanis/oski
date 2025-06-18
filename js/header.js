@@ -1,5 +1,8 @@
 // Centralized Header Component
 function loadHeader() {
+  // Check if we're on rubricon.html to show logout button
+  const isRubriconPage = window.location.pathname.includes('rubricon.html');
+  
   const headerHTML = `
     <div class="navigation-wrapper">
       <div data-w-id="2ec87728-4b9f-a5bf-eacf-e9e9575fcd6a" data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="navbar-component w-nav">
@@ -25,12 +28,21 @@ function loadHeader() {
                 <div class="line-bottom"></div>
               </div>
             </div>
-            <a data-w-id="87ece5ab-4141-8518-64d6-497478bacd68" href="mailto:support@oski.app" class="button-first _01 w-inline-block">
-              <div class="txt-wrapper">
-                <div class="button-txt">Contact</div>
-                <div class="button-txt">Contact</div>
-              </div>
-            </a>
+            ${isRubriconPage ? `
+              <button onclick="logout()" class="button-first _01 w-inline-block" style="background: #dc2626; border: none; cursor: pointer;">
+                <div class="txt-wrapper">
+                  <div class="button-txt">Logout</div>
+                  <div class="button-txt">Logout</div>
+                </div>
+              </button>
+            ` : `
+              <a data-w-id="87ece5ab-4141-8518-64d6-497478bacd68" href="mailto:support@oski.app" class="button-first _01 w-inline-block">
+                <div class="txt-wrapper">
+                  <div class="button-txt">Contact</div>
+                  <div class="button-txt">Contact</div>
+                </div>
+              </a>
+            `}
           </div>
         </div>
       </div>

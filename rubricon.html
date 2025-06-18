@@ -9,6 +9,9 @@
     <meta content="images/OskiPreview.png" property="og:image">
     <meta content="width=device-width, initial-scale=1" name="viewport">
     
+    <!-- Supabase Authentication -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <!-- Oski CSS Framework -->
     <link href="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/css/tenet-template.webflow.shared.40365d26e.css" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com" rel="preconnect">
@@ -1114,6 +1117,61 @@
             }
         }
     </style>
+
+    <!-- Authentication Check Script -->
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://yqioyjcriynhtirluyxb.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxaW95amNyaXluaHRpcmx1eXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNzk3NjEsImV4cCI6MjA2NTg1NTc2MX0.VOUimS9zIE1eIYIs_8taFF124qi943xRVxT8dqOnCkM';
+
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Check authentication immediately on page load
+        async function checkAuthentication() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('Auth error:', error);
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                if (!session || !session.user) {
+                    // No active session, redirect to login
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // User is authenticated, allow access
+                console.log('User authenticated:', session.user.email);
+                
+                // Add logout functionality
+                window.logout = async function() {
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                        console.error('Logout error:', error);
+                    }
+                    window.location.href = 'login.html';
+                };
+                
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Run authentication check immediately
+        checkAuthentication();
+
+        // Listen for auth state changes
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
 </head>
 
 <body>
