@@ -37,7 +37,7 @@ function loadFooter() {
                           <div class="line-horizontal"></div>
                         </a>
                         <a href="promptgen.html" class="button-first-line w-inline-block">
-                          <div class="button-line-flex"><div>PromptGen</div></div>
+                          <div class="button-line-flex"><div>Rubricon</div></div>
                           <div class="line-horizontal"></div>
                         </a>
                       </div>

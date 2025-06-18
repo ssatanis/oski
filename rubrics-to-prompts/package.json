@@ -1,0 +1,56 @@
+{
+  "name": "rubricon-standalone",
+  "version": "1.0.0",
+  "description": "Standalone AI Rubric to Prompt Converter - Transform medical assessment rubrics into AI-ready YAML prompts",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "serve": "npx http-server -p 8000",
+    "dev": "python3 -m http.server 3000",
+    "build": "echo 'No build required - this is a standalone client-side application'",
+    "test": "echo 'Open index.html in browser to test functionality'"
+  },
+  "keywords": [
+    "medical",
+    "assessment",
+    "rubric",
+    "ai",
+    "yaml",
+    "osce",
+    "healthcare",
+    "education",
+    "prompt",
+    "converter"
+  ],
+  "author": "Oski Development Team",
+  "license": "Proprietary",
+  "homepage": ".",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oski/rubricon-standalone"
+  },
+  "bugs": {
+    "url": "https://github.com/oski/rubricon-standalone/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "config": {
+    "port": "8000"
+  },
+  "devDependencies": {},
+  "dependencies": {},
+  "files": [
+    "index.html",
+    "js/",
+    "api/",
+    "css/",
+    "images/",
+    "README.md"
+  ]
+} 

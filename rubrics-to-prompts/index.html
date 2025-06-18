@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Rubricon | Oski</title>
+    <meta content="Transform OSCE rubrics into AI-ready prompts with intelligent processing and automated YAML generation." name="description">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1f2937;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Animated Rainbow Gradient Header */
+        .rainbow-header {
+            height: 3px;
+            background: linear-gradient(90deg, 
+                #ff6b6b 0%, 
+                #4ecdc4 14%, 
+                #45b7d1 28%, 
+                #96ceb4 42%, 
+                #ffeaa7 56%, 
+                #fab1a0 70%, 
+                #fd79a8 84%, 
+                #fdcb6e 100%
+            );
+            background-size: 200% 100%;
+            animation: rainbowMove 8s ease-in-out infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes rainbowMove {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        /* Header */
+        .header {
+            padding: 2rem 0;
+            text-align: center;
+            position: relative;
+            background: linear-gradient(135deg, 
+                rgba(255, 107, 107, 0.02) 0%,
+                rgba(78, 205, 196, 0.02) 25%,
+                rgba(69, 183, 209, 0.02) 50%,
+                rgba(150, 206, 180, 0.02) 75%,
+                rgba(255, 234, 167, 0.02) 100%
+            );
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            color: #6b7280;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            opacity: 0.8;
+        }
+
+        .upload-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-zone.dragover {
+            border-color: #667eea;
+            background: #e0e7ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .upload-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+
+        .upload-subtext {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Status Section */
+        .status-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .status-section.success {
+            background: #ecfdf5;
+            border: 1px solid #10b981;
+            color: #065f46;
+            display: block;
+        }
+
+        .status-section.error {
+            background: #fef2f2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+            display: block;
+        }
+
+        .status-section.processing {
+            background: #eff6ff;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+            display: block;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        .results-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #10b981, #059669, #10b981);
+            opacity: 0.8;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .results-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+
+        .yaml-output {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-bottom: 2rem;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .download-button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .download-button.secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+        }
+
+        .download-button.secondary:hover {
+            box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            background: #f9fafb;
+            margin-top: auto;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .upload-section {
+                padding: 2rem;
+            }
+            
+            .upload-zone {
+                padding: 2rem;
+            }
+            
+            .results-section {
+                padding: 2rem;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Loading Animation */
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="rainbow-header"></div>
+    
+    <div class="header">
+        <h1>Rubricon</h1>
+        <p>AI-Powered Rubric to Assessment Prompt Generator</p>
+    </div>
+
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Upload Your Rubric File</div>
+                <div class="upload-subtext">Drag and drop or click to select Excel, CSV, or image files</div>
+                <button class="upload-button" type="button">Choose File</button>
+                <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv,.png,.jpg,.jpeg,.pdf">
+            </div>
+        </div>
+
+        <!-- Status Section -->
+        <div id="statusSection" class="status-section">
+            <div id="statusContent"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="results-section">
+            <div class="results-header">
+                <h2 class="results-title">Generated YAML Prompt</h2>
+                <p>Your rubric has been successfully converted into a structured assessment prompt.</p>
+            </div>
+            
+            <div id="yamlOutput" class="yaml-output"></div>
+            
+            <div class="download-buttons">
+                <button class="download-button" onclick="downloadYAML()">📥 Download YAML</button>
+                <button class="download-button secondary" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                <button class="download-button secondary" onclick="resetForm()">🔄 Process Another File</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2024 Rubricon. Transform rubrics into intelligent assessment prompts.</p>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html> 

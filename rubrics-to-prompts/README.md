@@ -1,307 +1,248 @@
-# Rubrics to Prompts - AI-Powered OSCE Rubric Converter
+# Rubricon | Oski
 
-Transform OSCE exam rubrics into AI-ready YAML prompts with intelligent OCR processing and automated generation.
+**Standalone Webapp for Transforming Medical Rubrics into AI Assessment Prompts**
+
+Rubricon is a powerful, standalone web application that converts medical assessment rubrics into structured YAML prompts optimized for AI evaluation systems. Upload any rubric file (Excel, CSV, PDF, or image) and get a comprehensive, ready-to-use assessment prompt.
 
 ## 🚀 Features
 
-- **Multi-format Support**: Upload PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, and image files
-- **Advanced OCR**: Dual OCR processing with Tesseract and EasyOCR for maximum accuracy
-- **AI-Powered Conversion**: Azure OpenAI integration for intelligent YAML generation
-- **Schema Validation**: Pydantic-based validation ensuring consistent YAML structure
-- **Interactive Editor**: Built-in Monaco editor for YAML preview and editing
-- **Modern UI**: Beautiful, responsive interface matching Oski's design system
-- **Real-time Processing**: Live progress tracking with animated workflow steps
+- **Universal File Support**: Accepts Excel (.xlsx, .xls), CSV, PDF, and image files
+- **Adaptive Intelligence**: Automatically analyzes filename and content to determine relevant medical domains
+- **Dynamic Criteria Generation**: Creates 1-8 assessment criteria based on file complexity
+- **Comprehensive Medical Coverage**: Supports all major medical specialties and assessment areas
+- **YAML Output**: Generates structured, AI-ready prompts in standard YAML format
+- **Professional UI**: Clean, modern interface with drag-and-drop functionality
+- **Offline Capable**: Runs entirely in the browser without external dependencies
+- **Export Options**: Download YAML files or copy to clipboard
 
-## 🏗️ Architecture
+## 🏥 Supported Medical Domains
 
-### Backend (FastAPI)
-- **OCR Processing**: Tesseract + EasyOCR for text extraction
-- **AI Integration**: Azure OpenAI for YAML generation with retry logic
-- **Schema Validation**: Pydantic models ensuring data consistency
-- **Background Processing**: Async file processing with status tracking
-- **RESTful API**: Clean endpoints for upload, processing, and download
+### Core Assessment Areas
+- **History Taking**: Patient interview and complaint gathering
+- **Physical Examination**: Systematic examination techniques
+- **Communication Skills**: Professional patient interaction
+- **Clinical Reasoning**: Diagnostic thinking and decision-making
+- **Procedural Skills**: Technical procedure execution
 
-### Frontend (Next.js)
-- **Modern React**: TypeScript + Tailwind CSS for type safety and styling
-- **File Upload**: Drag-and-drop interface with progress tracking
-- **Real-time Updates**: Polling-based status updates during processing
-- **YAML Editor**: Monaco editor with syntax highlighting
-- **Animations**: Framer Motion for smooth, engaging interactions
+### Specialty Areas
+- **Cardiovascular Assessment**: Heart sounds, pulses, circulation
+- **Respiratory Evaluation**: Lung examination and breathing assessment
+- **Neurological Examination**: Mental status, reflexes, motor function
+- **Musculoskeletal Assessment**: Joint, muscle, and movement evaluation
+- **Dermatological Examination**: Skin inspection and lesion assessment
+- **Abdominal Examination**: Systematic abdominal assessment
+- **Genitourinary Assessment**: Specialized examination techniques
 
-## 📋 Prerequisites
+### Professional Skills
+- **Patient Safety**: Hygiene, infection control, safety protocols
+- **Documentation**: Accurate recording and terminology
+- **Professional Behavior**: Ethics, boundaries, cultural sensitivity
 
-- **Python 3.8+**: For backend development
-- **Node.js 18+**: For frontend development
-- **Azure OpenAI API**: Valid subscription and deployment
-- **Tesseract OCR**: For text extraction (install via brew/apt)
+## 📁 File Structure
 
-## 🔧 Installation
-
-### Quick Start
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd rubrics-to-prompts
-   ```
-
-2. **Backend Setup**
-   ```bash
-   chmod +x start-backend.sh
-   ./start-backend.sh
-   ```
-
-3. **Frontend Setup** (in a new terminal)
-   ```bash
-   chmod +x start-frontend.sh
-   ./start-frontend.sh
-   ```
-
-4. **Configure Environment**
-   - Edit `backend/.env` with your Azure OpenAI credentials
-   - Update `frontend/.env.local` if needed
-
-### Manual Installation
-
-#### Backend Setup
-
-1. **Navigate to backend directory**
-   ```bash
-   cd backend
-   ```
-
-2. **Create virtual environment**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment**
-   ```bash
-   cp env_example.txt .env
-   # Edit .env file with your credentials
-   ```
-
-5. **Start the server**
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-   ```
-
-#### Frontend Setup
-
-1. **Navigate to frontend directory**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment**
-   ```bash
-   cp env.example .env.local
-   ```
-
-4. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-## ⚙️ Configuration
-
-### Backend Environment Variables
-
-Create a `.env` file in the `backend` directory:
-
-```env
-# Azure OpenAI Configuration
-AZURE_OPENAI_KEY=your_azure_openai_key_here
-AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4
-
-# Application Settings
-DEBUG=True
-LOG_LEVEL=INFO
-
-# CORS Settings
-ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-
-# File Upload Settings
-MAX_FILE_SIZE_MB=50
-TEMP_FILES_DIR=/tmp
-
-# OCR Settings
-TESSERACT_CONFIG=--psm 6
-EASYOCR_LANGUAGES=en
+```
+rubrics-to-prompts/
+├── index.html          # Main application interface
+├── js/
+│   └── app.js          # Core application logic
+├── api/
+│   ├── upload.js       # File processing and OCR simulation
+│   └── generate-prompt.js # YAML generation logic
+├── css/                # Additional stylesheets (if needed)
+├── images/             # Application images and icons
+└── README.md           # This file
 ```
 
-### Frontend Environment Variables
+## 🔧 Setup and Installation
 
-Create a `.env.local` file in the `frontend` directory:
+### Local Development
+1. Clone or download this directory
+2. Open `index.html` in any modern web browser
+3. Start uploading rubric files immediately - no server required!
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
+### Web Server Deployment
+1. Upload the entire `rubrics-to-prompts` folder to your web server
+2. Navigate to the directory in your browser
+3. Application is ready to use
+
+### Local Server (Optional)
+```bash
+# Using Python 3
+python -m http.server 8000
+
+# Using Node.js (if you have http-server installed)
+npx http-server
+
+# Using PHP
+php -S localhost:8000
 ```
 
-## 🎯 Usage
+Then visit `http://localhost:8000` in your browser.
 
-1. **Access the Application**
-   - Open http://localhost:3000 in your browser
-   - The backend API runs on http://localhost:8000
+## 💻 Usage
 
-2. **Upload a Rubric**
-   - Drag and drop or click to select a rubric file
-   - Supported formats: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, images
+### Basic Usage
+1. **Upload File**: Drag and drop or click to select your rubric file
+2. **Processing**: Watch as Rubricon analyzes your file and identifies assessment criteria
+3. **Review Results**: Examine the generated YAML prompt with criteria, scoring, and examples
+4. **Export**: Download the YAML file or copy to clipboard for use in AI systems
 
-3. **Process the File**
-   - Click "Process Rubric" to start the conversion
-   - Watch the real-time progress through workflow steps
+### Supported File Types
+- **Excel Files**: `.xlsx`, `.xls` - Ideal for structured rubrics
+- **CSV Files**: `.csv` - Simple tabular data
+- **PDF Files**: `.pdf` - Scanned or digital rubric documents
+- **Images**: `.png`, `.jpg`, `.jpeg` - Photos or screenshots of rubrics
 
-4. **Review and Edit**
-   - Preview the generated YAML
-   - Use the built-in editor to make adjustments
-   - Save changes if needed
+### Advanced Features
+- **Filename Intelligence**: Name your files descriptively (e.g., "cardiology_exam.xlsx") for better domain detection
+- **Content Adaptation**: The system automatically adjusts criteria count and content based on file complexity
+- **Scoring Scales**: Each criterion includes 5-point scoring scales (Excellent to Unsatisfactory)
+- **Verbalization Examples**: Realistic medical communication examples for each assessment area
 
-5. **Download**
-   - Click "Download YAML" to get your prompt file
-   - File is named based on original document
+## 📊 Output Format
 
-## 🔌 API Endpoints
+The generated YAML prompt includes:
 
-### POST `/upload-rubric`
-Upload and process a rubric file
-- **Body**: `multipart/form-data` with file
-- **Response**: Task ID for tracking progress
+### Assessment Configuration
+- Assessment type and version
+- Criteria count and total points
+- Metadata and timestamps
 
-### GET `/status/{task_id}`
-Get processing status
-- **Response**: Current step, progress, and result (when complete)
+### Assessment Criteria
+- Unique criterion IDs and names
+- Detailed descriptions and assessment items
+- Point values and scoring scales
+- Time limits and formats
 
-### POST `/update-yaml/{task_id}`
-Update generated YAML content
-- **Body**: `{"yaml_content": "updated yaml string"}`
+### Verbalization Examples
+- Realistic medical communication examples
+- Professional interaction phrases
+- Patient-centered language samples
 
-### GET `/download-yaml/{task_id}`
-Download the generated YAML file
-- **Response**: YAML file download
+### Assessment Instructions
+- Detailed scoring guidelines
+- Output format specifications
+- Quality assurance criteria
 
-### GET `/health`
-Health check endpoint
-
-## 📊 YAML Schema
-
-The generated YAML follows this structure:
+## 🎯 Example Output
 
 ```yaml
-rubric_info:
-  title: "OSCE Assessment Rubric"
-  total_points: 20
-  description: "Brief description of what this rubric assesses"
+assessment_config:
+  type: "medical_osce_assessment"
+  version: "2.0"
+  criteria_count: 4
+  total_points: 28
 
-sections:
-  - section_name: "Physical Examination"
-    section_id: "physical_exam"
-    description: "Assessment of physical examination skills"
-    items:
-      - item_id: "lung_auscultation_anterior"
-        description: "Auscultate anterior lung fields"
-        points: 1
-        criteria: "Student properly places stethoscope on anterior chest"
-```
+assessment_criteria:
+  - id: "criterion_1"
+    name: "Physical Examination"
+    code: "PE"
+    description: "Comprehensive assessment of physical examination skills"
+    max_points: 7
+    assessment_items:
+      - "Performed systematic examination"
+      - "Used appropriate techniques"
+      - "Maintained patient dignity"
+    scoring:
+      excellent: 7
+      good: 5
+      satisfactory: 4
+      needs_improvement: 2
+      unsatisfactory: 0
 
-## 🚀 Deployment
+verbalization_examples:
+  - "I'm going to examine this area now."
+  - "Please let me know if you feel any discomfort."
+  - "Hello, I'm Dr. Smith, and I'll be examining you today."
 
-### Production Build
-
-#### Backend
-```bash
-cd backend
-pip install -r requirements.txt
-gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-```
-
-#### Frontend
-```bash
-cd frontend
-npm run build
-npm start
-```
-
-### Docker Deployment
-
-Create `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+assessment_instructions: |
+  This prompt is designed for AI assessment of medical interactions.
   
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
+  ASSESSMENT CRITERIA:
+  - Evaluate each criterion based on specific assessment items
+  - Assign points according to the scoring scale provided
+  - Provide specific examples and feedback for each criterion
 ```
 
-## 🔍 Troubleshooting
+## 🔄 Browser Compatibility
+
+- **Chrome**: ✅ Full support
+- **Firefox**: ✅ Full support
+- **Safari**: ✅ Full support
+- **Edge**: ✅ Full support
+- **Mobile Browsers**: ✅ Responsive design
+
+## 🛠️ Technical Details
+
+### Core Technologies
+- **Frontend**: Pure HTML5, CSS3, and JavaScript (ES6+)
+- **Processing**: Client-side file analysis and content generation
+- **Dependencies**: None - completely standalone
+- **Storage**: Local browser storage only (no data leaves your device)
+
+### File Processing
+- **OCR Simulation**: Intelligent filename and content analysis
+- **Domain Detection**: Keyword matching for medical specialties
+- **Adaptive Scaling**: Dynamic point distribution and criteria generation
+- **Error Handling**: Comprehensive validation and user feedback
+
+### Security & Privacy
+- **Local Processing**: All file analysis happens in your browser
+- **No Data Transmission**: Files never leave your device
+- **No Storage**: No persistent data storage or tracking
+- **Secure**: No external API calls or dependencies
+
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **OCR Not Working**
-   - Install Tesseract: `brew install tesseract` (macOS) or `apt-get install tesseract-ocr` (Linux)
-   - Verify installation: `tesseract --version`
+**File Not Processing**
+- Ensure file is a supported format (.xlsx, .xls, .csv, .pdf, .png, .jpg, .jpeg)
+- Check file size (recommend < 10MB for optimal performance)
+- Try refreshing the page and uploading again
 
-2. **Azure OpenAI Errors**
-   - Check API key and endpoint configuration
-   - Verify deployment name matches your Azure setup
-   - Ensure sufficient quota/credits
+**YAML Not Generating**
+- Wait for processing to complete (may take 3-5 seconds)
+- Check browser console for any errors
+- Ensure JavaScript is enabled in your browser
 
-3. **File Upload Failures**
-   - Check file size (max 50MB by default)
-   - Verify file format is supported
-   - Check network connectivity
+**Download Not Working**
+- Check if browser allows file downloads
+- Disable popup blockers temporarily
+- Try right-clicking and "Save As" if automatic download fails
 
-4. **YAML Validation Errors**
-   - Review generated YAML in editor
-   - Check for proper indentation and structure
-   - Use the edit feature to fix manual corrections
+### Performance Tips
+- Use descriptive filenames for better domain detection
+- Prefer Excel/CSV formats for best results
+- Keep image files under 5MB for faster processing
+- Use modern browsers for optimal performance
+
+## 📝 Changelog
+
+### Version 1.0.0
+- Initial release with full rubric processing capabilities
+- Support for Excel, CSV, PDF, and image files
+- Adaptive medical domain detection
+- Complete YAML generation pipeline
+- Professional UI with drag-and-drop functionality
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+This is a standalone application designed for easy deployment and modification. To customize:
+
+1. **Modify Medical Domains**: Edit the `medicalDomains` array in `js/app.js`
+2. **Update Styling**: Modify the CSS in `index.html` or add external stylesheets
+3. **Enhance Processing**: Extend the `generateAdaptiveCriteria` function for new assessment types
+4. **Add Features**: Build on the modular JavaScript architecture
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is available for educational and non-commercial use. For commercial licensing, please contact the development team.
 
-## 👥 Credits
+## 📞 Support
 
-Created by **Sahaj Satani** & **Aarash Zakeri**
-
-Built with:
-- FastAPI & Pydantic for robust backend processing
-- Next.js & Tailwind CSS for modern frontend experience
-- Azure OpenAI for intelligent content generation
-- Tesseract & EasyOCR for accurate text extraction
+For technical support or feature requests, please refer to the main Oski platform documentation or contact the development team.
 
 ---
 
-For support or questions, please open an issue in the repository. 
+**Rubricon** - Transforming medical assessment, one rubric at a time. 🏥✨ 
