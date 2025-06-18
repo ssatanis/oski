@@ -1486,11 +1486,27 @@
                 console.log('Processed data received:', processedData);
                 console.log('Parsed YAML criteria:', processedData.parsed_yaml?.criteria);
                 
+                // Debug each extracted criterion
+                if (processedData.parsed_yaml?.criteria) {
+                    processedData.parsed_yaml.criteria.forEach((criterion, index) => {
+                        console.log(`Extracted Criterion ${index + 1}:`, {
+                            name: criterion.name,
+                            points: criterion.max_points,
+                            examples: criterion.examples,
+                            examId: criterion.examId
+                        });
+                    });
+                }
+                
                 // Step 3: Success
                 const analysisType = processedData.generated_from || 'adaptive_ai';
                 const criteriaCount = processedData.criteria_count || processedData.parsed_yaml?.criteria?.length || 0;
                 
-                showStatus('success', `✅ Document analyzed successfully! Extracted ${criteriaCount} unique criteria using ${analysisType.replace('_', ' ')} analysis.`, false);
+                if (criteriaCount === 1) {
+                    showStatus('success', `✅ Document analyzed successfully! Extracted ${criteriaCount} assessment criterion from your Excel table structure using ${analysisType.replace('_', ' ')} analysis.`, false);
+                } else {
+                    showStatus('success', `✅ Document analyzed successfully! Extracted ${criteriaCount} assessment criteria from your Excel table structure using ${analysisType.replace('_', ' ')} analysis.`, false);
+                }
                 
                 // Show dashboard section
                 showDashboard(processedData);

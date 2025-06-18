@@ -130,23 +130,152 @@ export default async function handler(req, res) {
 }
 
 async function basicCriteriaExtraction(extracted_text, filename) {
-  console.log('Using basic criteria extraction as fallback');
+  console.log('Using enhanced Excel criteria extraction');
   
   const criteria = [];
   const lines = extracted_text.split('\n').filter(line => line.trim());
   
+  // Parse the new Excel extraction format
+  const extractedCriteria = parseExcelTableData(extracted_text);
+  
+  if (extractedCriteria.length > 0) {
+    console.log(`Extracted ${extractedCriteria.length} criteria from Excel table structure`);
+    return extractedCriteria;
+  }
+  
+  // Fallback to pattern matching if extraction fails
+  console.log('Falling back to pattern matching');
+  return fallbackPatternExtraction(extracted_text, filename);
+}
+
+function parseExcelTableData(extracted_text) {
+  const criteria = [];
+  const lines = extracted_text.split('\n');
+  
+  // Look for the "ASSESSMENT CRITERIA EXTRACTED" section
+  let criteriaSection = false;
+  let verbalizationSection = false;
+  let extractedVerbalizations = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Check for verbalization examples section
+    if (line.includes('EXTRACTED VERBALIZATION EXAMPLES')) {
+      verbalizationSection = true;
+      continue;
+    }
+    
+    if (verbalizationSection && line.startsWith('•')) {
+      extractedVerbalizations.push(line.substring(1).trim());
+      continue;
+    }
+    
+    if (line.includes('SCORING INFORMATION') || line.includes('EXCEL STRUCTURE')) {
+      verbalizationSection = false;
+    }
+    
+    // Check for criteria section
+    if (line.includes('ASSESSMENT CRITERIA EXTRACTED')) {
+      criteriaSection = true;
+      continue;
+    }
+    
+    if (line.includes('Domain,Code,Max Points,Description,Specific Assessment Items')) {
+      continue; // Skip header
+    }
+    
+    // Parse CSV-style criteria data
+    if (criteriaSection && line.includes('"') && line.includes(',')) {
+      try {
+        // Parse CSV line: "Physical Exam Elements","PE",2,"Description","item1; item2"
+        const csvMatch = line.match(/"([^"]+)","([^"]+)",(\d+),"([^"]+)","([^"]+)"/);
+        
+        if (csvMatch) {
+          const [, name, code, points, description, itemsString] = csvMatch;
+          const items = itemsString.split(';').map(item => item.trim());
+          
+          // Generate relevant verbalization examples based on the specific items
+          const examples = generateVerbalizationsFromItems(items, extractedVerbalizations);
+          
+          const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+          
+          criteria.push({
+            examId: examId,
+            name: name,
+            max_points: parseInt(points),
+            examples: examples
+          });
+        }
+      } catch (error) {
+        console.warn('Error parsing criteria line:', line, error.message);
+      }
+    }
+    
+    // Stop parsing if we hit the verbalization section
+    if (line.includes('=== EXTRACTED VERBALIZATION EXAMPLES ===')) {
+      criteriaSection = false;
+    }
+  }
+  
+  return criteria;
+}
+
+function generateVerbalizationsFromItems(items, extractedVerbalizations) {
+  const examples = [];
+  
+  // Use extracted verbalizations if available
+  if (extractedVerbalizations.length > 0) {
+    examples.push(...extractedVerbalizations.slice(0, 3)); // Take first 3
+  }
+  
+  // Add specific examples based on the assessment items
+  items.forEach(item => {
+    if (item.toLowerCase().includes('wash') && item.toLowerCase().includes('hands')) {
+      examples.push("I'm going to wash my hands before the examination");
+    }
+    if (item.toLowerCase().includes('inspect') && item.toLowerCase().includes('skin')) {
+      examples.push("I'm going to inspect your skin carefully");
+      examples.push("Let me examine the affected area");
+    }
+    if (item.toLowerCase().includes('introduce')) {
+      examples.push("Hello, I'm Dr. Smith and I'll be examining you today");
+    }
+    if (item.toLowerCase().includes('consent') || item.toLowerCase().includes('explain')) {
+      examples.push("Is it okay if I proceed with the examination?");
+    }
+    if (item.toLowerCase().includes('palpat') || item.toLowerCase().includes('feel')) {
+      examples.push("I'm going to feel this area with my hands");
+    }
+    if (item.toLowerCase().includes('listen') || item.toLowerCase().includes('auscult')) {
+      examples.push("I'm going to listen to your heart and lungs");
+    }
+  });
+  
+  // Remove duplicates and ensure we have at least 2 examples
+  const uniqueExamples = [...new Set(examples)];
+  
+  if (uniqueExamples.length === 0) {
+    uniqueExamples.push("I'm going to perform this examination now");
+    uniqueExamples.push("Please let me know if you feel any discomfort");
+  } else if (uniqueExamples.length === 1) {
+    uniqueExamples.push("Please let me know if you feel any discomfort");
+  }
+  
+  return uniqueExamples.slice(0, 4); // Limit to 4 examples max
+}
+
+function fallbackPatternExtraction(extracted_text, filename) {
+  const criteria = [];
+  
   // Look for common medical examination patterns
   const medicalPatterns = [
-    { pattern: /history.{0,20}taking/i, name: 'History Taking', points: 25 },
-    { pattern: /physical.{0,20}exam/i, name: 'Physical Examination', points: 15 },
-    { pattern: /diagnostic.{0,20}accuracy/i, name: 'Diagnostic Accuracy', points: 10 },
-    { pattern: /diagnostic.{0,20}reasoning/i, name: 'Diagnostic Reasoning', points: 8 },
-    { pattern: /management/i, name: 'Management', points: 5 },
-    { pattern: /abdomen/i, name: 'Abdominal Examination', points: 8 },
-    { pattern: /heart|cardiac/i, name: 'Cardiovascular Examination', points: 8 },
-    { pattern: /lung|respiratory/i, name: 'Respiratory Examination', points: 8 },
-    { pattern: /skin|rash/i, name: 'Skin Examination', points: 6 },
-    { pattern: /neuro/i, name: 'Neurological Examination', points: 10 }
+    { pattern: /physical.{0,20}exam/i, name: 'Physical Examination', points: 2 },
+    { pattern: /history.{0,20}taking/i, name: 'History Taking', points: 3 },
+    { pattern: /diagnostic.{0,20}accuracy/i, name: 'Diagnostic Accuracy', points: 2 },
+    { pattern: /communication|rapport/i, name: 'Patient Communication', points: 1 },
+    { pattern: /hands|hygiene|wash/i, name: 'Hand Hygiene', points: 1 },
+    { pattern: /skin|inspect/i, name: 'Skin Inspection', points: 1 }
   ];
   
   const textContent = extracted_text.toLowerCase();
@@ -156,33 +285,26 @@ async function basicCriteriaExtraction(extracted_text, filename) {
       const examId = pattern.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
       
       let examples = [];
-      if (pattern.name.toLowerCase().includes('history')) {
-        examples = [
-          "Can you tell me about your symptoms?",
-          "When did this start?",
-          "What makes it better or worse?",
-          "Do you have any allergies?"
-        ];
-      } else if (pattern.name.toLowerCase().includes('physical')) {
+      if (pattern.name.toLowerCase().includes('physical')) {
         examples = [
           "I'm going to examine you now",
-          "I'm going to listen to your heart",
-          "I'm going to check your blood pressure"
+          "Let me check this area"
         ];
-      } else if (pattern.name.toLowerCase().includes('diagnostic')) {
+      } else if (pattern.name.toLowerCase().includes('history')) {
         examples = [
-          "Based on your symptoms and examination",
-          "The most likely diagnosis is",
-          "I need to consider several possibilities"
+          "Can you tell me about your symptoms?",
+          "When did this start?"
         ];
-      } else if (pattern.name.toLowerCase().includes('management')) {
+      } else if (pattern.name.toLowerCase().includes('hygiene')) {
         examples = [
-          "I recommend",
-          "The treatment includes",
-          "We should follow up"
+          "I'm going to wash my hands before the examination"
+        ];
+      } else if (pattern.name.toLowerCase().includes('skin')) {
+        examples = [
+          "I'm going to inspect your skin carefully"
         ];
       } else {
-        examples = [`I'm going to examine your ${pattern.name.toLowerCase()}`];
+        examples = [`I'm going to assess your ${pattern.name.toLowerCase()}`];
       }
       
       criteria.push({
@@ -191,25 +313,22 @@ async function basicCriteriaExtraction(extracted_text, filename) {
         max_points: pattern.points,
         examples: examples
       });
+      
+      break; // Only take the first match to avoid duplicates
     }
   }
   
-  // If no patterns found, use generic defaults
+  // If no patterns found, create a default physical exam criterion
   if (criteria.length === 0) {
-    criteria.push(
-      {
-        examId: 'Patient_History',
-        name: 'Patient History',
-        max_points: 5,
-        examples: ["Can you tell me about your symptoms?", "What brings you in today?"]
-      },
-      {
-        examId: 'Physical_Examination',
-        name: 'Physical Examination',
-        max_points: 4,
-        examples: ["I'm going to examine you now", "Let me check your vital signs"]
-      }
-    );
+    criteria.push({
+      examId: 'Physical_Exam_Elements',
+      name: 'Physical Exam Elements',
+      max_points: 2,
+      examples: [
+        "I'm going to wash my hands before the examination",
+        "I'm going to inspect your skin carefully"
+      ]
+    });
   }
   
   return criteria;
