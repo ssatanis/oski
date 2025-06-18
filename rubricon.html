@@ -186,7 +186,7 @@
             height: auto !important;
         }
 
-        /* Make footer adaptive to content */
+        /* Perfect adaptive footer system */
         body {
             margin: 0;
             padding: 0;
@@ -197,12 +197,37 @@
 
         .promptgen-section {
             flex: 1;
+            padding-bottom: 40px; /* Reduced gap to footer */
+            transition: padding-bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Enhanced section transitions based on state */
+        .content-state-processing .promptgen-section {
+            padding-bottom: 30px;
+        }
+
+        .content-state-dashboard .promptgen-section {
+            padding-bottom: 20px;
         }
 
         .footer {
             margin-top: auto;
             background: #ffffff;
-            border-top: 1px solid #e5e7eb;
+            /* Removed border-top line completely */
+            transition: margin-top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Dynamic footer positioning based on content state */
+        .content-state-initial .footer {
+            margin-top: auto;
+        }
+
+        .content-state-processing .footer {
+            margin-top: 60px;
+        }
+
+        .content-state-dashboard .footer {
+            margin-top: 80px;
         }
 
         /* GLOBAL BUTTON CENTERING - AFFECTS ALL PAGES */
@@ -290,20 +315,23 @@
             max-width: 800px;
             margin: 0 auto;
             margin-bottom: 20px;
-            transition: margin-bottom 0.5s ease;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Dynamic spacing classes */
+        /* Smooth adaptive content transitions */
         .content-grid.file-uploaded {
             margin-bottom: 30px;
+            transform: translateY(0);
         }
 
         .content-grid.processing-active {
             margin-bottom: 40px;
+            transform: translateY(-10px);
         }
 
         .content-grid.dashboard-visible {
             margin-bottom: 50px;
+            transform: translateY(-20px);
         }
 
         /* Upload Section - Enhanced with subtle rainbow accent */
@@ -448,8 +476,8 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.08);
             border: 1px solid #f1f3f4;
             opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
+            transform: translateY(30px) scale(0.98);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
         }
@@ -468,7 +496,7 @@
 
         .processing-card.visible {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
         }
 
         .file-preview {
@@ -611,8 +639,8 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.08);
             border: 1px solid #f1f3f4;
             opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
+            transform: translateY(40px) scale(0.96);
+            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
         }
@@ -631,7 +659,7 @@
 
         .dashboard-card.visible {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
         }
 
         .dashboard-card.visible::before {
@@ -1262,6 +1290,19 @@
     <script>
         let currentFile = null;
         let processedData = null;
+
+        // Perfect adaptive footer state management
+        function updateFooterState(state) {
+            const body = document.body;
+            
+            // Remove all existing content state classes
+            body.classList.remove('content-state-initial', 'content-state-processing', 'content-state-dashboard');
+            
+            // Add new state class with smooth transition
+            body.classList.add(`content-state-${state}`);
+            
+            console.log(`Footer state updated to: ${state}`);
+        }
         
         // Smart Backend Configuration - FREE VERCEL SERVERLESS FUNCTIONS!
         const getBackendUrl = () => {
@@ -1283,6 +1324,9 @@
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize footer state
+            updateFooterState('initial');
+            
             setupFileUpload();
             setupDragAndDrop();
         });
@@ -1338,6 +1382,9 @@
             
             filePreview.style.display = 'flex';
             processButton.disabled = false;
+            
+            // Update footer state for file selection
+            updateFooterState('processing');
             
             // Show processing section with animation
             processingSection.classList.add('visible');
@@ -1535,6 +1582,9 @@
             
             // Show dashboard section
             dashboardSection.classList.add('visible');
+            
+            // Update footer state for dashboard
+            updateFooterState('dashboard');
             
             // Add maximum spacing for dashboard
             contentGrid.classList.add('dashboard-visible');
@@ -1959,6 +2009,9 @@ response_config:
             document.getElementById('statusMessages').innerHTML = '';
             document.getElementById('processingSection').classList.remove('visible');
             document.getElementById('dashboardSection').classList.remove('visible');
+            
+            // Reset footer state to initial
+            updateFooterState('initial');
             
             // Reset spacing classes
             contentGrid.classList.remove('file-uploaded', 'processing-active', 'dashboard-visible');

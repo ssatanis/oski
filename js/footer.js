@@ -9,7 +9,7 @@ function loadFooter() {
               <div>
                 <a href="index.html" onclick="scrollToHero(event)" style="text-decoration: none !important;"><img width="90" loading="lazy" alt="" src="images/Oski.png"></a>
                 <div style="margin-top: 20px; color: #6b7280; font-size: 14px; line-height: 1.4;">
-                  ©2025 OSKI. ALL RIGHTS RESERVED. HIPAA-COMPLIANT.<br>DESIGNED BY SAHAJ SATANI.
+                  HIPAA-COMPLIANT.<br>©2025 OSKI. ALL RIGHTS RESERVED. <br>DESIGNED BY SAHAJ SATANI.
                 </div>
               </div>
             </div>
