@@ -964,7 +964,7 @@
                     <div class="dashboard-card" id="dashboardSection">
                         <div class="dashboard-header">
                             <h2 class="dashboard-title">Rubric Editor</h2>
-                            <p class="dashboard-description">Review and edit your OSCE assessment criteria before exporting.</p>
+                            <p class="dashboard-description">Review and edit your OSCE assessment criteria before exporting to YAML format.</p>
                         </div>
 
                         <!-- Rubric Basic Info -->
@@ -972,10 +972,7 @@
                             <div class="editor-header">
                                 <h3>Basic Information</h3>
                             </div>
-                            <div class="input-group">
-                                <label for="rubricKey">Rubric Key:</label>
-                                <input type="text" id="rubricKey" class="form-input" placeholder="e.g., osce_assessment_rubric">
-                            </div>
+
                             <div class="input-group">
                                 <label for="systemMessage">System Message:</label>
                                 <textarea id="systemMessage" class="form-textarea" rows="3" placeholder="You are a helpful assistant..."></textarea>
@@ -1025,14 +1022,6 @@
                                         <line x1="12" y1="15" x2="12" y2="3"></line>
                                     </svg>
                                     Download YAML
-                                </button>
-                                <button class="export-button secondary" onclick="downloadJson()">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                    </svg>
-                                    Download JSON
                                 </button>
                                 <button class="export-button tertiary" onclick="resetUpload()">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1244,8 +1233,8 @@
 
                 const uploadResult = await uploadResponse.json();
                 
-                // Step 2: Process with AI
-                showStatus('processing', 'Analyzing rubric with AI...', true);
+                // Step 2: Process the rubric
+                showStatus('processing', 'Analyzing rubric structure...', true);
                 
                 const processResponse = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
                     method: 'POST',
@@ -1331,8 +1320,7 @@
         }
 
         function initializeDashboard(data) {
-            // Set basic information
-            document.getElementById('rubricKey').value = data.parsed_yaml?.key || 'osce_assessment_rubric';
+            // Set basic information - no key field needed for this format
             document.getElementById('systemMessage').value = data.parsed_yaml?.system_message || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
             
             // Load criteria
@@ -1493,7 +1481,6 @@
         }
 
         function updateUserMessagePreview() {
-            const rubricKey = document.getElementById('rubricKey').value;
             const container = document.getElementById('criteriaContainer');
             const criteria = [];
             
@@ -1508,9 +1495,10 @@
                 
                 if (nameInput.value.trim()) {
                     criteria.push({
+                        examId: nameInput.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'),
                         name: nameInput.value.trim(),
                         max_points: parseInt(pointsInput.value) || 1,
-                        examples: examples
+                        examples: examples.length > 0 ? examples : [`I'm going to examine your ${nameInput.value.trim().toLowerCase()}`]
                     });
                 }
             });
@@ -1520,35 +1508,39 @@
         }
 
         function generateUserMessage(criteria) {
-            return `Important Instruction:
-When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions (e.g., "I'm going to examine your...").
+            const examsList = criteria.map(c => c.examId || c.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'));
+            
+            return `
+Your task is to identify the start and end times of specific physical exams within the conversation and provide the reasoning behind your choices. Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam. This station consists of the following physical exams: ${examsList.join(', ')}
+
+Important Instructions:
+- When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions (e.g., "I'm going to look at your nose and eyes").
+- Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam.
+- Always pay close attention to surrounding context and related physical examinations mentioned.
    
-You need to identify the following examinations from this conversation: 
-${criteria.map((criterion, index) => `${index + 1}: ${criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}: Did the doctor perform ${criterion.name.toLowerCase()}? 
- - Examples: 
-${criterion.examples.map(example => `    	 - ${example}`).join('\n')}
-`).join('\n')}
+You need to identify the following physical exams from this transcript: 
+${criteria.map((criterion, index) => `	 ${index + 1}. ${criterion.examId || criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}: Did the doctor ${criterion.name.toLowerCase().includes('did') ? criterion.name.toLowerCase() : `perform ${criterion.name.toLowerCase()}`}? 
+	 - Verbalization examples: ${criterion.examples.join(', ')}`).join('\n\n')}
 
-If there is any part in the conversation where the medical student is performing an examination but you cannot tell what specific type it is, look at the conversation before and after to find what type of exam that was. Pay close attention to surrounding context and related examinations mentioned.
 
-If no exam is detected, you can say "No exam was performed", start_time: "nan", end_time: "nan", score: 0.
-     
-# Formatting instructions
+If no exam is detected, you can say "no exam was performed", start_time: "nan", end_time: "nan", score: 0.
+
+### Formatting Instructions
 
 - Ensure strict adherence to JSON formatting.
 - Do not use double quotes for multiple statements within a single field.
 - Use commas, single quotes, or other appropriate delimiters for multiple statements.
 - Do not include any text before or after the JSON output. Provide ONLY the json response.
 
-Please provide a response in the following format with keys: ${criteria.map(criterion => criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')).join(', ')}
+Please provide a response in the following format with keys: ${examsList.join(', ')}
 
 and the schema: 
 {
-     "statement": "statement extracted from the conversation that supports this specific exam",
-     "start_time": "timepoint for start of the exam (ONLY 1 decimal pt)",
-     "end_time": "timepoint for end of the exam (ONLY 1 decimal pt)",
-     "rationale": "reasoning behind scoring the examination",
-     "score": "score of the exam (0-${Math.max(...criteria.map(c => c.max_points))})"
+     "statement": "statement extracted from the transcript that supports this specific exam",
+     "start_time": "timepoint for start of the exam (MM:SS only)",
+     "end_time": "timepoint for end of the exam (MM:SS only)",
+     "rationale": "reasoning behind scoring the physical exam",
+     "score": "score of the exam (0 or 1)"
 }`;
         }
 
@@ -1557,44 +1549,19 @@ and the schema:
             downloadFile(yamlContent, 'rubric-prompts.yaml', 'text/yaml');
         }
 
-        function downloadJson() {
-            const jsonContent = generateCurrentJson();
-            downloadFile(jsonContent, 'rubric-prompts.json', 'application/json');
-        }
+
 
         function generateCurrentYaml() {
-            const rubricKey = document.getElementById('rubricKey').value || 'osce_assessment_rubric';
-            const systemMessage = document.getElementById('systemMessage').value || 'You are a helpful assistant...';
+            const systemMessage = document.getElementById('systemMessage').value || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
             const userMessage = document.getElementById('userMessagePreview').textContent;
             
-            return `key: 
-  ${rubricKey}
-system_message: 
-  |
+            return `system_message: 
    ${systemMessage}
    
 user_message: 
-  |   
-   ${userMessage}
+  |${userMessage}
 response_config:
   structured_output: True`;
-        }
-
-        function generateCurrentJson() {
-            const rubricKey = document.getElementById('rubricKey').value || 'osce_assessment_rubric';
-            const systemMessage = document.getElementById('systemMessage').value || 'You are a helpful assistant...';
-            const userMessage = document.getElementById('userMessagePreview').textContent;
-            
-            const jsonData = {
-                key: rubricKey,
-                system_message: systemMessage,
-                user_message: userMessage,
-                response_config: {
-                    structured_output: true
-                }
-            };
-            
-            return JSON.stringify(jsonData, null, 2);
         }
 
         function showStatus(type, message, withSpinner = false) {
@@ -1642,7 +1609,7 @@ response_config:
         document.addEventListener('DOMContentLoaded', function() {
             // Listen for changes in form inputs to update preview
             document.addEventListener('input', function(e) {
-                if (e.target.matches('#rubricKey, #systemMessage')) {
+                if (e.target.matches('#systemMessage')) {
                     updateUserMessagePreview();
                 }
             });

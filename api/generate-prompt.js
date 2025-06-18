@@ -24,132 +24,169 @@ export default async function handler(req, res) {
     // Parse the extracted text to identify criteria and generate proper YAML
     const lines = extracted_text.split('\n').filter(line => line.trim());
     const criteria = [];
-    let rubricTitle = 'OSCE Assessment Rubric';
-    let totalPoints = 0;
+    let stationName = 'OSCE_Assessment';
+    let examsList = [];
 
-    // Extract rubric title if present
+    // Extract station/title name if present
     const titleLine = lines.find(line => 
-      line.toLowerCase().includes('rubric') || 
+      line.toLowerCase().includes('station') || 
       line.toLowerCase().includes('assessment') ||
-      line.toLowerCase().includes('osce')
+      line.toLowerCase().includes('osce') ||
+      line.toLowerCase().includes('examination') ||
+      line.toLowerCase().includes('rubric')
     );
     if (titleLine) {
-      rubricTitle = titleLine.trim();
+      stationName = titleLine.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
     }
 
-    // Extract criteria from the text
+    // Extract criteria and create exam names
     lines.forEach((line, index) => {
+      // Look for criteria patterns
       const criteriaMatch = line.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)(.*?)(?:\((\d+)-(\d+)\s*points?\)|\((\d+)\s*points?\))?/i);
       if (criteriaMatch) {
         const name = criteriaMatch[1].trim();
-        const maxPoints = criteriaMatch[4] || criteriaMatch[3] || 2; // Default to 2 points
-        totalPoints += parseInt(maxPoints);
+        const maxPoints = criteriaMatch[4] || criteriaMatch[3] || 1;
         
         // Look for examples in following lines
         const examples = [];
-        for (let i = index + 1; i < Math.min(index + 5, lines.length); i++) {
+        for (let i = index + 1; i < Math.min(index + 10, lines.length); i++) {
           const nextLine = lines[i];
           if (nextLine.includes('point') && nextLine.includes(':')) {
-            examples.push(nextLine.trim());
+            examples.push(nextLine.replace(/^\d+\s*points?:\s*/i, '').trim());
           } else if (nextLine.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)/i)) {
             break; // Hit next criteria
+          } else if (nextLine.trim().startsWith('-') || nextLine.trim().startsWith('•')) {
+            examples.push(nextLine.replace(/^[-•]\s*/, '').trim());
           }
         }
 
+        // Create exam ID from criterion name
+        const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+        examsList.push(examId);
+
         criteria.push({
+          examId: examId,
           name: name,
           max_points: parseInt(maxPoints),
-          examples: examples
+          examples: examples.length > 0 ? examples : [
+            `I'm going to examine your ${name.toLowerCase()}`,
+            `Let me check your ${name.toLowerCase()}`,
+            `I'm going to assess your ${name.toLowerCase()}`
+          ]
         });
       }
     });
 
-    // If no criteria found, create default ones
+    // If no criteria found, try to extract from different patterns
+    if (criteria.length === 0) {
+      // Look for bullet points or numbered lists
+      lines.forEach((line, index) => {
+        const bulletMatch = line.match(/^[-•]\s*(.+)/);
+        const numberedMatch = line.match(/^\d+\.\s*(.+)/);
+        
+        if (bulletMatch || numberedMatch) {
+          const name = (bulletMatch?.[1] || numberedMatch?.[1] || '').trim();
+          if (name && name.length > 5) { // Reasonable length check
+            const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+            examsList.push(examId);
+            
+            criteria.push({
+              examId: examId,
+              name: name,
+              max_points: 1,
+              examples: [
+                `I'm going to examine your ${name.toLowerCase()}`,
+                `Let me check your ${name.toLowerCase()}`,
+                `I'm going to assess your ${name.toLowerCase()}`
+              ]
+            });
+          }
+        }
+      });
+    }
+
+    // Default criteria if still nothing found
     if (criteria.length === 0) {
       criteria.push(
         {
+          examId: "Patient_Greeting",
           name: "Patient Greeting and Introduction",
-          max_points: 2,
+          max_points: 1,
           examples: [
-            "0 points: No greeting or introduction",
-            "1 point: Basic greeting only", 
-            "2 points: Professional greeting with name and role introduction"
+            "Hello, I'm Dr. Smith",
+            "Good morning, I'm a medical student",
+            "Hi, I'll be examining you today"
           ]
         },
         {
-          name: "Clinical Assessment",
-          max_points: 3,
+          examId: "Physical_Examination", 
+          name: "Physical Examination",
+          max_points: 1,
           examples: [
-            "0 points: No assessment performed",
-            "1 point: Limited assessment with major gaps",
-            "2 points: Adequate assessment with minor gaps",
-            "3 points: Comprehensive and systematic assessment"
+            "I'm going to examine you now",
+            "Let me check your vital signs",
+            "I'm going to listen to your heart"
           ]
         }
       );
-      totalPoints = 5;
+      examsList = ["Patient_Greeting", "Physical_Examination"];
     }
 
-    // Generate the YAML content in the format of 1A.yaml
-    const yamlContent = `key: 
-  ${rubricTitle.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}
-system_message: 
-  |
+    // Generate the YAML content in the exact format of abdominal_pain.yaml
+    const yamlContent = `system_message: 
    You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
    
 user_message: 
-  |   
-   Important Instruction:
-   When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions (e.g., "I'm going to examine your...").
+  |
+   
+   Your task is to identify the start and end times of specific physical exams within the conversation and provide the reasoning behind your choices. Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam. This station consists of the following physical exams: ${examsList.join(', ')}
+   
+   Important Instructions:
+   - When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions (e.g., "I'm going to look at your nose and eyes").
+   - Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam.
+   - Always pay close attention to surrounding context and related physical examinations mentioned.
       
-   You need to identify the following examinations from this conversation: 
-${criteria.map((criterion, index) => `   ${index + 1}: ${criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}: Did the doctor perform ${criterion.name.toLowerCase()}? 
-    - Examples: 
-${criterion.examples.map(example => `    	 - ${example.replace(/^\d+\s*points?:\s*/i, '')}`).join('\n')}
-`).join('\n')}   
+   You need to identify the following physical exams from this transcript: 
+${criteria.map((criterion, index) => `   	 ${index + 1}. ${criterion.examId}: Did the doctor ${criterion.name.toLowerCase().includes('did') ? criterion.name.toLowerCase() : `perform ${criterion.name.toLowerCase()}`}? 
+   	 - Verbalization examples: ${criterion.examples.join(', ')}`).join('\n\n')}
    
-   If there is any part in the conversation where the medical student is performing an examination but you cannot tell what specific type it is, look at the conversation before and after to find what type of exam that was. Pay close attention to surrounding context and related examinations mentioned.
    
-   If no exam is detected, you can say "No exam was performed", start_time: "nan", end_time: "nan", score: 0.
-        
-   # Formatting instructions
+   If no exam is detected, you can say "no exam was performed", start_time: "nan", end_time: "nan", score: 0.
+   
+   ### Formatting Instructions
    
    - Ensure strict adherence to JSON formatting.
    - Do not use double quotes for multiple statements within a single field.
    - Use commas, single quotes, or other appropriate delimiters for multiple statements.
    - Do not include any text before or after the JSON output. Provide ONLY the json response.
    
-   Please provide a response in the following format with keys: ${criteria.map(criterion => criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')).join(', ')}
+   Please provide a response in the following format with keys: ${examsList.join(', ')}
    
    and the schema: 
    {
-        "statement": "statement extracted from the conversation that supports this specific exam",
-        "start_time": "timepoint for start of the exam (ONLY 1 decimal pt)",
-        "end_time": "timepoint for end of the exam (ONLY 1 decimal pt)",
-        "rationale": "reasoning behind scoring the examination",
-        "score": "score of the exam (0-${Math.max(...criteria.map(c => c.max_points))})"
+        "statement": "statement extracted from the transcript that supports this specific exam",
+        "start_time": "timepoint for start of the exam (MM:SS only)",
+        "end_time": "timepoint for end of the exam (MM:SS only)",
+        "rationale": "reasoning behind scoring the physical exam",
+        "score": "score of the exam (0 or 1)"
    }
 response_config:
   structured_output: True`;
 
     // Create parsed structure for the dashboard
     const parsedYaml = {
-      key: rubricTitle.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
       system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-      user_message: "Analysis instructions for medical examination assessment",
+      user_message: `Your task is to identify the start and end times of specific physical exams within the conversation...`,
       criteria: criteria,
-      total_points: totalPoints,
+      exams_list: examsList,
       response_config: {
         structured_output: true
       }
     };
 
-    const jsonContent = JSON.stringify(parsedYaml, null, 2);
-
     res.status(200).json({
       message: 'Prompt generated successfully',
       yaml_content: yamlContent,
-      json_content: jsonContent,
       parsed_yaml: parsedYaml,
       validation_success: true
     });
