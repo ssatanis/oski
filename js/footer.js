@@ -36,7 +36,7 @@ function loadFooter() {
                           <div class="button-line-flex"><div>OSCESim</div></div>
                           <div class="line-horizontal"></div>
                         </a>
-                        <a href="promptgen.html" class="button-first-line w-inline-block">
+                        <a href="rubricon.html" class="button-first-line w-inline-block">
                           <div class="button-line-flex"><div>Rubricon</div></div>
                           <div class="line-horizontal"></div>
                         </a>
@@ -73,8 +73,12 @@ function loadFooter() {
               <div>
                 <p class="title-small for-footer-title">contact us</p>
                 <div class="margin-20">
-                  <p class="title-small"><a href="mailto:support@oski.app" style="text-decoration: none !important; color: inherit;">support@oski.app</a><br></p>
-                  <p class="title-small add-top-px"><a href="tel:+12146483111" style="text-decoration: none !important; color: inherit;">+1 (214) 648-3111</a><br></p>
+                  <div class="title-small">
+                    <a href="mailto:support@oski.app" style="text-decoration: none; color: inherit;">support@oski.app</a>
+                  </div>
+                  <div class="title-small add-top-px">
+                    <a href="tel:+12146483111" style="text-decoration: none; color: inherit;">+1 (214) 648-3111</a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -82,6 +86,55 @@ function loadFooter() {
         </div>
       </div>
     </div>
+
+    <!-- Footer styling to remove underlines and make all links unbolded -->
+    <style>
+      /* Remove underlines from ALL footer links and make them unbolded like contact info */
+      .footer a, .footer .button-first-line {
+          text-decoration: none !important;
+          border-bottom: none !important;
+          font-weight: normal !important;
+      }
+
+      .footer a:hover, .footer .button-first-line:hover {
+          text-decoration: none !important;
+          border-bottom: none !important;
+          font-weight: normal !important;
+      }
+
+      /* Ensure Navigation and Useful Links sections have no underlines and are unbolded */
+      .navigation-grid a {
+          text-decoration: none !important;
+          border-bottom: none !important;
+          font-weight: normal !important;
+      }
+
+      .navigation-grid a:hover {
+          text-decoration: none !important;
+          border-bottom: none !important;
+          font-weight: normal !important;
+      }
+
+      /* Override any conflicting styles */
+      .footer .button-line-flex div {
+          text-decoration: none !important;
+          border-bottom: none !important;
+          font-weight: normal !important;
+      }
+
+      /* Contact links styling - keep consistent */
+      .footer .title-small a {
+          text-decoration: none !important;
+          border-bottom: none !important;
+          font-weight: normal !important;
+      }
+
+      .footer .title-small a:hover {
+          text-decoration: none !important;
+          border-bottom: none !important;
+          opacity: 0.8;
+      }
+    </style>
   `;
   
   // Insert footer into the page

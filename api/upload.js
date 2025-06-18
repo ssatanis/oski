@@ -76,7 +76,7 @@ async function simulateAdvancedOCR(fileContent, fileName, fileExtension) {
   const currentTime = new Date().toISOString();
   
   // Create unique hash from file content for variation
-  const contentHash = createSimpleHash(fileContent);
+  const contentHash = simpleHash(fileContent);
   const variation = contentHash % 5; // 0-4 for different variations
   
   // Determine document type and generate appropriate content
@@ -154,7 +154,7 @@ Time Allocation: ${extractedTableData.timeLimit}
   return csvContent;
 }
 
-function createSimpleHash(str) {
+function simpleHash(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
@@ -170,7 +170,7 @@ function parseExcelTableStructure(baseFileName, variation) {
   
   // Analyze filename for content hints
   const fileName = baseFileName.toLowerCase();
-  const contentHash = createSimpleHash(baseFileName + variation.toString());
+  const contentHash = simpleHash(baseFileName + variation.toString());
   
   // Determine number of criteria (1-8 based on content complexity)
   const criteriaCount = Math.max(1, Math.min(8, 2 + (contentHash % 7)));
@@ -650,12 +650,3 @@ Total Assessment Points: ${[28, 34, 40, 46, 52][variation]}
 `;
 }
 
-function createSimpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
-} 
