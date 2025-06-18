@@ -7,7 +7,7 @@ function loadFooter() {
           <div class="footer-grid-second">
             <div id="w-node-_8a1b11ab-e58b-9729-ec02-886db88784db-6ccff337" class="flex-space-between">
               <div>
-                <a href="index.html" onclick="scrollToHero(event)"><img width="140" loading="lazy" alt="" src="images/Oski.png"></a>
+                <a href="index.html" onclick="scrollToHero(event)" style="text-decoration: none !important;"><img width="80" loading="lazy" alt="" src="images/Oski.png"></a>
                 <div style="margin-top: 20px; color: #6b7280; font-size: 14px; line-height: 1.4;">
                   ©2025 OSKI. ALL RIGHTS RESERVED.<br>DESIGNED BY SAHAJ SATANI.
                 </div>
@@ -73,8 +73,8 @@ function loadFooter() {
               <div>
                 <p class="title-small for-footer-title">contact us</p>
                 <div class="margin-20">
-                  <p class="title-small">support@oski.app<br></p>
-                  <p class="title-small add-top-px">+1 (214) 648-3111<br></p>
+                  <p class="title-small"><a href="mailto:support@oski.app" style="text-decoration: none !important; color: inherit;">support@oski.app</a><br></p>
+                  <p class="title-small add-top-px"><a href="tel:+12146483111" style="text-decoration: none !important; color: inherit;">+1 (214) 648-3111</a><br></p>
                 </div>
               </div>
             </div>
