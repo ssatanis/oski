@@ -1,10 +1,2 @@
 INFO:     Will watch for changes in these directories: ['/Users/sahajsatani/Documents/Oski/rubrics-to-prompts/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [24754] using StatReload
-INFO:     Started server process [24763]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:49753 - "POST /upload-rubric HTTP/1.1" 200 OK
-ERROR:main:Background processing failed: I/O operation on closed file.
-INFO:     127.0.0.1:49753 - "GET /status/676c5073-6fea-4ee7-8514-e8d4b0c662e5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51855 - "GET /health HTTP/1.1" 200 OK
+ERROR:    [Errno 48] Address already in use
