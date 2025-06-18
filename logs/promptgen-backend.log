@@ -1,7 +1,33 @@
 INFO:     Will watch for changes in these directories: ['/Users/sahajsatani/Documents/Oski/rubrics-to-prompts/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [43552] using StatReload
+INFO:     Started reloader process [44649] using StatReload
 INFO:main:Azure OpenAI client initialized successfully
-INFO:     Started server process [43559]
+INFO:     Started server process [44656]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:52024 - "GET /health HTTP/1.1" 200 OK
+INFO:main:Extracted text length: 30 characters
+INFO:     127.0.0.1:52039 - "POST /upload HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [44656]
+INFO:main:Azure OpenAI client initialized successfully
+INFO:     Started server process [44808]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [44808]
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:main:Azure OpenAI client initialized successfully
+INFO:     Started server process [44826]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:main:Azure OpenAI client initialized successfully
+INFO:     Started server process [44829]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.

@@ -37,8 +37,12 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Rubrics to Prompts API", version="1.0.0")
 
 # Configure CORS
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
-allowed_origins = [origin.strip() for origin in allowed_origins]
+# For development, allow all origins. In production, restrict this.
+if os.getenv("DEBUG", "False").lower() == "true":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    allowed_origins = [origin.strip() for origin in allowed_origins]
 
 app.add_middleware(
     CORSMiddleware,
@@ -603,6 +607,100 @@ async def download_yaml(task_id: str):
         filename=yaml_filename,
         media_type='application/x-yaml'
     )
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Simple upload endpoint that returns extracted text immediately"""
+    try:
+        # Validate file type
+        allowed_extensions = ['pdf', 'xls', 'doc', 'docx', 'txt', 'xlsx', 'csv', 'png', 'jpg', 'jpeg']
+        file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
+        
+        if file_extension not in allowed_extensions:
+            raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}")
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as temp_file:
+            temp_file.write(file_content)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Extract text
+            extracted_text = await extract_text_from_file(temp_file_path, file_extension)
+            
+            if not extracted_text.strip():
+                raise HTTPException(status_code=400, detail="No text could be extracted from the file")
+            
+            logger.info(f"Extracted text length: {len(extracted_text)} characters")
+            
+            return {
+                "message": "File processed successfully",
+                "filename": file.filename,
+                "extracted_text": extracted_text,
+                "text_length": len(extracted_text)
+            }
+            
+        finally:
+            # Cleanup temporary file
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass
+                
+    except Exception as e:
+        logger.error(f"Upload processing failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
+
+class GeneratePromptRequest(BaseModel):
+    extracted_text: str
+
+@app.post("/generate-prompt")
+async def generate_prompt(request: GeneratePromptRequest):
+    """Generate prompt endpoint that takes extracted text and returns YAML/JSON"""
+    try:
+        # Generate a temporary task ID for tracking
+        import uuid
+        temp_task_id = str(uuid.uuid4())
+        
+        # Initialize temporary task storage
+        task_storage[temp_task_id] = {
+            'status': ProcessingStatus(
+                step="ai_analysis",
+                message="Analyzing rubric structure with AI...",
+                progress=50.0
+            ),
+            'result': None,
+            'error': None
+        }
+        
+        # Generate YAML prompt
+        result = await generate_yaml_prompt(request.extracted_text, temp_task_id)
+        
+        # Clean up temporary task
+        if temp_task_id in task_storage:
+            del task_storage[temp_task_id]
+        
+        # Convert YAML to JSON for the JSON download option
+        import json
+        json_content = json.dumps(result['parsed_yaml'], indent=2)
+        
+        return {
+            "message": "Prompt generated successfully",
+            "yaml_content": result['yaml_content'],
+            "json_content": json_content,
+            "parsed_yaml": result['parsed_yaml'],
+            "validation_success": result['validation_success']
+        }
+        
+    except Exception as e:
+        logger.error(f"Prompt generation failed: {e}")
+        # Clean up temporary task if it exists
+        if 'temp_task_id' in locals() and temp_task_id in task_storage:
+            del task_storage[temp_task_id]
+        raise HTTPException(status_code=500, detail=f"Failed to generate prompt: {str(e)}")
 
 @app.get("/health")
 async def health_check():

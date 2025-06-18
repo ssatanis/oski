@@ -1,6 +1,6 @@
 INFO:     Will watch for changes in these directories: ['/Users/sahajsatani/Documents/Oski/osce-video-grader/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [43549] using StatReload
+INFO:     Started reloader process [44646] using StatReload
 Process SpawnProcess-1:
 Traceback (most recent call last):
   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap

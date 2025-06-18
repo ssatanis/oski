@@ -43,9 +43,9 @@
 
         /* PromptGen Specific Styles */
         .promptgen-section {
-            padding: 80px 0 120px;
+            padding: 120px 0 60px;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            min-height: 100vh;
+            min-height: calc(100vh - 120px);
         }
 
         .promptgen-container {
@@ -57,6 +57,7 @@
         .promptgen-header {
             text-align: center;
             margin-bottom: 60px;
+            padding-top: 40px;
         }
 
         .breadcrumb-nav {
@@ -99,6 +100,21 @@
             gap: 40px;
             max-width: 800px;
             margin: 0 auto;
+            margin-bottom: 40px;
+            transition: margin-bottom 0.5s ease;
+        }
+
+        /* Dynamic spacing classes */
+        .content-grid.file-uploaded {
+            margin-bottom: 60px;
+        }
+
+        .content-grid.processing-active {
+            margin-bottom: 80px;
+        }
+
+        .content-grid.dashboard-visible {
+            margin-bottom: 100px;
         }
 
         /* Upload Section */
@@ -578,12 +594,6 @@
             <div class="promptgen-container">
                 <!-- Header -->
                 <div class="promptgen-header fade-in">
-                    <a href="index.html" class="breadcrumb-nav">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                        Back to Oski
-                    </a>
                     <h1 class="promptgen-title">PromptGen</h1>
                     <p class="promptgen-subtitle">Transform your rubrics into AI-powered assessment prompts with intelligent analysis and automated generation.</p>
                 </div>
@@ -745,6 +755,7 @@
             const fileSize = document.getElementById('fileSize');
             const processButton = document.getElementById('processButton');
             const processingSection = document.getElementById('processingSection');
+            const contentGrid = document.querySelector('.content-grid');
 
             fileName.textContent = file.name;
             fileSize.textContent = formatFileSize(file.size);
@@ -754,6 +765,9 @@
             
             // Show processing section with animation
             processingSection.classList.add('visible');
+            
+            // Add dynamic spacing
+            contentGrid.classList.add('file-uploaded');
             
             // Smooth scroll to processing section
             setTimeout(() => {
@@ -780,6 +794,7 @@
 
             const processButton = document.getElementById('processButton');
             const statusMessages = document.getElementById('statusMessages');
+            const contentGrid = document.querySelector('.content-grid');
             
             // Disable button and show processing state
             processButton.disabled = true;
@@ -790,6 +805,9 @@
 
             // Clear previous status messages
             statusMessages.innerHTML = '';
+            
+            // Add processing spacing
+            contentGrid.classList.add('processing-active');
 
             try {
                 // Step 1: Upload file
@@ -804,7 +822,8 @@
                 });
 
                 if (!uploadResponse.ok) {
-                    throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+                    const errorText = await uploadResponse.text();
+                    throw new Error(`Upload failed (${uploadResponse.status}): ${errorText}`);
                 }
 
                 const uploadResult = await uploadResponse.json();
@@ -823,7 +842,8 @@
                 });
 
                 if (!processResponse.ok) {
-                    throw new Error(`Processing failed: ${processResponse.statusText}`);
+                    const errorText = await processResponse.text();
+                    throw new Error(`Processing failed (${processResponse.status}): ${errorText}`);
                 }
 
                 processedData = await processResponse.json();
@@ -836,7 +856,16 @@
 
             } catch (error) {
                 console.error('Error processing rubric:', error);
-                showStatus('error', `Error: ${error.message}`);
+                
+                // More detailed error handling
+                let errorMessage = 'Unknown error occurred';
+                if (error.message) {
+                    errorMessage = error.message;
+                } else if (error.toString) {
+                    errorMessage = error.toString();
+                }
+                
+                showStatus('error', `Error: ${errorMessage}`);
                 
                 // Reset button
                 processButton.disabled = false;
@@ -846,6 +875,9 @@
                     </svg>
                     Process Rubric
                 `;
+                
+                // Remove processing spacing
+                contentGrid.classList.remove('processing-active');
             }
         }
 
@@ -854,6 +886,7 @@
             const rubricTitle = document.getElementById('rubricTitle');
             const rubricDescription = document.getElementById('rubricDescription');
             const totalPoints = document.getElementById('totalPoints');
+            const contentGrid = document.querySelector('.content-grid');
             
             // Update dashboard content
             if (data.parsed_yaml && data.parsed_yaml.rubric_info) {
@@ -864,6 +897,9 @@
             
             // Show dashboard section
             dashboardSection.classList.add('visible');
+            
+            // Add maximum spacing for dashboard
+            contentGrid.classList.add('dashboard-visible');
             
             // Setup download buttons
             setupDownloadButtons();
@@ -963,12 +999,17 @@
             currentFile = null;
             processedData = null;
             
+            const contentGrid = document.querySelector('.content-grid');
+            
             document.getElementById('fileInput').value = '';
             document.getElementById('filePreview').style.display = 'none';
             document.getElementById('processButton').disabled = true;
             document.getElementById('statusMessages').innerHTML = '';
             document.getElementById('processingSection').classList.remove('visible');
             document.getElementById('dashboardSection').classList.remove('visible');
+            
+            // Reset spacing classes
+            contentGrid.classList.remove('file-uploaded', 'processing-active', 'dashboard-visible');
         }
 
         // Add keyboard shortcuts
