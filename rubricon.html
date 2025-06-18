@@ -1120,10 +1120,10 @@
 
     <!-- Authentication Loading Screen -->
     <style>
-        /* Completely hide body content initially */
+        /* Initial loading state */
         body {
-            visibility: hidden;
             background: #ffffff;
+            visibility: visible;
         }
         
         body.loading {
@@ -1207,7 +1207,16 @@
         }
         
         /* Hide main content until authenticated */
-        body:not(.authenticated) .page-wrapper {
+        body:not(.authenticated):not(.fallback) .page-wrapper {
+            display: none !important;
+        }
+        
+        /* Show content in fallback mode */
+        body.fallback .page-wrapper {
+            display: block !important;
+        }
+        
+        body.fallback #auth-loading {
             display: none !important;
         }
         
@@ -1249,27 +1258,87 @@
         // Set initial loading state
         document.body.classList.add('loading');
         
-        // Show loading screen immediately
-        document.body.innerHTML = `
+        // Show loading screen immediately with safer DOM manipulation
+        const loadingHTML = `
             <div id="auth-loading">
                 <img src="images/Oski.png" alt="Oski" class="auth-logo">
                 <div class="auth-spinner"></div>
                 <div class="auth-text">Verifying access permissions</div>
                 <div class="auth-subtitle">Ensuring secure authentication</div>
             </div>
-        ` + document.body.innerHTML;
+        `;
+        
+        // Insert loading screen at the beginning of body
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.insertAdjacentHTML('afterbegin', loadingHTML);
+        });
+        
+        // If DOM is already loaded, insert immediately
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!document.getElementById('auth-loading')) {
+                    document.body.insertAdjacentHTML('afterbegin', loadingHTML);
+                }
+            });
+        } else {
+            document.body.insertAdjacentHTML('afterbegin', loadingHTML);
+        }
 
-        // Supabase configuration
-        const SUPABASE_URL = 'https://yqioyjcriynhtirluyxb.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxaW95amNyaXluaHRpcmx1eXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNzk3NjEsImV4cCI6MjA2NTg1NTc2MX0.VOUimS9zIE1eIYIs_8taFF124qi943xRVxT8dqOnCkM';
+        // Fallback timer to ensure page doesn't stay white forever
+        let authCheckComplete = false;
+        setTimeout(() => {
+            if (!authCheckComplete) {
+                console.warn('Auth check timed out, showing page in fallback mode');
+                document.body.classList.add('fallback');
+                const loadingElement = document.getElementById('auth-loading');
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+                // Still try to redirect after showing content briefly
+                setTimeout(() => {
+                    window.location.replace('login.html');
+                }, 2000);
+            }
+        }, 5000); // 5 second timeout
 
-        // Initialize Supabase
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Check if Supabase is available
+        function waitForSupabase() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 50;
+                
+                function checkSupabase() {
+                    attempts++;
+                    if (window.supabase) {
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('Supabase failed to load'));
+                    } else {
+                        setTimeout(checkSupabase, 100);
+                    }
+                }
+                
+                checkSupabase();
+            });
+        }
 
-        // Check authentication immediately on page load
-        async function checkAuthentication() {
+        // Initialize authentication
+        async function initAuth() {
             try {
+                // Wait for Supabase to load
+                await waitForSupabase();
+                
+                // Supabase configuration
+                const SUPABASE_URL = 'https://yqioyjcriynhtirluyxb.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxaW95amNyaXluaHRpcmx1eXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNzk3NjEsImV4cCI6MjA2NTg1NTc2MX0.VOUimS9zIE1eIYIs_8taFF124qi943xRVxT8dqOnCkM';
+
+                // Initialize Supabase
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                // Check authentication
                 const { data: { session }, error } = await supabase.auth.getSession();
+                
+                authCheckComplete = true;
                 
                 if (error) {
                     console.error('Auth error:', error);
@@ -1278,12 +1347,12 @@
                 }
                 
                 if (!session || !session.user) {
-                    // No active session, redirect to login immediately
+                    // No active session, redirect to login
                     window.location.replace('login.html');
                     return;
                 }
                 
-                // User is authenticated, show content with smooth transition
+                // User is authenticated, show content
                 setTimeout(() => {
                     document.body.classList.add('authenticated');
                     console.log('User authenticated:', session.user.email);
@@ -1295,32 +1364,37 @@
                             loadingElement.remove();
                         }
                     }, 800);
-                }, 600); // Small delay to ensure smooth loading experience
+                }, 600);
                 
                 // Add logout functionality
                 window.logout = async function() {
-                    const { error } = await supabase.auth.signOut();
-                    if (error) {
-                        console.error('Logout error:', error);
+                    try {
+                        const { error } = await supabase.auth.signOut();
+                        if (error) {
+                            console.error('Logout error:', error);
+                        }
+                    } catch (e) {
+                        console.error('Logout failed:', e);
                     }
                     window.location.replace('login.html');
                 };
                 
+                // Listen for auth state changes
+                supabase.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_OUT' || !session) {
+                        window.location.replace('login.html');
+                    }
+                });
+                
             } catch (error) {
-                console.error('Authentication check failed:', error);
+                authCheckComplete = true;
+                console.error('Authentication initialization failed:', error);
                 window.location.replace('login.html');
             }
         }
 
-        // Run authentication check immediately
-        checkAuthentication();
-
-        // Listen for auth state changes
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_OUT' || !session) {
-                window.location.replace('login.html');
-            }
-        });
+        // Start authentication process
+        initAuth();
     </script>
 </head>
 
