@@ -8,7 +8,13 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 import pytesseract
-import easyocr
+# Remove automatic EasyOCR import to handle SSL issues
+try:
+    import easyocr
+    EASYOCR_AVAILABLE = True
+except Exception as e:
+    print(f"EasyOCR not available: {e}")
+    EASYOCR_AVAILABLE = False
 from PIL import Image
 import aiofiles
 from pydantic import BaseModel, ValidationError
@@ -48,7 +54,7 @@ azure_openai_key = os.getenv("AZURE_OPENAI_KEY")
 azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 azure_openai_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
 
-if azure_openai_key and azure_openai_endpoint:
+if azure_openai_key and azure_openai_endpoint and azure_openai_key != "your_azure_openai_key_here":
     try:
         azure_openai_client = AzureOpenAI(
             api_version="2024-12-01-preview",
@@ -60,16 +66,21 @@ if azure_openai_key and azure_openai_endpoint:
         logger.error(f"Failed to initialize Azure OpenAI client: {e}")
         azure_openai_client = None
 else:
-    logger.warning("Azure OpenAI configuration missing. Key or endpoint not found.")
+    logger.warning("Azure OpenAI configuration missing or using placeholder values. Using fallback processing.")
 
-# Initialize EasyOCR reader (lazy loading)
+# Initialize EasyOCR reader (lazy loading with error handling)
 ocr_reader = None
 
 def get_ocr_reader():
     global ocr_reader
-    if ocr_reader is None:
-        ocr_reader = easyocr.Reader(['en'])
-    return ocr_reader
+    if ocr_reader is None and EASYOCR_AVAILABLE:
+        try:
+            ocr_reader = easyocr.Reader(['en'])
+            logger.info("EasyOCR initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize EasyOCR: {e}. Using Tesseract only.")
+            ocr_reader = "failed"
+    return ocr_reader if ocr_reader != "failed" else None
 
 class ProcessingStatus(BaseModel):
     step: str
@@ -89,46 +100,50 @@ async def extract_text_from_file(file_path: str, file_type: str) -> str:
     """Extract text from various file formats using OCR"""
     try:
         if file_type.lower() in ['pdf', 'png', 'jpg', 'jpeg', 'tiff', 'bmp']:
-            # Use both Tesseract and EasyOCR for better accuracy
+            # Use Tesseract (primary) and EasyOCR (secondary if available)
             
             # Tesseract OCR
             try:
                 if file_type.lower() == 'pdf':
                     # For PDF files, we can't directly open as image
-                    # Skip Tesseract for PDF and rely on EasyOCR
-                    logger.info("PDF detected, skipping Tesseract OCR")
+                    # Skip Tesseract for PDF and rely on PDF text extraction
+                    logger.info("PDF detected, skipping Tesseract OCR for image processing")
                     tesseract_text = ""
                 else:
                     image = Image.open(file_path).convert('RGB')
                     tesseract_config = os.getenv('TESSERACT_CONFIG', '--psm 6')
                     tesseract_text = pytesseract.image_to_string(image, config=tesseract_config)
                     logger.info(f"Tesseract extracted {len(tesseract_text)} characters")
+                    
+                    # Return immediately if Tesseract got good results
+                    if len(tesseract_text.strip()) > 50:
+                        return tesseract_text
             except Exception as e:
                 logger.warning(f"Tesseract OCR failed: {e}")
                 tesseract_text = ""
             
-            # EasyOCR
-            try:
-                if file_type.lower() == 'pdf':
-                    # For PDF files, skip EasyOCR as it expects image files
-                    logger.info("PDF detected, skipping EasyOCR")
-                    easyocr_text = ""
-                else:
+            # EasyOCR (only if Tesseract didn't get good results and EasyOCR is available)
+            easyocr_text = ""
+            if len(tesseract_text.strip()) < 50:
+                try:
                     reader = get_ocr_reader()
-                    easyocr_results = reader.readtext(file_path)
-                    easyocr_text = ' '.join([result[1] for result in easyocr_results])
-                    logger.info(f"EasyOCR extracted {len(easyocr_text)} characters")
-            except Exception as e:
-                logger.warning(f"EasyOCR failed: {e}")
-                easyocr_text = ""
+                    if reader and file_type.lower() != 'pdf':
+                        easyocr_results = reader.readtext(file_path)
+                        easyocr_text = ' '.join([result[1] for result in easyocr_results])
+                        logger.info(f"EasyOCR extracted {len(easyocr_text)} characters")
+                except Exception as e:
+                    logger.warning(f"EasyOCR failed: {e}")
+                    easyocr_text = ""
             
             # Combine results, preferring the longer extraction
             if len(easyocr_text) > len(tesseract_text):
                 extracted_text = easyocr_text
                 logger.info("Using EasyOCR result")
-            else:
+            elif len(tesseract_text) > 0:
                 extracted_text = tesseract_text
                 logger.info("Using Tesseract result")
+            else:
+                raise ValueError("OCR failed to extract meaningful text from image")
         
         elif file_type.lower() in ['txt', 'csv']:
             # Read text files directly with encoding fallback

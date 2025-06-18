@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { 
   Upload, 
@@ -14,7 +14,11 @@ import {
   Save,
   RotateCcw,
   FileDown,
-  Settings
+  Settings,
+  ArrowDown,
+  Plus,
+  X,
+  Home
 } from 'lucide-react';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
@@ -74,6 +78,9 @@ export default function PromptGen() {
   const [parsedRubric, setParsedRubric] = useState<ParsedRubric | null>(null);
   const [currentView, setCurrentView] = useState<'upload' | 'dashboard'>('upload');
 
+  // Ref for smooth scrolling
+  const uploadSectionRef = useRef<HTMLElement>(null);
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
@@ -126,8 +133,9 @@ export default function PromptGen() {
     } catch (error) {
       const errorMessage = axios.isAxiosError(error) && error.response?.data?.detail 
         ? error.response.data.detail 
-        : 'Upload failed';
+        : 'Upload failed - please ensure the backend server is running';
       toast.error(errorMessage);
+      console.error('Upload error:', error);
     }
   };
 
@@ -167,8 +175,9 @@ export default function PromptGen() {
         toast.error('Unknown processing status');
         setProcessingStatus(null);
       }
-    } catch {
-      toast.error('Failed to get processing status');
+    } catch (error) {
+      console.error('Status polling error:', error);
+      toast.error('Failed to get processing status - please check backend connection');
     }
   };
 
@@ -186,30 +195,33 @@ export default function PromptGen() {
         filename = `${uploadedFile?.name?.split('.')[0] || 'rubric'}_prompt.yaml`;
         mimeType = 'application/x-yaml';
       } else {
-        // Convert YAML to JSON for download
-        content = JSON.stringify(parsedRubric, null, 2);
+        const response = await axios.get(`${API_BASE_URL}/download-json/${taskId}`, {
+          responseType: 'blob'
+        });
+        content = response.data;
         filename = `${uploadedFile?.name?.split('.')[0] || 'rubric'}_prompt.json`;
         mimeType = 'application/json';
-        content = new Blob([content], { type: mimeType });
       }
-      
-      const url = URL.createObjectURL(content);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+
+      const blob = new Blob([content], { type: mimeType });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       toast.success(`${format.toUpperCase()} file downloaded successfully!`);
-    } catch {
-      toast.error('Download failed');
+    } catch (error) {
+      toast.error(`Failed to download ${format.toUpperCase()} file`);
+      console.error('Download error:', error);
     }
   };
 
   const saveEditedYaml = async () => {
-    if (!taskId) return;
+    if (!taskId || !editedYaml) return;
     
     try {
       await axios.post(`${API_BASE_URL}/update-yaml/${taskId}`, {
@@ -218,27 +230,17 @@ export default function PromptGen() {
       
       toast.success('Changes saved successfully!');
       setIsEditing(false);
-      
-      // Update local result
-      if (result) {
-        setResult({
-          ...result,
-          yaml_content: editedYaml
-        });
-      }
     } catch (error) {
-      const errorMessage = axios.isAxiosError(error) && error.response?.data?.detail 
-        ? error.response.data.detail 
-        : 'Failed to save changes';
-      toast.error(errorMessage);
+      toast.error('Failed to save changes');
+      console.error('Save error:', error);
     }
   };
 
   const resetProcess = () => {
     setUploadedFile(null);
+    setResult(null);
     setTaskId(null);
     setProcessingStatus(null);
-    setResult(null);
     setIsEditing(false);
     setEditedYaml('');
     setShowPreview(false);
@@ -250,393 +252,426 @@ export default function PromptGen() {
     if (!parsedRubric) return;
     
     const updated = { ...parsedRubric };
-    if (field === 'description' || field === 'criteria') {
-      updated.sections[sectionIndex].items[itemIndex][field] = value as string;
+    if (field === 'description') {
+      updated.sections[sectionIndex].items[itemIndex].description = value as string;
     } else if (field === 'points') {
-      updated.sections[sectionIndex].items[itemIndex][field] = value as number;
+      updated.sections[sectionIndex].items[itemIndex].points = value as number;
+    } else if (field === 'criteria') {
+      updated.sections[sectionIndex].items[itemIndex].criteria = value as string;
     }
     
     setParsedRubric(updated);
-    
-    // Update the YAML content
-    const yamlContent = `rubric_info:
-  title: "${updated.rubric_info.title}"
-  total_points: ${updated.rubric_info.total_points}
-  description: "${updated.rubric_info.description}"
+  };
 
-sections:
-${updated.sections.map(section => `  - section_name: "${section.section_name}"
-    section_id: "${section.section_id}"
-    description: "${section.description}"
-    items:
-${section.items.map(item => `      - item_id: "${item.item_id}"
-        description: "${item.description}"
-        points: ${item.points}
-        criteria: "${item.criteria}"`).join('\n')}`).join('\n')}`;
+  const addRubricItem = (sectionIndex: number) => {
+    if (!parsedRubric) return;
     
-    setEditedYaml(yamlContent);
+    const updated = { ...parsedRubric };
+    const newItem: RubricItem = {
+      item_id: `item_${Date.now()}`,
+      description: 'New rubric item',
+      points: 1,
+      criteria: 'Add criteria here'
+    };
+    updated.sections[sectionIndex].items.push(newItem);
+    setParsedRubric(updated);
+  };
+
+  const removeRubricItem = (sectionIndex: number, itemIndex: number) => {
+    if (!parsedRubric) return;
+    
+    const updated = { ...parsedRubric };
+    updated.sections[sectionIndex].items.splice(itemIndex, 1);
+    setParsedRubric(updated);
+  };
+
+  const NavigationHeader = () => (
+    <motion.header 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50"
+    >
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <motion.a 
+              href="/" 
+              className="oski-button-secondary flex items-center gap-2 text-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Home size={16} />
+              Back to Oski
+            </motion.a>
+            <div className="h-6 w-px bg-gray-300" />
+            <h1 className="oski-heading text-2xl font-semibold text-gray-900">PromptGen</h1>
+          </div>
+          
+          {currentView === 'dashboard' && (
+            <motion.button
+              onClick={resetProcess}
+              className="oski-button-secondary flex items-center gap-2 text-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Plus size={16} />
+              New Upload
+            </motion.button>
+          )}
+        </div>
+      </div>
+    </motion.header>
+  );
+
+  const FileUploadSection = () => (
+    <motion.section 
+      ref={uploadSectionRef}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="min-h-screen flex items-center justify-center px-6 py-12"
+    >
+      <div className="max-w-2xl w-full">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-12"
+        >
+          <h2 className="oski-heading text-4xl font-semibold text-gray-900 mb-4">
+            Transform Your OSCE Rubric
+          </h2>
+          <p className="text-lg text-gray-600 max-w-xl mx-auto">
+            Upload your OSCE rubric and let our AI convert it into structured, ready-to-use prompts for assessment automation.
+          </p>
+        </motion.div>
+
+        <div
+          {...getRootProps()}
+          className={`oski-upload-area p-12 text-center cursor-pointer transition-all duration-300 ${
+            isDragActive ? 'drag-active scale-105' : ''
+          }`}
+        >
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4 }}
+            className="w-full h-full"
+          >
+          <input {...getInputProps()} />
+          
+          <motion.div
+            animate={{ 
+              rotateY: isDragActive ? 180 : 0,
+              scale: isDragActive ? 1.1 : 1 
+            }}
+            transition={{ duration: 0.3 }}
+            className="mb-6"
+          >
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mb-4">
+              <Upload className="w-10 h-10 text-gray-600" />
+            </div>
+          </motion.div>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {isDragActive ? 'Drop your rubric here' : 'Upload your OSCE Rubric'}
+          </h3>
+          
+          <p className="text-gray-600 mb-6">
+            Drag and drop your files here or click to upload
+          </p>
+
+          {uploadedFile ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gray-50 rounded-xl p-4 mb-6 inline-flex items-center gap-3"
+            >
+              <FileText className="w-5 h-5 text-gray-600" />
+              <span className="font-medium text-gray-900">{uploadedFile.name}</span>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setUploadedFile(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </motion.div>
+          ) : (
+            <div className="text-sm text-gray-500 mb-6">
+              Supports PDF, Word, Excel, images, and text files
+            </div>
+          )}
+
+          {uploadedFile && !processingStatus && (
+            <motion.button
+              onClick={(e) => {
+                e.stopPropagation();
+                uploadAndProcess();
+              }}
+              className="oski-button-primary"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              Process Rubric
+                         </motion.button>
+           )}
+           </motion.div>
+         </div>
+
+         {processingStatus && (
+           <ProcessingIndicator status={processingStatus} />
+         )}
+       </div>
+     </motion.section>
+   );
+
+  const ProcessingIndicator = ({ status }: { status: ProcessingStatus }) => (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-8 oski-card max-w-md mx-auto"
+    >
+      <div className="flex items-center gap-4 mb-4">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          className="w-8 h-8 border-2 border-gray-300 border-t-black rounded-full"
+        />
+        <div>
+          <h4 className="font-semibold text-gray-900">{status.step}</h4>
+          <p className="text-sm text-gray-600">{status.message}</p>
+        </div>
+      </div>
+      
+      <div className="w-full bg-gray-200 rounded-full h-2">
+        <motion.div 
+          className="bg-black h-2 rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: `${status.progress}%` }}
+          transition={{ duration: 0.5 }}
+        />
+      </div>
+      
+      <div className="mt-2 text-xs text-gray-500 text-right">
+        {Math.round(status.progress)}% complete
+      </div>
+    </motion.div>
+  );
+
+  const RubricDashboard = () => {
+    if (!parsedRubric) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="min-h-screen py-12 px-6"
+      >
+        <div className="max-w-6xl mx-auto">
+          {/* Dashboard Header */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-center mb-12"
+          >
+            <h2 className="oski-heading text-3xl font-semibold text-gray-900 mb-4">
+              Rubric Dashboard
+            </h2>
+            <p className="text-lg text-gray-600">
+              Review and edit your processed rubric content before exporting
+            </p>
+          </motion.div>
+
+          {/* Rubric Info Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="oski-card mb-8"
+          >
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {parsedRubric.rubric_info.title}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  {parsedRubric.rubric_info.description}
+                </p>
+                <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
+                  <span className="text-sm font-medium text-gray-900">
+                    Total Points: {parsedRubric.rubric_info.total_points}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Rubric Sections */}
+          <div className="space-y-6 mb-8">
+            {parsedRubric.sections.map((section, sectionIndex) => (
+              <motion.div
+                key={section.section_id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + sectionIndex * 0.1 }}
+                className="oski-section-divider p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-gray-900">
+                    {section.section_name}
+                  </h4>
+                  <motion.button
+                    onClick={() => addRubricItem(sectionIndex)}
+                    className="oski-button-secondary flex items-center gap-2 text-sm"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Plus size={14} />
+                    Add Item
+                  </motion.button>
+                </div>
+                
+                <p className="text-gray-600 mb-6">{section.description}</p>
+                
+                <div className="space-y-4">
+                  {section.items.map((item, itemIndex) => (
+                    <motion.div
+                      key={item.item_id}
+                      layout
+                      className="bg-white border border-gray-200 rounded-xl p-4"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Description
+                            </label>
+                            <input
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => updateRubricItem(sectionIndex, itemIndex, 'description', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Points
+                              </label>
+                              <input
+                                type="number"
+                                value={item.points}
+                                onChange={(e) => updateRubricItem(sectionIndex, itemIndex, 'points', parseInt(e.target.value) || 0)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                                min="0"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Criteria
+                              </label>
+                              <input
+                                type="text"
+                                value={item.criteria}
+                                onChange={(e) => updateRubricItem(sectionIndex, itemIndex, 'criteria', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <motion.button
+                          onClick={() => removeRubricItem(sectionIndex, itemIndex)}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <X size={18} />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Export Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="oski-card text-center"
+          >
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              Export Your Rubric
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Download your processed rubric in the format you need
+            </p>
+            
+            <div className="flex flex-wrap gap-4 justify-center">
+              <motion.button
+                onClick={() => downloadFile('yaml')}
+                className="oski-button-primary flex items-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FileDown size={18} />
+                Download YAML File
+              </motion.button>
+              
+              <motion.button
+                onClick={() => downloadFile('json')}
+                className="oski-button-secondary flex items-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FileDown size={18} />
+                Download JSON File
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <Toaster position="top-right" />
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white">
+      <NavigationHeader />
       
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="oski-heading text-3xl text-gray-900">PromptGen</h1>
-              <p className="text-gray-600 mt-1">OSCE Rubric Converter</p>
-            </div>
-            {currentView === 'dashboard' && (
-              <button
-                onClick={resetProcess}
-                className="oski-button-secondary"
-              >
-                <RotateCcw className="w-4 h-4" />
-                New Rubric
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
-
       <AnimatePresence mode="wait">
         {currentView === 'upload' ? (
-          <motion.div
-            key="upload"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
-          >
-            {/* Hero Section */}
-            <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 className="oski-heading text-5xl text-gray-900 mb-6">
-                  Upload your OSCE Rubric
-                </h2>
-                <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
-                  Transform traditional rubrics into structured assessment prompts with intelligent processing
-                </p>
-
-                {/* Upload Area */}
-                <div className="max-w-lg mx-auto">
-                  <div 
-                    {...getRootProps()} 
-                    className={`oski-upload-area p-12 text-center cursor-pointer ${
-                      isDragActive ? 'drag-active' : ''
-                    }`}
-                  >
-                    <input {...getInputProps()} />
-                    <Upload className="w-16 h-16 mx-auto mb-6 text-gray-400" />
-                    {uploadedFile ? (
-                      <div className="space-y-2">
-                        <p className="text-lg font-semibold text-gray-900">{uploadedFile.name}</p>
-                        <p className="text-sm text-gray-500">
-                          {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                        <p className="text-xs text-gray-400">Click to change file</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <p className="text-lg font-semibold text-gray-900">
-                          Drag or drop your files here or click to upload
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Supports PDF, Word, Excel, text files, and images
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {uploadedFile && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-8"
-                    >
-                      <button
-                        onClick={uploadAndProcess}
-                        disabled={!!processingStatus}
-                        className="oski-button-primary w-full text-lg py-4"
-                      >
-                        {processingStatus ? (
-                          <>
-                            <RefreshCw className="w-5 h-5 animate-spin" />
-                            Processing Rubric...
-                          </>
-                        ) : (
-                          <>
-                            <Settings className="w-5 h-5" />
-                            Process Rubric
-                          </>
-                        )}
-                      </button>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Processing Status */}
-                {processingStatus && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-12 max-w-2xl mx-auto"
-                  >
-                    <div className="oski-card">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Processing Status</h3>
-                        <span className="text-sm text-gray-500">
-                          {Math.round(processingStatus.progress)}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                        <div 
-                          className="bg-black h-2 rounded-full transition-all duration-500" 
-                          style={{ width: `${processingStatus.progress}%` }}
-                        />
-                      </div>
-                      <p className="text-gray-600">{processingStatus.message}</p>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            </section>
-          </motion.div>
+          <FileUploadSection key="upload" />
         ) : (
-          <motion.div
-            key="dashboard"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
-          >
-            {/* Dashboard */}
-            <section className="py-8">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Dashboard Header */}
-                <div className="oski-card mb-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <CheckCircle className="w-6 h-6 text-green-600" />
-                      </div>
-                      <div>
-                        <h2 className="oski-heading text-2xl text-gray-900">Rubric Ready</h2>
-                        <p className="text-gray-600">
-                          {parsedRubric?.rubric_info?.title || 'OSCE Assessment Rubric'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={() => setShowPreview(!showPreview)}
-                        className="oski-button-secondary"
-                      >
-                        {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        {showPreview ? 'Hide Code' : 'View Code'}
-                      </button>
-                      <button
-                        onClick={() => downloadFile('yaml')}
-                        className="oski-button-secondary"
-                      >
-                        <FileDown className="w-4 h-4" />
-                        Export YAML
-                      </button>
-                      <button
-                        onClick={() => downloadFile('json')}
-                        className="oski-button-primary"
-                      >
-                        <Download className="w-4 h-4" />
-                        Export JSON
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Rubric Editor */}
-                  <div className="lg:col-span-2">
-                    <div className="oski-card">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-6">Assessment Sections</h3>
-                      <div className="space-y-6">
-                        {parsedRubric?.sections.map((section, sectionIndex) => (
-                          <motion.div
-                            key={section.section_id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: sectionIndex * 0.1 }}
-                            className="border border-gray-200 rounded-lg p-6"
-                          >
-                            <h4 className="font-semibold text-gray-900 mb-4">{section.section_name}</h4>
-                            <p className="text-gray-600 text-sm mb-4">{section.description}</p>
-                            <div className="space-y-4">
-                              {section.items.map((item, itemIndex) => (
-                                <div key={item.item_id} className="border-l-4 border-gray-100 pl-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="md:col-span-2">
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Description
-                                      </label>
-                                      <textarea
-                                        value={item.description}
-                                        onChange={(e) => updateRubricItem(sectionIndex, itemIndex, 'description', e.target.value)}
-                                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                                        rows={2}
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Points
-                                      </label>
-                                      <input
-                                        type="number"
-                                        value={item.points}
-                                        onChange={(e) => updateRubricItem(sectionIndex, itemIndex, 'points', parseInt(e.target.value) || 0)}
-                                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Assessment Criteria
-                                    </label>
-                                    <textarea
-                                      value={item.criteria}
-                                      onChange={(e) => updateRubricItem(sectionIndex, itemIndex, 'criteria', e.target.value)}
-                                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                                      rows={2}
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Summary & Actions */}
-                  <div className="space-y-6">
-                    {/* Summary Card */}
-                    <div className="oski-card">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Assessment Summary</h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total Sections:</span>
-                          <span className="font-semibold">{parsedRubric?.sections.length || 0}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total Items:</span>
-                          <span className="font-semibold">
-                            {parsedRubric?.sections.reduce((acc, section) => acc + section.items.length, 0) || 0}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total Points:</span>
-                          <span className="font-semibold">{parsedRubric?.rubric_info?.total_points || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Export Options */}
-                    <div className="oski-card">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Options</h3>
-                      <div className="space-y-3">
-                        <button
-                          onClick={() => downloadFile('yaml')}
-                          className="w-full oski-button-secondary justify-start"
-                        >
-                          <FileText className="w-4 h-4" />
-                          Download YAML File
-                        </button>
-                        <button
-                          onClick={() => downloadFile('json')}
-                          className="w-full oski-button-primary justify-start"
-                        >
-                          <FileDown className="w-4 h-4" />
-                          Download JSON File
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Save Changes */}
-                    {editedYaml !== result?.yaml_content && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="oski-card border-orange-200 bg-orange-50"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-orange-900">Unsaved Changes</h3>
-                          <button
-                            onClick={saveEditedYaml}
-                            className="oski-button-primary"
-                          >
-                            <Save className="w-4 h-4" />
-                            Save
-                          </button>
-                        </div>
-                        <p className="text-sm text-orange-700">
-                          You have unsaved changes to your rubric. Save them before downloading.
-                        </p>
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Code Preview */}
-                <AnimatePresence>
-                  {showPreview && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-8"
-                    >
-                      <div className="oski-card">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">Generated Code</h3>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => setIsEditing(!isEditing)}
-                              className={`oski-button-secondary ${isEditing ? 'bg-black text-white' : ''}`}
-                            >
-                              <Edit3 className="w-4 h-4" />
-                              {isEditing ? 'View Only' : 'Edit Code'}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="border rounded-lg overflow-hidden">
-                          <MonacoEditor
-                            height="400px"
-                            language="yaml"
-                            value={isEditing ? editedYaml : result?.yaml_content}
-                            onChange={(value) => isEditing && setEditedYaml(value || '')}
-                            theme="vs-light"
-                            options={{
-                              readOnly: !isEditing,
-                              minimap: { enabled: false },
-                              lineNumbers: 'on',
-                              wordWrap: 'on',
-                              automaticLayout: true,
-                              fontSize: 14,
-                              fontFamily: 'var(--font-geist-mono), monospace'
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </section>
-          </motion.div>
+          <RubricDashboard key="dashboard" />
         )}
       </AnimatePresence>
+
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#ffffff',
+            color: '#000000',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+          },
+        }}
+      />
     </div>
   );
 }

@@ -1,19 +1,20 @@
 @import "tailwindcss";
 
+/* Oski Design System - Complete Implementation */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-prata);
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-heading: "Prata", serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-prata);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-heading);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,20 +27,25 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  font-variation-settings: "wght" 400;
+  line-height: 1.6;
 }
 
-/* Oski Design System Utilities */
+/* Typography */
 .oski-heading {
   font-family: var(--font-heading);
   font-weight: 400;
   line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
+/* Core Design Components */
 .oski-card {
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
   border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 32px 24px;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -48,18 +54,36 @@ body {
 }
 
 .oski-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-  border-color: rgba(0, 0, 0, 0.15);
+  border-color: rgba(102, 126, 234, 0.3);
 }
 
+.oski-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.oski-card:hover::before {
+  opacity: 1;
+}
+
+/* Button Styles - Exact Oski Implementation */
 .oski-button-primary {
   background: #000000;
   color: #ffffff;
   border-radius: 25px;
   padding: 12px 24px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   cursor: pointer;
   display: inline-flex;
@@ -67,12 +91,18 @@ body {
   justify-content: center;
   gap: 8px;
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .oski-button-primary:hover {
   background: #333333;
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.oski-button-primary:active {
+  transform: translateY(0);
 }
 
 .oski-button-secondary {
@@ -82,13 +112,16 @@ body {
   border-radius: 25px;
   padding: 12px 24px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .oski-button-secondary:hover {
@@ -98,28 +131,66 @@ body {
   box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
+.oski-button-secondary:active {
+  transform: translateY(0);
+}
+
+/* Upload Area - Aceternity-inspired with Oski Branding */
 .oski-upload-area {
   border: 2px dashed rgba(0,0,0,0.15);
-  border-radius: 16px;
-  transition: all 0.3s ease;
+  border-radius: 20px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.oski-upload-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .oski-upload-area:hover,
 .oski-upload-area.drag-active {
-  border-color: #000000;
-  background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f5f7ff 0%, #fafbff 100%);
+  transform: scale(1.01);
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.1);
+}
+
+.oski-upload-area:hover::before,
+.oski-upload-area.drag-active::before {
+  opacity: 1;
+}
+
+.oski-upload-area.drag-active {
+  border-color: #764ba2;
   transform: scale(1.02);
 }
 
+/* Section Dividers */
 .oski-section-divider {
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.oski-section-divider:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+
+/* Animations */
 .fade-in {
-  animation: fadeIn 0.6s ease-out;
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadeIn {
@@ -130,5 +201,121 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gradient Backgrounds */
+.gradient-bg-primary {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.gradient-bg-secondary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Input Styles */
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  font-family: var(--font-sans);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Interactive Elements */
+.interactive {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.interactive:hover {
+  transform: translateY(-2px);
+}
+
+.interactive:active {
+  transform: translateY(0);
+}
+
+/* Loading Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Backdrop Blur */
+.backdrop-blur {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Progress Bar */
+.progress-bar {
+  background: linear-gradient(90deg, #000000, #333333);
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .oski-card {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+  
+  .oski-button-primary,
+  .oski-button-secondary {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  .oski-upload-area {
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .oski-heading {
+    font-size: 1.8rem;
+  }
+  
+  .oski-card {
+    padding: 20px 16px;
   }
 }
