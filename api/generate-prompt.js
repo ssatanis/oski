@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing extracted_text in request body' });
     }
 
-    // Parse the extracted text to identify criteria and generate proper YAML
+    // Enhanced parsing to handle multiple formats
     const lines = extracted_text.split('\n').filter(line => line.trim());
     const criteria = [];
     let stationName = 'OSCE_Assessment';
@@ -39,74 +39,162 @@ export default async function handler(req, res) {
       stationName = titleLine.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
     }
 
-    // Extract criteria and create exam names
-    lines.forEach((line, index) => {
-      // Look for criteria patterns
-      const criteriaMatch = line.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)(.*?)(?:\((\d+)-(\d+)\s*points?\)|\((\d+)\s*points?\))?/i);
-      if (criteriaMatch) {
-        const name = criteriaMatch[1].trim();
-        const maxPoints = criteriaMatch[4] || criteriaMatch[3] || 1;
+    // Parse CSV-style data (for Excel files)
+    const csvHeaderLine = lines.find(line => 
+      line.toLowerCase().includes('criteria') && 
+      (line.includes(',') || line.includes('\t'))
+    );
+    
+    if (csvHeaderLine) {
+      // Parse CSV format
+      const headerIndex = lines.indexOf(csvHeaderLine);
+      for (let i = headerIndex + 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim()) continue;
         
-        // Look for examples in following lines
-        const examples = [];
-        for (let i = index + 1; i < Math.min(index + 10, lines.length); i++) {
-          const nextLine = lines[i];
-          if (nextLine.includes('point') && nextLine.includes(':')) {
-            examples.push(nextLine.replace(/^\d+\s*points?:\s*/i, '').trim());
-          } else if (nextLine.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)/i)) {
-            break; // Hit next criteria
-          } else if (nextLine.trim().startsWith('-') || nextLine.trim().startsWith('•')) {
-            examples.push(nextLine.replace(/^[-•]\s*/, '').trim());
+        // Split by comma, handling quoted strings
+        const parts = line.split(',').map(part => part.replace(/^"|"$/g, '').trim());
+        if (parts.length >= 3) {
+          const name = parts[0];
+          const points = parseInt(parts[1]) || 1;
+          const description = parts[2];
+          const examplesString = parts[3] || '';
+          
+          const examples = examplesString.split(/[,;]/).map(ex => ex.trim()).filter(ex => ex);
+          if (examples.length === 0) {
+            examples.push(`I'm going to examine your ${name.toLowerCase()}`);
           }
+          
+          const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+          examsList.push(examId);
+          
+          criteria.push({
+            examId: examId,
+            name: name,
+            max_points: points,
+            examples: examples
+          });
         }
-
-        // Create exam ID from criterion name
-        const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-        examsList.push(examId);
-
-        criteria.push({
-          examId: examId,
-          name: name,
-          max_points: parseInt(maxPoints),
-          examples: examples.length > 0 ? examples : [
-            `I'm going to examine your ${name.toLowerCase()}`,
-            `Let me check your ${name.toLowerCase()}`,
-            `I'm going to assess your ${name.toLowerCase()}`
-          ]
-        });
       }
-    });
-
-    // If no criteria found, try to extract from different patterns
-    if (criteria.length === 0) {
-      // Look for bullet points or numbered lists
+    } else {
+      // Parse traditional criteria format
       lines.forEach((line, index) => {
-        const bulletMatch = line.match(/^[-•]\s*(.+)/);
-        const numberedMatch = line.match(/^\d+\.\s*(.+)/);
-        
-        if (bulletMatch || numberedMatch) {
-          const name = (bulletMatch?.[1] || numberedMatch?.[1] || '').trim();
-          if (name && name.length > 5) { // Reasonable length check
+        // Look for criteria patterns
+        const criteriaMatch = line.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)(.*?)(?:\((\d+)\s*points?\))?/i);
+        if (criteriaMatch) {
+          const name = criteriaMatch[1].trim();
+          const maxPoints = parseInt(criteriaMatch[2]) || 1;
+          
+          // Look for examples in following lines
+          const examples = [];
+          for (let i = index + 1; i < Math.min(index + 15, lines.length); i++) {
+            const nextLine = lines[i];
+            if (nextLine.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)/i)) {
+              break; // Hit next criteria
+            }
+            
+            // Look for examples line
+            if (nextLine.toLowerCase().includes('examples:') || 
+                nextLine.toLowerCase().includes('verbalization:') ||
+                nextLine.toLowerCase().includes('example:')) {
+              // Extract examples from this line and potentially the next few
+              const exampleText = nextLine.replace(/^.*?(?:examples?|verbalization):?/i, '').trim();
+              if (exampleText) {
+                examples.push(...exampleText.split(/[,;]/).map(ex => ex.trim()).filter(ex => ex));
+              }
+              
+              // Check next few lines for more examples
+              for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+                const exLine = lines[j];
+                if (exLine.match(/^(?:Criteria?\s*\d+:|^\d+[:.]?\s*)/i)) break;
+                if (exLine.trim() && !exLine.toLowerCase().includes('student') && 
+                    !exLine.toLowerCase().includes('point')) {
+                  examples.push(...exLine.split(/[,;]/).map(ex => ex.trim()).filter(ex => ex));
+                }
+              }
+              break;
+            }
+          }
+          
+          // Create exam ID from criterion name
+          const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+          examsList.push(examId);
+
+          criteria.push({
+            examId: examId,
+            name: name,
+            max_points: maxPoints,
+            examples: examples.length > 0 ? examples : [
+              `I'm going to examine your ${name.toLowerCase()}`,
+              `Let me check your ${name.toLowerCase()}`,
+              `I'm going to assess your ${name.toLowerCase()}`
+            ]
+          });
+        }
+      });
+
+      // If no criteria found with the above pattern, try numbered list format
+      if (criteria.length === 0) {
+        lines.forEach((line, index) => {
+          const numberedMatch = line.match(/^(\d+)\.\s*(.+?)(?:\s*\((\d+)\s*points?\))?$/i);
+          if (numberedMatch) {
+            const name = numberedMatch[2].trim();
+            const points = parseInt(numberedMatch[3]) || 1;
+            
+            // Look for examples in following lines
+            const examples = [];
+            for (let i = index + 1; i < Math.min(index + 10, lines.length); i++) {
+              const nextLine = lines[i];
+              if (nextLine.match(/^\d+\.\s/)) break; // Hit next numbered item
+              
+              if (nextLine.toLowerCase().includes('examples:') || 
+                  nextLine.toLowerCase().includes('verbalization:')) {
+                const exampleText = nextLine.replace(/^.*?(?:examples?|verbalization):?/i, '').trim();
+                examples.push(...exampleText.split(/[,;]/).map(ex => ex.trim()).filter(ex => ex));
+              } else if (nextLine.trim() && !nextLine.toLowerCase().includes('student')) {
+                examples.push(...nextLine.split(/[,;]/).map(ex => ex.trim()).filter(ex => ex));
+              }
+            }
+            
             const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
             examsList.push(examId);
             
             criteria.push({
               examId: examId,
               name: name,
-              max_points: 1,
-              examples: [
-                `I'm going to examine your ${name.toLowerCase()}`,
-                `Let me check your ${name.toLowerCase()}`,
-                `I'm going to assess your ${name.toLowerCase()}`
-              ]
+              max_points: points,
+              examples: examples.length > 0 ? examples : [`I'm going to examine your ${name.toLowerCase()}`]
             });
           }
-        }
-      });
+        });
+      }
+
+      // If still no criteria found, try bullet points or simple patterns
+      if (criteria.length === 0) {
+        lines.forEach((line, index) => {
+          const bulletMatch = line.match(/^[-•]\s*(.+)/);
+          
+          if (bulletMatch) {
+            const name = bulletMatch[1].trim();
+            if (name && name.length > 5) { // Reasonable length check
+              const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+              examsList.push(examId);
+              
+              criteria.push({
+                examId: examId,
+                name: name,
+                max_points: 1,
+                examples: [`I'm going to examine your ${name.toLowerCase()}`]
+              });
+            }
+          }
+        });
+      }
     }
 
     // Default criteria if still nothing found
     if (criteria.length === 0) {
+      console.log('No criteria found, using defaults');
       criteria.push(
         {
           examId: "Patient_Greeting",
@@ -131,6 +219,8 @@ export default async function handler(req, res) {
       );
       examsList = ["Patient_Greeting", "Physical_Examination"];
     }
+
+    console.log(`Found ${criteria.length} criteria:`, criteria.map(c => c.name));
 
     // Generate the YAML content in the exact format of abdominal_pain.yaml
     const yamlContent = `system_message: 

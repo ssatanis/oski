@@ -1257,6 +1257,8 @@
                 }
 
                 processedData = await processResponse.json();
+                console.log('Processed data received:', processedData);
+                console.log('Parsed YAML criteria:', processedData.parsed_yaml?.criteria);
                 
                 // Step 3: Success
                 showStatus('success', 'Processing complete!', false);
@@ -1320,11 +1322,22 @@
         }
 
         function initializeDashboard(data) {
+            console.log('Initializing dashboard with data:', data);
+            
             // Set basic information - no key field needed for this format
             document.getElementById('systemMessage').value = data.parsed_yaml?.system_message || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
             
-            // Load criteria
-            loadCriteria(data.parsed_yaml?.criteria || []);
+            // Load criteria with better error handling
+            const criteria = data.parsed_yaml?.criteria || [];
+            console.log('Loading criteria:', criteria);
+            
+            if (criteria.length > 0) {
+                loadCriteria(criteria);
+                console.log(`Successfully loaded ${criteria.length} criteria`);
+            } else {
+                console.warn('No criteria found in parsed data');
+                loadCriteria([]);
+            }
             
             // Update total points
             updateTotalPoints();
@@ -1337,12 +1350,16 @@
             const container = document.getElementById('criteriaContainer');
             container.innerHTML = '';
             
-            criteria.forEach((criterion, index) => {
-                addCriterionToDOM(criterion, index);
-            });
+            console.log('Loading criteria into DOM:', criteria);
             
-            // Add one empty criterion if none exist
-            if (criteria.length === 0) {
+            if (criteria && criteria.length > 0) {
+                criteria.forEach((criterion, index) => {
+                    console.log(`Adding criterion ${index + 1}:`, criterion);
+                    addCriterionToDOM(criterion, index);
+                });
+            } else {
+                console.log('No criteria provided, adding empty criterion');
+                // Add one empty criterion if none exist
                 addNewCriterion();
             }
         }
@@ -1366,17 +1383,28 @@
             criterionDiv.className = 'criterion-item';
             criterionDiv.dataset.index = index;
             
+            // Ensure criterion has required fields
+            const safeGriterion = {
+                name: criterion?.name || '',
+                max_points: criterion?.max_points || 1,
+                examples: criterion?.examples || ['']
+            };
+            
+            // Escape HTML in values to prevent issues
+            const escapedName = safeGriterion.name.replace(/"/g, '&quot;');
+            const escapedExamples = safeGriterion.examples.map(ex => ex.replace(/"/g, '&quot;'));
+            
             criterionDiv.innerHTML = `
                 <div class="criterion-header">
                     <div style="display: flex; align-items: center;">
                         <span class="criterion-number">${index + 1}</span>
                         <div style="flex: 1;">
                             <div class="input-group" style="margin-bottom: 10px;">
-                                <input type="text" class="form-input criterion-name" placeholder="e.g., Patient Greeting and Introduction" value="${criterion.name || ''}" oninput="updateCriterion(${index})">
+                                <input type="text" class="form-input criterion-name" placeholder="e.g., Patient Greeting and Introduction" value="${escapedName}" oninput="updateCriterion(${index})">
                             </div>
                             <div class="input-group" style="margin-bottom: 0;">
                                 <label>Max Points:</label>
-                                <input type="number" class="form-input criterion-points" min="1" max="10" value="${criterion.max_points || 1}" oninput="updateCriterion(${index})" style="width: 80px;">
+                                <input type="number" class="form-input criterion-points" min="1" max="10" value="${safeGriterion.max_points}" oninput="updateCriterion(${index})" style="width: 80px;">
                             </div>
                         </div>
                     </div>
@@ -1390,7 +1418,7 @@
                 <div class="criterion-examples">
                     <label>Examples:</label>
                     <div class="examples-list">
-                        ${(criterion.examples || ['']).map((example, exampleIndex) => `
+                        ${escapedExamples.map((example, exampleIndex) => `
                             <div class="example-item">
                                 <input type="text" class="example-input" placeholder="e.g., I'm going to examine your..." value="${example}" oninput="updateCriterion(${index})">
                                 <button class="btn-remove-example" onclick="removeExample(${index}, ${exampleIndex})">×</button>
