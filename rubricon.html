@@ -50,7 +50,7 @@
             overflow: hidden;
         }
 
-        /* Animated Rainbow Gradient Overlay */
+        /* Remove the rainbow line */
         .promptgen-section::before {
             content: '';
             position: absolute;
@@ -72,6 +72,7 @@
             animation: rainbowMove 8s ease-in-out infinite;
             opacity: 0.8;
             z-index: 1;
+            display: none;
         }
 
         /* Subtle animated gradient background for depth */
@@ -312,7 +313,7 @@
             padding: 50px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
             border: 2px dashed #e5e7eb;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
             cursor: pointer;
@@ -325,13 +326,7 @@
             left: 0;
             right: 0;
             height: 2px;
-            background: linear-gradient(90deg, 
-                rgba(255, 107, 107, 0.3) 0%, 
-                rgba(78, 205, 196, 0.3) 25%, 
-                rgba(69, 183, 209, 0.3) 50%, 
-                rgba(150, 206, 180, 0.3) 75%, 
-                rgba(255, 234, 167, 0.3) 100%
-            );
+            background: #000000;
             opacity: 0;
             transition: opacity 0.3s ease;
             z-index: 1;
@@ -358,10 +353,10 @@
         }
 
         .upload-card.dragover {
-            border-color: #96ceb4;
+            border-color: #000000;
             background: #ffffff;
             transform: scale(1.02);
-            box-shadow: 0 8px 30px rgba(150, 206, 180, 0.15), 0 4px 6px rgba(150, 206, 180, 0.1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .upload-content {
@@ -466,15 +461,8 @@
             left: 0;
             right: 0;
             height: 2px;
-            background: linear-gradient(90deg, 
-                rgba(255, 107, 107, 0.4) 0%, 
-                rgba(78, 205, 196, 0.4) 25%, 
-                rgba(69, 183, 209, 0.4) 50%, 
-                rgba(150, 206, 180, 0.4) 75%, 
-                rgba(255, 234, 167, 0.4) 100%
-            );
+            background: #000000;
             background-size: 200% 100%;
-            animation: rainbowMove 3s ease-in-out infinite;
             opacity: 1;
         }
 
@@ -636,13 +624,7 @@
             left: 0;
             right: 0;
             height: 2px;
-            background: linear-gradient(90deg, 
-                rgba(255, 107, 107, 0.3) 0%, 
-                rgba(78, 205, 196, 0.3) 25%, 
-                rgba(69, 183, 209, 0.3) 50%, 
-                rgba(150, 206, 180, 0.3) 75%, 
-                rgba(255, 234, 167, 0.3) 100%
-            );
+            background: #000000;
             opacity: 0;
             transition: opacity 0.3s ease;
         }
