@@ -7,9 +7,9 @@ function loadFooter() {
           <div class="footer-grid-second">
             <div id="w-node-_8a1b11ab-e58b-9729-ec02-886db88784db-6ccff337" class="flex-space-between">
               <div>
-                <a href="index.html" onclick="scrollToHero(event)" style="text-decoration: none !important;"><img width="80" loading="lazy" alt="" src="images/Oski.png"></a>
+                <a href="index.html" onclick="scrollToHero(event)" style="text-decoration: none !important;"><img width="90" loading="lazy" alt="" src="images/Oski.png"></a>
                 <div style="margin-top: 20px; color: #6b7280; font-size: 14px; line-height: 1.4;">
-                  ©2025 OSKI. ALL RIGHTS RESERVED.<br>DESIGNED BY SAHAJ SATANI.
+                  ©2025 OSKI. ALL RIGHTS RESERVED. HIPAA-COMPLIANT.<br>DESIGNED BY SAHAJ SATANI.
                 </div>
               </div>
             </div>
