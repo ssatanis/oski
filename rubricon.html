@@ -1120,42 +1120,41 @@
 
     <!-- Authentication Loading Screen -->
     <style>
-        /* Initial loading state */
+        /* Show page content by default - NO HIDING */
         body {
             background: #ffffff;
             visibility: visible;
         }
         
-        body.loading {
-            visibility: visible;
-        }
-        
-        body.authenticated {
-            visibility: visible;
-        }
-        
-        #auth-loading {
+        /* Simple auth overlay - only shows when needed */
+        #auth-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            display: flex;
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 99999;
             font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            backdrop-filter: blur(10px);
+        }
+        
+        #auth-overlay.show {
+            display: flex;
+        }
+        
+        .auth-content {
+            text-align: center;
+            padding: 40px;
         }
         
         .auth-logo {
             width: 80px;
             height: auto;
-            margin-bottom: 40px;
-            opacity: 0;
-            animation: fadeInScale 0.8s ease-out 0.2s forwards;
+            margin-bottom: 30px;
         }
         
         .auth-spinner {
@@ -1165,7 +1164,7 @@
             border-top: 3px solid #3b82f6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 24px;
+            margin: 0 auto 20px;
         }
         
         @keyframes spin {
@@ -1173,228 +1172,107 @@
             100% { transform: rotate(360deg); }
         }
         
-        @keyframes fadeInScale {
-            0% { 
-                opacity: 0; 
-                transform: scale(0.8);
-            }
-            100% { 
-                opacity: 1; 
-                transform: scale(1);
-            }
-        }
-        
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        
         .auth-text {
             color: #64748b;
             font-size: 16px;
             font-weight: 500;
-            opacity: 0;
-            animation: fadeIn 0.6s ease-out 0.5s forwards;
+            margin-bottom: 8px;
         }
         
         .auth-subtitle {
             color: #94a3b8;
             font-size: 14px;
             font-weight: 400;
-            margin-top: 8px;
-            opacity: 0;
-            animation: fadeIn 0.6s ease-out 0.7s forwards;
-        }
-        
-        /* Hide main content until authenticated */
-        body:not(.authenticated):not(.fallback) .page-wrapper {
-            display: none !important;
-        }
-        
-        /* Show content in fallback mode */
-        body.fallback .page-wrapper {
-            display: block !important;
-        }
-        
-        body.fallback #auth-loading {
-            display: none !important;
-        }
-        
-        body.authenticated #auth-loading {
-            animation: fadeOutUp 0.5s ease-in forwards;
-        }
-        
-        @keyframes fadeOutUp {
-            0% { 
-                opacity: 1; 
-                transform: translateY(0);
-            }
-            100% { 
-                opacity: 0; 
-                transform: translateY(-20px);
-                pointer-events: none;
-            }
-        }
-        
-        /* Smooth content reveal */
-        body.authenticated .page-wrapper {
-            animation: fadeInContent 0.6s ease-out 0.3s both;
-        }
-        
-        @keyframes fadeInContent {
-            0% { 
-                opacity: 0; 
-                transform: translateY(20px);
-            }
-            100% { 
-                opacity: 1; 
-                transform: translateY(0);
-            }
         }
     </style>
 
-    <!-- Authentication Check Script -->
+    <!-- Simple Authentication Check -->
     <script>
-        // Set initial loading state
-        document.body.classList.add('loading');
-        
-        // Show loading screen immediately with safer DOM manipulation
-        const loadingHTML = `
-            <div id="auth-loading">
-                <img src="images/Oski.png" alt="Oski" class="auth-logo">
-                <div class="auth-spinner"></div>
-                <div class="auth-text">Verifying access permissions</div>
-                <div class="auth-subtitle">Ensuring secure authentication</div>
-            </div>
-        `;
-        
-        // Insert loading screen at the beginning of body
-        document.addEventListener('DOMContentLoaded', function() {
-            document.body.insertAdjacentHTML('afterbegin', loadingHTML);
-        });
-        
-        // If DOM is already loaded, insert immediately
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                if (!document.getElementById('auth-loading')) {
-                    document.body.insertAdjacentHTML('afterbegin', loadingHTML);
-                }
-            });
-        } else {
-            document.body.insertAdjacentHTML('afterbegin', loadingHTML);
-        }
-
-        // Fallback timer to ensure page doesn't stay white forever
-        let authCheckComplete = false;
-        setTimeout(() => {
-            if (!authCheckComplete) {
-                console.warn('Auth check timed out, showing page in fallback mode');
-                document.body.classList.add('fallback');
-                const loadingElement = document.getElementById('auth-loading');
-                if (loadingElement) {
-                    loadingElement.remove();
-                }
-                // Still try to redirect after showing content briefly
-                setTimeout(() => {
-                    window.location.replace('login.html');
-                }, 2000);
+        // Simple authentication check that doesn't block the page
+        function checkAuth() {
+            // Only check auth if Supabase is available
+            if (!window.supabase) {
+                console.log('Supabase not available, skipping auth check');
+                return;
             }
-        }, 5000); // 5 second timeout
-
-        // Check if Supabase is available
-        function waitForSupabase() {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 50;
-                
-                function checkSupabase() {
-                    attempts++;
-                    if (window.supabase) {
-                        resolve();
-                    } else if (attempts >= maxAttempts) {
-                        reject(new Error('Supabase failed to load'));
-                    } else {
-                        setTimeout(checkSupabase, 100);
-                    }
-                }
-                
-                checkSupabase();
-            });
-        }
-
-        // Initialize authentication
-        async function initAuth() {
+            
             try {
-                // Wait for Supabase to load
-                await waitForSupabase();
-                
-                // Supabase configuration
                 const SUPABASE_URL = 'https://yqioyjcriynhtirluyxb.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxaW95amNyaXluaHRpcmx1eXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNzk3NjEsImV4cCI6MjA2NTg1NTc2MX0.VOUimS9zIE1eIYIs_8taFF124qi943xRVxT8dqOnCkM';
-
-                // Initialize Supabase
+                
                 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-                // Check authentication
-                const { data: { session }, error } = await supabase.auth.getSession();
                 
-                authCheckComplete = true;
+                // Show auth overlay
+                showAuthOverlay();
                 
-                if (error) {
-                    console.error('Auth error:', error);
-                    window.location.replace('login.html');
-                    return;
-                }
-                
-                if (!session || !session.user) {
-                    // No active session, redirect to login
-                    window.location.replace('login.html');
-                    return;
-                }
-                
-                // User is authenticated, show content
-                setTimeout(() => {
-                    document.body.classList.add('authenticated');
+                supabase.auth.getSession().then(({ data: { session }, error }) => {
+                    hideAuthOverlay();
+                    
+                    if (error || !session || !session.user) {
+                        // Redirect to login if not authenticated
+                        window.location.replace('login.html');
+                        return;
+                    }
+                    
                     console.log('User authenticated:', session.user.email);
                     
-                    // Remove loading screen after animation completes
-                    setTimeout(() => {
-                        const loadingElement = document.getElementById('auth-loading');
-                        if (loadingElement) {
-                            loadingElement.remove();
-                        }
-                    }, 800);
-                }, 600);
-                
-                // Add logout functionality
-                window.logout = async function() {
-                    try {
-                        const { error } = await supabase.auth.signOut();
-                        if (error) {
-                            console.error('Logout error:', error);
-                        }
-                    } catch (e) {
-                        console.error('Logout failed:', e);
-                    }
-                    window.location.replace('login.html');
-                };
-                
-                // Listen for auth state changes
-                supabase.auth.onAuthStateChange((event, session) => {
-                    if (event === 'SIGNED_OUT' || !session) {
+                    // Add logout functionality
+                    window.logout = async function() {
+                        await supabase.auth.signOut();
                         window.location.replace('login.html');
-                    }
+                    };
+                    
+                    // Listen for auth state changes
+                    supabase.auth.onAuthStateChange((event, session) => {
+                        if (event === 'SIGNED_OUT' || !session) {
+                            window.location.replace('login.html');
+                        }
+                    });
+                }).catch((error) => {
+                    hideAuthOverlay();
+                    console.error('Auth check failed:', error);
+                    window.location.replace('login.html');
                 });
                 
             } catch (error) {
-                authCheckComplete = true;
-                console.error('Authentication initialization failed:', error);
+                hideAuthOverlay();
+                console.error('Auth initialization failed:', error);
                 window.location.replace('login.html');
             }
         }
-
-        // Start authentication process
-        initAuth();
+        
+        function showAuthOverlay() {
+            const overlay = document.getElementById('auth-overlay');
+            if (overlay) {
+                overlay.classList.add('show');
+            }
+        }
+        
+        function hideAuthOverlay() {
+            const overlay = document.getElementById('auth-overlay');
+            if (overlay) {
+                overlay.classList.remove('show');
+            }
+        }
+        
+        // Wait for page to load, then check auth
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add auth overlay to page
+            const authHTML = `
+                <div id="auth-overlay">
+                    <div class="auth-content">
+                        <img src="images/Oski.png" alt="Oski" class="auth-logo">
+                        <div class="auth-spinner"></div>
+                        <div class="auth-text">Verifying access permissions</div>
+                        <div class="auth-subtitle">Please wait...</div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', authHTML);
+            
+            // Check authentication after a brief delay
+            setTimeout(checkAuth, 100);
+        });
     </script>
 </head>
 

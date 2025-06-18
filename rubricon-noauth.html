@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html data-wf-domain="tenet-template.webflow.io" data-wf-page="683d91777124b040c4a5b5cd" data-wf-site="683d91777124b040c4a5b5db" lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Rubricon (No Auth) | Oski</title>
+    <meta content="Transform OSCE rubrics into AI-ready prompts with intelligent OCR processing and automated YAML generation." name="description">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    
+    <!-- Oski CSS Framework -->
+    <link href="https://cdn.prod.website-files.com/683d91777124b040c4a5b5db/css/tenet-template.webflow.shared.40365d26e.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous">
+    <script src="js/1.6.26-webfont.js" type="text/javascript"></script>
+    <script type="text/javascript">WebFont.load({  google: {    families: ["Geist:100,200,300,regular,500,600,700,800,900","Prata:regular"]  }});</script>
+    
+    <style>
+        body {
+            font-family: 'Geist', sans-serif;
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 40px 0;
+            text-align: left;
+        }
+        
+        .status-good {
+            color: #28a745;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Rubricon Debug Page</h1>
+        <p>This is a version without authentication to test if the page loads properly.</p>
+        
+        <div class="debug-info">
+            <h3>Debug Information:</h3>
+            <div id="debug-output">
+                <div class="status-good">✅ HTML loaded</div>
+                <div class="status-good">✅ CSS loaded</div>
+                <div id="js-status">❌ JavaScript not loaded yet</div>
+                <div id="fonts-status">❌ Fonts not loaded yet</div>
+            </div>
+        </div>
+        
+        <a href="rubricon.html" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; border-radius: 50px; text-decoration: none; font-weight: 600; display: inline-block;">
+            Try Real Rubricon Again
+        </a>
+    </div>
+    
+    <script>
+        console.log('Debug page JavaScript loaded');
+        document.getElementById('js-status').innerHTML = '<div class="status-good">✅ JavaScript loaded</div>';
+        
+        // Check if fonts loaded
+        document.fonts.ready.then(function () {
+            document.getElementById('fonts-status').innerHTML = '<div class="status-good">✅ Fonts loaded</div>';
+        });
+        
+        // Additional debugging
+        console.log('Document ready state:', document.readyState);
+        console.log('User agent:', navigator.userAgent);
+        console.log('Window location:', window.location.href);
+    </script>
+</body>
+</html> 
