@@ -43,9 +43,9 @@
 
         /* PromptGen Specific Styles */
         .promptgen-section {
-            padding: 120px 0 60px;
+            padding: 120px 0 40px;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            min-height: calc(100vh - 120px);
+            min-height: calc(100vh - 160px);
         }
 
         .promptgen-container {
@@ -77,16 +77,15 @@
         }
 
         .promptgen-title {
-            font-family: "Prata", serif;
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 400;
-            color: #000000;
-            margin-bottom: 20px;
-            letter-spacing: -0.025em;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-family: "Geist", sans-serif;
         }
 
         .promptgen-subtitle {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             color: #6b7280;
             max-width: 600px;
             margin: 0 auto;
@@ -100,21 +99,21 @@
             gap: 40px;
             max-width: 800px;
             margin: 0 auto;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             transition: margin-bottom 0.5s ease;
         }
 
         /* Dynamic spacing classes */
         .content-grid.file-uploaded {
-            margin-bottom: 60px;
+            margin-bottom: 30px;
         }
 
         .content-grid.processing-active {
-            margin-bottom: 80px;
+            margin-bottom: 40px;
         }
 
         .content-grid.dashboard-visible {
-            margin-bottom: 100px;
+            margin-bottom: 50px;
         }
 
         /* Upload Section */
@@ -592,11 +591,11 @@
         <!-- PromptGen Section -->
         <section class="promptgen-section">
             <div class="promptgen-container">
-                <!-- Header -->
-                <div class="promptgen-header fade-in">
-                    <h1 class="promptgen-title">PromptGen</h1>
-                    <p class="promptgen-subtitle">Transform your rubrics into AI-powered assessment prompts with intelligent analysis and automated generation.</p>
-                </div>
+                                 <!-- Header -->
+                 <div class="promptgen-header fade-in">
+                     <h2 class="promptgen-title">📝 PromptGen System</h2>
+                     <p class="promptgen-subtitle">AI-Powered Rubric to Assessment Prompt Generator</p>
+                 </div>
 
                 <div class="content-grid">
                     <!-- Upload Section -->
@@ -813,16 +812,42 @@
                 // Step 1: Upload file
                 showStatus('processing', 'Uploading file...', true);
                 
+                // Check if backend is accessible
+                try {
+                    console.log('Testing backend connection...');
+                    const healthCheck = await fetch('http://localhost:8000/health', {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    console.log('Health check response:', healthCheck.status, healthCheck.statusText);
+                    if (!healthCheck.ok) {
+                        throw new Error(`Backend server responded with ${healthCheck.status}: ${healthCheck.statusText}`);
+                    }
+                    const healthData = await healthCheck.json();
+                    console.log('Backend health:', healthData);
+                } catch (healthError) {
+                    console.error('Health check failed:', healthError);
+                    throw new Error(`Cannot connect to backend server: ${healthError.message}`);
+                }
+                
                 const formData = new FormData();
                 formData.append('file', currentFile);
+                console.log('Uploading file:', currentFile.name, 'Size:', currentFile.size);
 
                 const uploadResponse = await fetch('http://localhost:8000/upload', {
                     method: 'POST',
+                    mode: 'cors',
                     body: formData
                 });
+                console.log('Upload response:', uploadResponse.status, uploadResponse.statusText);
 
                 if (!uploadResponse.ok) {
-                    const errorText = await uploadResponse.text();
+                    let errorText = '';
+                    try {
+                        errorText = await uploadResponse.text();
+                    } catch (e) {
+                        errorText = 'Unknown server error';
+                    }
                     throw new Error(`Upload failed (${uploadResponse.status}): ${errorText}`);
                 }
 
@@ -842,7 +867,12 @@
                 });
 
                 if (!processResponse.ok) {
-                    const errorText = await processResponse.text();
+                    let errorText = '';
+                    try {
+                        errorText = await processResponse.text();
+                    } catch (e) {
+                        errorText = 'Unknown server error';
+                    }
                     throw new Error(`Processing failed (${processResponse.status}): ${errorText}`);
                 }
 
@@ -859,13 +889,16 @@
                 
                 // More detailed error handling
                 let errorMessage = 'Unknown error occurred';
-                if (error.message) {
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = 'Cannot connect to server. Please ensure the backend is running on http://localhost:8000';
+                } else if (error.message) {
                     errorMessage = error.message;
                 } else if (error.toString) {
                     errorMessage = error.toString();
                 }
                 
-                showStatus('error', `Error: ${errorMessage}`);
+                // Show user-friendly error message
+                showStatus('error', errorMessage);
                 
                 // Reset button
                 processButton.disabled = false;
