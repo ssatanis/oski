@@ -48,6 +48,39 @@
             min-height: calc(100vh - 200px);
         }
 
+        /* GLOBAL BUTTON CENTERING - AFFECTS ALL PAGES */
+        .button-flex {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            text-align: center !important;
+            width: 100% !important;
+        }
+
+        .button-flex.center-mobile {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            text-align: center !important;
+            width: 100% !important;
+        }
+
+        /* Ensure button containers are centered */
+        .margin-30 .button-flex,
+        .margin-40 .button-flex {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            text-align: center !important;
+            width: 100% !important;
+        }
+
+        /* Center individual buttons */
+        .button-first {
+            margin: 0 auto !important;
+            display: inline-block !important;
+        }
+
         .promptgen-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -599,7 +632,7 @@
                          <p class="p-02">AI-Powered Rubric to Assessment Prompt Generator</p>
                      </div>
                      <div class="margin-30">
-                         <div class="button-flex center-mobile">
+                         <div class="button-flex center-mobile" style="display: flex !important; justify-content: center !important; align-items: center !important; text-align: center !important; width: 100% !important;">
                              <a href="#upload" class="button-first w-inline-block">
                                  <div class="txt-wrapper">
                                      <div class="button-txt">Get Started</div>
@@ -716,6 +749,24 @@
     <script>
         let currentFile = null;
         let processedData = null;
+        
+        // Smart Backend Configuration - FREE VERCEL SERVERLESS FUNCTIONS!
+        const getBackendUrl = () => {
+            // Check if we're on localhost or deployed
+            const hostname = window.location.hostname;
+            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+            
+            if (isLocal) {
+                // Local development - use localhost backend
+                return 'http://localhost:8000';
+            } else {
+                // Production - use Vercel serverless functions (FREE!)
+                // The API routes will be at /api/ on the same domain
+                return window.location.origin; // Uses same domain as frontend
+            }
+        };
+        
+        const BACKEND_URL = getBackendUrl();
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -821,6 +872,8 @@
             // Add processing spacing
             contentGrid.classList.add('processing-active');
 
+            // Backend is always available now with Vercel serverless functions!
+
             try {
                 // Step 1: Upload file
                 showStatus('processing', 'Uploading file...', true);
@@ -828,7 +881,7 @@
                 // Check if backend is accessible
                 try {
                     console.log('Testing backend connection...');
-                    const healthCheck = await fetch('http://localhost:8000/health', {
+                    const healthCheck = await fetch(`${BACKEND_URL}/api/health`, {
                         method: 'GET',
                         mode: 'cors'
                     });
@@ -843,14 +896,22 @@
                     throw new Error(`Cannot connect to backend server: ${healthError.message}`);
                 }
                 
-                const formData = new FormData();
-                formData.append('file', currentFile);
+                // Convert file to base64 for Vercel serverless function
+                const fileArrayBuffer = await currentFile.arrayBuffer();
+                const fileBase64 = btoa(String.fromCharCode(...new Uint8Array(fileArrayBuffer)));
+                
                 console.log('Uploading file:', currentFile.name, 'Size:', currentFile.size);
 
-                const uploadResponse = await fetch('http://localhost:8000/upload', {
+                const uploadResponse = await fetch(`${BACKEND_URL}/api/upload`, {
                     method: 'POST',
                     mode: 'cors',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileName: currentFile.name,
+                        fileContent: fileBase64
+                    })
                 });
                 console.log('Upload response:', uploadResponse.status, uploadResponse.statusText);
 
@@ -869,7 +930,7 @@
                 // Step 2: Process with AI
                 showStatus('processing', 'Analyzing rubric with AI...', true);
                 
-                const processResponse = await fetch('http://localhost:8000/generate-prompt', {
+                const processResponse = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -903,7 +964,7 @@
                 // More detailed error handling
                 let errorMessage = 'Unknown error occurred';
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    errorMessage = 'Cannot connect to server. Please ensure the backend is running on http://localhost:8000';
+                    errorMessage = `Cannot connect to server. Please ensure the backend is running on ${BACKEND_URL || 'http://localhost:8000'}`;
                 } else if (error.message) {
                     errorMessage = error.message;
                 } else if (error.toString) {

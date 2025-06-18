@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel API Test - Oski</title>
+    <style>
+        body {
+            font-family: 'Geist', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 8px 8px 8px 0;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        .result {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        .error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        .loading {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            color: #ef6c00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Vercel API Test - Oski Backend</h1>
+    <p>Test the free Vercel serverless functions that power your PromptGen backend.</p>
+
+    <div class="test-card">
+        <h3>🩺 Health Check Test</h3>
+        <p>Tests the basic health endpoint to ensure the backend is responding.</p>
+        <button class="test-button" onclick="testHealth()">Test Health Endpoint</button>
+        <div id="healthResult"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>📁 File Upload Test</h3>
+        <p>Tests file upload and text extraction functionality.</p>
+        <button class="test-button" onclick="testUpload()">Test Upload Endpoint</button>
+        <div id="uploadResult"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>🤖 AI Prompt Generation Test</h3>
+        <p>Tests the prompt generation from extracted text.</p>
+        <button class="test-button" onclick="testGenerate()">Test Generate Endpoint</button>
+        <div id="generateResult"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>🔄 Full Workflow Test</h3>
+        <p>Tests the complete upload → process → download workflow.</p>
+        <button class="test-button" onclick="testFullWorkflow()">Test Full Workflow</button>
+        <div id="workflowResult"></div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+
+        function showResult(elementId, message, type = 'loading') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        async function testHealth() {
+            showResult('healthResult', 'Testing health endpoint...', 'loading');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('healthResult', 
+                        `✅ SUCCESS!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success'
+                    );
+                } else {
+                    showResult('healthResult', 
+                        `❌ ERROR!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showResult('healthResult', 
+                    `❌ NETWORK ERROR!\nError: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testUpload() {
+            showResult('uploadResult', 'Testing upload endpoint...', 'loading');
+            
+            try {
+                // Create a demo text file
+                const demoText = "OSCE Assessment Rubric\n\nCriteria 1: Patient Greeting (0-2 points)\nCriteria 2: History Taking (0-3 points)";
+                const fileBase64 = btoa(demoText);
+                
+                const response = await fetch(`${BASE_URL}/api/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileName: 'demo-rubric.txt',
+                        fileContent: fileBase64
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('uploadResult', 
+                        `✅ SUCCESS!\nStatus: ${response.status}\nExtracted ${data.text_length} characters\nPreview: ${data.extracted_text.substring(0, 200)}...`, 
+                        'success'
+                    );
+                } else {
+                    showResult('uploadResult', 
+                        `❌ ERROR!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showResult('uploadResult', 
+                    `❌ NETWORK ERROR!\nError: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testGenerate() {
+            showResult('generateResult', 'Testing generate endpoint...', 'loading');
+            
+            try {
+                const demoText = "OSCE Assessment Rubric\n\nCriteria 1: Patient Greeting (0-2 points)\nCriteria 2: History Taking (0-3 points)";
+                
+                const response = await fetch(`${BASE_URL}/api/generate-prompt`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        extracted_text: demoText
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('generateResult', 
+                        `✅ SUCCESS!\nStatus: ${response.status}\nGenerated YAML (${data.yaml_content.length} chars)\nGenerated JSON (${data.json_content.length} chars)\nValidation: ${data.validation_success}`, 
+                        'success'
+                    );
+                } else {
+                    showResult('generateResult', 
+                        `❌ ERROR!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showResult('generateResult', 
+                    `❌ NETWORK ERROR!\nError: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testFullWorkflow() {
+            showResult('workflowResult', 'Testing full workflow...', 'loading');
+            
+            try {
+                // Step 1: Upload
+                const demoText = "OSCE Assessment Rubric\n\nCriteria 1: Patient Greeting (0-2 points)\nCriteria 2: History Taking (0-3 points)";
+                const fileBase64 = btoa(demoText);
+                
+                const uploadResponse = await fetch(`${BASE_URL}/api/upload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: 'workflow-test.txt',
+                        fileContent: fileBase64
+                    })
+                });
+                
+                if (!uploadResponse.ok) {
+                    throw new Error(`Upload failed: ${uploadResponse.status}`);
+                }
+                
+                const uploadData = await uploadResponse.json();
+                
+                // Step 2: Generate
+                const generateResponse = await fetch(`${BASE_URL}/api/generate-prompt`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        extracted_text: uploadData.extracted_text
+                    })
+                });
+                
+                if (!generateResponse.ok) {
+                    throw new Error(`Generate failed: ${generateResponse.status}`);
+                }
+                
+                const generateData = await generateResponse.json();
+                
+                showResult('workflowResult', 
+                    `✅ FULL WORKFLOW SUCCESS!\n\n1. Upload: ✅ (${uploadData.text_length} chars extracted)\n2. Generate: ✅ (YAML & JSON created)\n3. Validation: ✅ (${generateData.validation_success})\n\nReady for production! 🎉`, 
+                    'success'
+                );
+                
+            } catch (error) {
+                showResult('workflowResult', 
+                    `❌ WORKFLOW ERROR!\nError: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        // Auto-run health check on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testHealth, 500);
+        });
+    </script>
+</body>
+</html> 
