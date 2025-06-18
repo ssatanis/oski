@@ -6,8 +6,8 @@
   - Local:        http://localhost:3001
 
  ✓ Starting...
- ✓ Ready in 1265ms
+ ✓ Ready in 2.6s
  ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 3s (552 modules)
- GET /health 404 in 3132ms
- ✓ Compiled in 132ms (287 modules)
+ ✓ Compiled /_not-found in 1111ms (552 modules)
+ GET /health 404 in 1200ms
+ ✓ Compiled in 98ms (287 modules)

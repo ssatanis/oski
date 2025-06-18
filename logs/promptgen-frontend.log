@@ -8,9 +8,15 @@
    - Environments: .env
 
  ✓ Starting...
- ✓ Ready in 803ms
-   Reload env: .env
-   Reload env: .env
- ○ Compiling /_not-found/page ...
- ✓ Compiled /_not-found/page in 1850ms
- GET /health 404 in 2159ms
+ ✓ Ready in 1236ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1624ms
+ GET / 200 in 1901ms
+ ✓ Compiled in 2.5s
+ ✓ Compiled in 77ms
+ ✓ Compiled in 574ms
+ ✓ Compiled / in 31ms
+ GET / 200 in 183ms
+ ✓ Compiled in 31ms
+ ✓ Compiled /_not-found/page in 376ms
+ GET /health 404 in 470ms

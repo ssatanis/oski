@@ -12,7 +12,7 @@ function loadHeader() {
               <div class="menu-left">
                 <a href="index.html#features" class="navbar-link w-nav-link">Features</a>
                 <a href="index.html#pricing" class="navbar-link w-nav-link">Pricing</a>
-                <a href="simulation.html" class="navbar-link w-nav-link">OSCESim</a>
+                <a href="oscesim.html" class="navbar-link w-nav-link">OSCESim</a>
                 <a href="promptgen.html" class="navbar-link w-nav-link">PromptGen</a>
               </div>
             </div>
