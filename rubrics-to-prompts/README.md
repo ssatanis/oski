@@ -1,4 +1,4 @@
-# Rubricon | Oski
+# Rubricon
 
 **Standalone Webapp for Transforming Medical Rubrics into AI Assessment Prompts**
 
