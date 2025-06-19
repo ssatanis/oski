@@ -2594,57 +2594,26 @@
                 let rubricData = null;
                 
                 try {
-                    // Try AWS Textract + Comprehend Medical first
-                    console.log('Attempting AWS Textract + Comprehend Medical processing...');
-                    rubricData = await processWithAWSTextractComprehend(currentFile, base64Content);
-                    console.log('AWS processing successful!');
-                } catch (awsError) {
-                    console.warn('AWS processing failed, trying backend fallback:', awsError.message);
+                    // Try comprehensive backend processing with multiple OCR services first
+                    console.log('Attempting comprehensive OCR processing with backend...');
+                    rubricData = await processWithComprehensiveOCR(currentFile, base64Content);
+                    console.log('Comprehensive OCR processing successful!');
+                } catch (backendError) {
+                    console.warn('Backend OCR processing failed, trying direct AWS:', backendError.message);
                     
                     try {
-                        // Try backend processing as fallback
-                        console.log('Attempting enhanced backend processing...');
-                        const uploadResponse = await fetch(`${BACKEND_URL}/api/upload`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                fileContent: base64Content,
-                                fileName: currentFile.name,
-                                enhanced_processing: true
-                            })
-                        });
-                        
-                        if (uploadResponse.ok) {
-                            const { extracted_text } = await uploadResponse.json();
-                            
-                            const promptResponse = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({ 
-                                    extracted_text,
-                                    enhanced_extraction: true,
-                                    require_all_sections: true
-                                })
-                            });
-                            
-                            if (promptResponse.ok) {
-                                const responseData = await promptResponse.json();
-                                rubricData = responseData.parsed_yaml;
-                                console.log('Enhanced backend processing successful!');
-                            }
-                        }
-                    } catch (networkError) {
-                        console.warn('Backend processing failed, using enhanced fallback:', networkError.message);
+                        // Try AWS Textract + Comprehend Medical directly
+                        console.log('Attempting direct AWS Textract + Comprehend Medical processing...');
+                        rubricData = await processWithAWSTextractComprehend(currentFile, base64Content);
+                        console.log('AWS processing successful!');
+                    } catch (awsError) {
+                        console.warn('AWS processing failed, trying local OCR fallback:', awsError.message);
                     }
                 }
                 
-                // If backend failed, use enhanced local processing
+                // If all OCR methods failed, use dynamic local processing
                 if (!rubricData) {
-                    showStatus('processing', 'Using enhanced local processing to ensure all sections...', true);
+                    showStatus('processing', 'Using dynamic local content analysis...', true);
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     rubricData = await generateEnhancedFallbackRubric(currentFile, base64Content);
                 }
@@ -2698,6 +2667,82 @@
                     </svg>
                     Process Rubric
                 `;
+            }
+        }
+
+        // Comprehensive OCR processing with backend (Google Vision + AWS Textract + OCR)
+        async function processWithComprehensiveOCR(file, base64Content) {
+            console.log('Starting comprehensive OCR processing with backend...');
+            
+            try {
+                // Step 1: Upload file and get comprehensive OCR extraction
+                showStatus('processing', 'Backend: Using Google Vision + AWS Textract + OCR...', true);
+                
+                const uploadResponse = await fetch(`${BACKEND_URL}/api/comprehensive-ocr`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileContent: base64Content,
+                        fileName: file.name,
+                        fileType: file.type,
+                        useMultipleOCR: true,
+                        services: ['google_vision', 'aws_textract', 'pytesseract', 'azure_cv'],
+                        extractTables: true,
+                        extractForms: true
+                    })
+                });
+                
+                if (!uploadResponse.ok) {
+                    throw new Error(`Backend OCR failed: ${uploadResponse.status}`);
+                }
+                
+                const { extracted_text, ocr_results } = await uploadResponse.json();
+                console.log('OCR extraction completed:', extracted_text.substring(0, 500) + '...');
+                
+                // Step 2: Parse rubric structure from extracted text
+                showStatus('processing', 'Backend: Parsing rubric structure with AI...', true);
+                
+                const parseResponse = await fetch(`${BACKEND_URL}/api/parse-rubric`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        extracted_text: extracted_text,
+                        file_name: file.name,
+                        ocr_results: ocr_results,
+                        parse_sections: true,
+                        extract_points: true,
+                        identify_medical_terms: true
+                    })
+                });
+                
+                if (!parseResponse.ok) {
+                    throw new Error(`Rubric parsing failed: ${parseResponse.status}`);
+                }
+                
+                const rubricStructure = await parseResponse.json();
+                console.log('Parsed rubric structure:', rubricStructure);
+                
+                return {
+                    system_message: rubricStructure.system_message || "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+                    user_message_preamble: rubricStructure.user_message_preamble || "Analyze the following medical examination and provide scores for each criterion:",
+                    sections: rubricStructure.sections || [],
+                    criteria: rubricStructure.criteria || [],
+                    rubric_analysis: rubricStructure.rubric_analysis || { sections: [] },
+                    assessment_type: rubricStructure.assessment_type || 'Medical Assessment',
+                    source_file: file.name,
+                    total_points: rubricStructure.total_points || 0,
+                    processing_method: 'Comprehensive Backend OCR',
+                    ocr_services_used: rubricStructure.ocr_services_used || ['google_vision', 'aws_textract'],
+                    extraction_confidence: rubricStructure.extraction_confidence || 0.85
+                };
+                
+            } catch (error) {
+                console.error('Comprehensive OCR processing error:', error);
+                throw new Error(`Comprehensive OCR processing failed: ${error.message}`);
             }
         }
 
@@ -2768,77 +2813,47 @@
             return fullText;
         }
 
-        // Advanced rubric structure parsing with medical intelligence
+        // Advanced rubric structure parsing with medical intelligence - DYNAMIC PARSING
         async function parseRubricStructureAdvanced(extractedText, medicalEntities, fileName) {
             console.log('Parsing rubric structure with medical intelligence...');
+            console.log('Extracted text preview:', extractedText.substring(0, 1000));
             
             const lines = extractedText.split('\n').filter(line => line.trim());
             const sections = [];
-            let currentSection = null;
-            let currentPoints = {};
             
-            // Extract point summary from bottom (like the user's example)
-            const pointsRegex = /(\w+)\s*\((\w+)\)\s*(\d+)/g;
-            let pointsMatch;
-            while ((pointsMatch = pointsRegex.exec(extractedText)) !== null) {
-                currentPoints[pointsMatch[1].toLowerCase()] = parseInt(pointsMatch[3]);
-            }
+            // DYNAMIC section detection - find actual sections in the uploaded rubric
+            const detectedSections = detectSectionsFromText(lines);
+            console.log('Detected sections from actual rubric:', detectedSections);
             
-            console.log('Extracted points summary:', currentPoints);
-            
-            // Define section patterns based on the user's rubric example
-            const sectionPatterns = [
-                {
-                    name: 'History Taking',
-                    code: 'HT',
-                    patterns: [/history\s*taking/i, /chief\s*concern/i, /hpi/i, /pmh/i],
-                    color: '#D4E4BC',
-                    points: currentPoints.history || currentPoints.ht || 27
-                },
-                {
-                    name: 'Physical Examination', 
-                    code: 'PE',
-                    patterns: [/physical\s*exam/i, /vitals/i, /examination/i, /rash\s*described/i],
-                    color: '#E4D5F7',
-                    points: currentPoints.physical || currentPoints.pe || 11
-                },
-                {
-                    name: 'Diagnostic Accuracy/Reasoning/Justification',
-                    code: 'DA',
-                    patterns: [/diagnostic/i, /diagnosis/i, /reasoning/i, /justification/i],
-                    color: '#F7E4D5',
-                    points: currentPoints.diagnostic || currentPoints.da || currentPoints.dr || 9
-                },
-                {
-                    name: 'Management',
-                    code: 'M',
-                    patterns: [/management/i, /treatment/i, /biopsy/i, /therapy/i],
-                    color: '#D5E4F7',
-                    points: currentPoints.management || currentPoints.m || 4
-                }
-            ];
-            
-            // Parse each section
-            for (const sectionPattern of sectionPatterns) {
+            // Parse each detected section dynamically
+            for (const detectedSection of detectedSections) {
                 const section = {
-                    name: sectionPattern.name,
-                    code: sectionPattern.code,
-                    maxPoints: sectionPattern.points,
+                    name: detectedSection.name,
+                    code: detectedSection.code,
+                    maxPoints: detectedSection.totalPoints,
                     items: [],
-                    color: sectionPattern.color
+                    startLine: detectedSection.startLine,
+                    endLine: detectedSection.endLine
                 };
                 
-                // Find section content
-                const sectionText = findSectionContent(lines, sectionPattern);
-                
-                // Extract items from section
-                const items = extractItemsFromSection(sectionText, medicalEntities, sectionPattern);
+                // Extract actual items from this section
+                const sectionLines = lines.slice(detectedSection.startLine, detectedSection.endLine);
+                const items = extractActualItemsFromSection(sectionLines, medicalEntities, detectedSection.name);
                 section.items = items;
+                
+                // Calculate total points for section
+                section.maxPoints = items.reduce((sum, item) => sum + (item.points || 1), 0);
                 
                 sections.push(section);
             }
             
-            console.log('Parsed sections:', sections);
+            console.log('Dynamically parsed sections:', sections);
+            
+            // If no sections detected, try fallback parsing
+            if (sections.length === 0) {
+                console.log('No sections detected, trying fallback parsing...');
+                return parseRubricFallback(extractedText, medicalEntities, fileName);
+            }
             
             // Return comprehensive rubric structure
             return {
@@ -2860,12 +2875,149 @@
                         items: section.items
                     }))
                 },
-                assessment_type: 'OSCE Medical Assessment',
+                assessment_type: 'Dynamic Medical Assessment',
                 source_file: fileName,
                 total_points: sections.reduce((sum, section) => sum + section.maxPoints, 0),
-                processing_method: 'AWS Textract + Comprehend Medical',
-                medicalEntitiesFound: medicalEntities.Entities ? medicalEntities.Entities.length : 0
+                processing_method: 'AWS Textract + Comprehend Medical - Dynamic Parsing',
+                medicalEntitiesFound: medicalEntities.Entities ? medicalEntities.Entities.length : 0,
+                sectionsDetected: sections.length
             };
+        }
+
+        // DYNAMIC section detection from actual rubric text
+        function detectSectionsFromText(lines) {
+            const sections = [];
+            let currentSection = null;
+            
+            // Common section header patterns - these will match any rubric
+            const sectionPatterns = [
+                /^(history[\s\-_]*taking|patient[\s\-_]*history|history)/i,
+                /^(physical[\s\-_]*exam|physical[\s\-_]*examination|examination|exam)/i,
+                /^(diagnostic|diagnosis|reasoning|justification|clinical[\s\-_]*reasoning)/i,
+                /^(management|treatment|therapeutic|intervention|plan)/i,
+                /^(communication|interpersonal|professional)/i,
+                /^(documentation|recording|charting)/i,
+                /^(safety|infection[\s\-_]*control|sterile)/i,
+                /^(assessment|evaluation|scoring)/i
+            ];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // Check if this line is a section header
+                const isSection = sectionPatterns.some(pattern => pattern.test(line)) ||
+                                line.match(/^[A-Z][a-zA-Z\s\-_]{2,}:?\s*$/); // Generic section headers
+                
+                if (isSection && line.length > 2 && line.length < 100) {
+                    // End previous section
+                    if (currentSection) {
+                        currentSection.endLine = i;
+                        sections.push(currentSection);
+                    }
+                    
+                    // Start new section
+                    currentSection = {
+                        name: line.replace(/[:;]/g, '').trim(),
+                        code: generateSectionCode(line),
+                        startLine: i + 1,
+                        endLine: lines.length,
+                        totalPoints: 0
+                    };
+                }
+            }
+            
+            // Close last section
+            if (currentSection) {
+                sections.push(currentSection);
+            }
+            
+            return sections;
+        }
+
+        // Generate section code from name
+        function generateSectionCode(sectionName) {
+            return sectionName.replace(/[^A-Z]/g, '').substring(0, 3) || 
+                   sectionName.substring(0, 2).toUpperCase();
+        }
+
+        // Extract actual items from a section - DYNAMIC parsing
+        function extractActualItemsFromSection(sectionLines, medicalEntities, sectionName) {
+            const items = [];
+            
+            for (const line of sectionLines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine || trimmedLine.length < 3) continue;
+                
+                // Skip obvious non-items (headers, empty lines, etc.)
+                if (trimmedLine.match(/^(item|criteria|points|total|section)/i)) continue;
+                
+                // Extract points from line (look for numbers in parentheses or after keywords)
+                const pointMatches = trimmedLine.match(/\((\d+)\s*(?:points?|pts?)\)|(\d+)\s*(?:points?|pts?)|(\d+)$/);
+                const points = pointMatches ? parseInt(pointMatches[1] || pointMatches[2] || pointMatches[3]) : 1;
+                
+                // Clean description (remove points notation, bullets, numbers)
+                let description = trimmedLine
+                    .replace(/\(\d+\s*(?:points?|pts?)\)/g, '')
+                    .replace(/^\d+[\.\-\)\s]+/, '')
+                    .replace(/^[\-\*\•\◦\▪\▫\s]+/, '')
+                    .trim();
+                
+                if (description && description.length > 2) {
+                    // Generate contextual examples based on description and medical entities
+                    const examples = generateContextualExamples(description, medicalEntities, sectionName);
+                    
+                    items.push({
+                        description: description,
+                        points: points,
+                        examples: examples,
+                        category: generateSectionCode(sectionName)
+                    });
+                }
+            }
+            
+            return items;
+        }
+
+        // Generate contextual examples based on actual rubric content
+        function generateContextualExamples(description, medicalEntities, sectionName) {
+            const desc = description.toLowerCase();
+            const examples = [];
+            
+            // Use medical entities to enhance examples
+            const relevantEntities = medicalEntities.Entities ? 
+                medicalEntities.Entities.filter(entity => 
+                    desc.includes(entity.Text.toLowerCase()) ||
+                    entity.Category === 'MEDICAL_CONDITION' || 
+                    entity.Category === 'MEDICATION' ||
+                    entity.Category === 'ANATOMY'
+                ).slice(0, 2) : [];
+            
+            // Generate examples based on actual rubric content
+            if (desc.includes('chief') || desc.includes('concern') || desc.includes('complaint')) {
+                examples.push("What brings you in today?", "Can you tell me about your main concern?");
+            } else if (desc.includes('history') && desc.includes('present')) {
+                examples.push("Tell me more about this problem", "When did this start?");
+            } else if (desc.includes('vital') || desc.includes('signs')) {
+                examples.push("I'm going to check your vital signs", "Let me take your blood pressure");
+            } else if (desc.includes('exam') || desc.includes('examination')) {
+                examples.push(`I'm going to examine ${desc.replace(/examination?|exam/gi, '').trim()}`, 
+                            `Physical assessment of ${description.toLowerCase()}`);
+            } else if (desc.includes('diagnosis') || desc.includes('diagnostic')) {
+                examples.push("Based on my findings, I believe...", `Clinical reasoning for ${description.toLowerCase()}`);
+            } else if (desc.includes('treatment') || desc.includes('management') || desc.includes('plan')) {
+                examples.push("The treatment plan includes...", `Management approach for ${description.toLowerCase()}`);
+            } else {
+                // Generic examples based on section and description
+                examples.push(`Assessment of ${description.toLowerCase()}`, 
+                             `Evaluation related to ${description.toLowerCase()}`);
+            }
+            
+            // Add entity-specific examples
+            relevantEntities.forEach(entity => {
+                examples.push(`Assessment involving ${entity.Text}`);
+            });
+            
+            return examples.length > 0 ? examples.slice(0, 3) : [`Assessment of ${description}`];
         }
 
         // Find section content in text
@@ -3016,233 +3168,272 @@
             return examples.length > 0 ? examples : [`Assessment of ${description}`];
         }
 
-        // Enhanced fallback rubric generation with all OSCE sections
-        async function generateEnhancedFallbackRubric(file, base64Content) {
-            console.log('Generating enhanced fallback rubric for:', file.name);
-            
-            // Try to extract text from the file for better analysis
-            let extractedText = '';
-            try {
-                // Attempt simple text extraction for better pattern matching
-                if (file.type.includes('text') || file.name.endsWith('.txt')) {
-                    extractedText = await file.text();
-                } else {
-                    // For other files, try to get some content hints from filename
-                    extractedText = file.name + ' ' + (file.type || '');
-                }
-            } catch (error) {
-                console.warn('Could not extract text, using filename-based analysis');
-                extractedText = file.name;
-            }
-            
-            // Enhanced OSCE sections with detailed items like the user's rubric
-            const detailedSections = [
-                {
-                    name: "History Taking",
-                    code: "HT",
-                    maxPoints: 27,
-                    items: [
-                        {
-                            description: "Chief Concern",
-                            points: 1,
-                            examples: ["What brings you in today?", "Can you tell me about your main concern?"]
-                        },
-                        {
-                            description: "Rash on arms",
-                            points: 1,
-                            examples: ["Tell me about this rash", "When did you first notice it?"]
-                        },
-                        {
-                            description: "HPI - Rash started about 3 months ago",
-                            points: 2,
-                            examples: ["When did this start?", "How long have you had this?"]
-                        },
-                        {
-                            description: "Initially on right elbow",
-                            points: 1,
-                            examples: ["Where did it first appear?", "Show me where it started"]
-                        },
-                        {
-                            description: "Now on both elbows",
-                            points: 1,
-                            examples: ["Has it spread anywhere else?", "Where else do you see it?"]
-                        },
-                        {
-                            description: "Itchy",
-                            points: 1,
-                            examples: ["Does it itch?", "Is it bothering you?"]
-                        },
-                        {
-                            description: "No previous episodes",
-                            points: 1,
-                            examples: ["Have you had this before?", "Is this the first time?"]
-                        },
-                        {
-                            description: "Moisturizer provides temporary relief",
-                            points: 1,
-                            examples: ["What helps with the symptoms?", "Have you tried anything?"]
-                        },
-                        {
-                            description: "PMH - Hypertension",
-                            points: 2,
-                            examples: ["Do you have any medical conditions?", "Any chronic illnesses?"]
-                        },
-                        {
-                            description: "Medications - Lisinopril",
-                            points: 1,
-                            examples: ["What medications are you taking?", "Any prescriptions?"]
-                        },
-                        {
-                            description: "No allergies",
-                            points: 1,
-                            examples: ["Any allergies?", "Are you allergic to anything?"]
-                        },
-                        {
-                            description: "Family History - Father has chronic rash",
-                            points: 1,
-                            examples: ["Any family history of skin problems?", "Does this run in your family?"]
-                        },
-                        {
-                            description: "Social History - Non-smoker",
-                            points: 1,
-                            examples: ["Do you smoke?", "Any tobacco use?"]
-                        }
-                    ]
-                },
-                {
-                    name: "Physical Examination",
-                    code: "PE",
-                    maxPoints: 11,
-                    items: [
-                        {
-                            description: "Vitals documented",
-                            points: 1,
-                            examples: ["I'm going to check your vital signs", "Let me take your blood pressure"]
-                        },
-                        {
-                            description: "Rash described as erythematous OR red",
-                            points: 2,
-                            examples: ["I can see the rash is red", "This appears erythematous"]
-                        },
-                        {
-                            description: "Plaques",
-                            points: 2,
-                            examples: ["These are raised plaques", "I can feel these elevated areas"]
-                        },
-                        {
-                            description: "Scale",
-                            points: 2,
-                            examples: ["There's some scaling here", "I notice flaky skin"]
-                        },
-                        {
-                            description: "On elbows OR extensor surface upper extremities",
-                            points: 2,
-                            examples: ["I'm examining your elbows", "Let me look at the extensor surfaces"]
-                        },
-                        {
-                            description: "No significant rash on knees OR back",
-                            points: 2,
-                            examples: ["I'm checking other areas", "Let me examine your knees and back"]
-                        }
-                    ]
-                },
-                {
-                    name: "Diagnostic Accuracy/Reasoning/Justification",
-                    code: "DA",
-                    maxPoints: 14,
-                    items: [
-                        {
-                            description: "Diagnosis 1 - Psoriasis",
-                            points: 5,
-                            examples: ["This appears to be psoriasis", "My diagnosis is psoriasis"]
-                        },
-                        {
-                            description: "Justification - Itchy",
-                            points: 1,
-                            examples: ["The itching supports this diagnosis", "Consistent with the symptoms"]
-                        },
-                        {
-                            description: "Family history of rash OR father with rash",
-                            points: 1,
-                            examples: ["The family history is significant", "This can run in families"]
-                        },
-                        {
-                            description: "Raised OR plaque",
-                            points: 1,
-                            examples: ["The raised appearance is typical", "These plaques are characteristic"]
-                        },
-                        {
-                            description: "Scale",
-                            points: 1,
-                            examples: ["The scaling is consistent", "This type of scaling fits"]
-                        },
-                        {
-                            description: "On elbows OR extensor surface",
-                            points: 1,
-                            examples: ["The location is typical", "Common areas for this condition"]
-                        },
-                        {
-                            description: "Other Diagnoses - Eczema OR atopic dermatitis",
-                            points: 2,
-                            examples: ["Could also consider eczema", "Atopic dermatitis is possible"]
-                        },
-                        {
-                            description: "Fungal infection OR tinea",
-                            points: 2,
-                            examples: ["We should rule out fungal infection", "Tinea is in the differential"]
-                        }
-                    ]
-                },
-                {
-                    name: "Management",
-                    code: "M",
-                    maxPoints: 4,
-                    items: [
-                        {
-                            description: "Skin biopsy",
-                            points: 1,
-                            examples: ["I recommend a skin biopsy", "We should take a tissue sample"]
-                        },
-                        {
-                            description: "CBC OR CMP OR Liver function tests",
-                            points: 1,
-                            examples: ["Let's do some blood work", "I'll order some lab tests"]
-                        },
-                        {
-                            description: "Topical corticosteroids OR Phototherapy",
-                            points: 1,
-                            examples: ["I'll prescribe a topical steroid", "Light therapy might help"]
-                        },
-                        {
-                            description: "Stress management OR moisturize regularly",
-                            points: 1,
-                            examples: ["Try to manage stress", "Keep the skin moisturized"]
-                        }
-                    ]
-                }
-            ];
-            
-            return {
-                system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
-                sections: detailedSections,
-                criteria: detailedSections.flatMap(section => 
-                    section.items.map(item => ({
-                        name: item.description,
-                        max_points: item.points,
-                        section: section.name,
-                        examples: item.examples
-                    }))
-                ),
-                rubric_analysis: {
-                    sections: detailedSections
-                },
-                assessment_type: 'OSCE Medical Assessment - Enhanced Detail',
-                source_file: file.name,
-                total_points: detailedSections.reduce((sum, section) => sum + section.maxPoints, 0),
-                processing_method: 'Enhanced Local Fallback with Detailed Items'
-            };
-        }
+                 // DYNAMIC fallback rubric generation - NO TEMPLATES
+         async function generateEnhancedFallbackRubric(file, base64Content) {
+             console.log('Generating DYNAMIC fallback rubric for:', file.name);
+             
+             // Try to extract actual text from the file
+             let extractedText = '';
+             try {
+                 if (file.type.includes('text') || file.name.endsWith('.txt')) {
+                     extractedText = await file.text();
+                 } else {
+                     // For binary files, try basic text extraction if possible
+                     console.log('Binary file detected, using filename-based analysis');
+                     extractedText = file.name;
+                 }
+             } catch (error) {
+                 console.warn('Could not extract text, using filename-based analysis');
+                 extractedText = file.name;
+             }
+             
+             console.log('Extracted text for fallback processing:', extractedText.substring(0, 500));
+             
+             // Parse the actual content dynamically
+             const dynamicStructure = parseRubricFallback(extractedText, { Entities: [] }, file.name);
+             
+             return dynamicStructure;
+         }
+
+         // DYNAMIC fallback parsing without templates
+         function parseRubricFallback(extractedText, medicalEntities, fileName) {
+             console.log('Parsing rubric with dynamic fallback - NO TEMPLATES');
+             
+             const lines = extractedText.split('\n').filter(line => line.trim());
+             
+             // If we have actual content, parse it
+             if (lines.length > 3 && extractedText.length > 100) {
+                 return parseContentBasedRubric(lines, medicalEntities, fileName);
+             }
+             
+             // If no content, create a minimal structure for user to fill in
+             return createMinimalRubricStructure(fileName);
+         }
+
+         // Parse actual content from the rubric
+         function parseContentBasedRubric(lines, medicalEntities, fileName) {
+             const sections = [];
+             let currentSection = null;
+             
+             // More comprehensive section detection
+             const sectionIndicators = [
+                 /history|patient.*history|taking.*history/i,
+                 /physical.*exam|examination|clinical.*exam/i,
+                 /diagnostic|diagnosis|reasoning|clinical.*reasoning/i,
+                 /management|treatment|therapeutic|intervention/i,
+                 /communication|interpersonal|professional/i,
+                 /documentation|recording|notes/i,
+                 /technical.*skills|procedural/i,
+                 /assessment|evaluation|overall/i
+             ];
+             
+             for (let i = 0; i < lines.length; i++) {
+                 const line = lines[i].trim();
+                 
+                 // Detect section headers (various formats)
+                 const isSection = sectionIndicators.some(pattern => pattern.test(line)) ||
+                                 line.match(/^[A-Z][A-Za-z\s\-_]{3,}:?\s*$/) ||
+                                 line.match(/^\d+[\.\-\)]\s*[A-Z][A-Za-z\s]{3,}/) ||
+                                 (line.length > 5 && line.length < 80 && line === line.toUpperCase());
+                 
+                 if (isSection) {
+                     // Save previous section
+                     if (currentSection && currentSection.items.length > 0) {
+                         sections.push(currentSection);
+                     }
+                     
+                     // Start new section
+                     currentSection = {
+                         name: cleanSectionName(line),
+                         code: generateSectionCode(line),
+                         maxPoints: 0,
+                         items: []
+                     };
+                 } else if (currentSection && line.length > 3) {
+                     // Parse potential rubric item
+                     const item = parseRubricItem(line);
+                     if (item) {
+                         currentSection.items.push(item);
+                         currentSection.maxPoints += item.points;
+                     }
+                 }
+             }
+             
+             // Add final section
+             if (currentSection && currentSection.items.length > 0) {
+                 sections.push(currentSection);
+             }
+             
+             // If no sections found, create structure from content
+             if (sections.length === 0) {
+                 return createStructureFromContent(lines, fileName);
+             }
+             
+             console.log('Parsed sections from actual content:', sections);
+             
+             return {
+                 system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+                 user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
+                 sections: sections,
+                 criteria: sections.flatMap(section => 
+                     section.items.map(item => ({
+                         name: item.description,
+                         max_points: item.points,
+                         section: section.name,
+                         examples: item.examples
+                     }))
+                 ),
+                 rubric_analysis: { sections: sections },
+                 assessment_type: 'Dynamic Medical Assessment from Content',
+                 source_file: fileName,
+                 total_points: sections.reduce((sum, section) => sum + section.maxPoints, 0),
+                 processing_method: 'Dynamic Content Parsing'
+             };
+         }
+
+         // Parse individual rubric items from lines
+         function parseRubricItem(line) {
+             const trimmed = line.trim();
+             
+             // Skip obvious non-items
+             if (trimmed.length < 3 || 
+                 trimmed.match(/^(total|points|section|criteria|item|score)/i) ||
+                 trimmed.match(/^[\-=\*\+\s]+$/)) {
+                 return null;
+             }
+             
+             // Extract points
+             const pointMatch = trimmed.match(/\((\d+)\s*(?:points?|pts?)\)|(\d+)\s*(?:points?|pts?)|\b(\d+)\s*$/);
+             const points = pointMatch ? parseInt(pointMatch[1] || pointMatch[2] || pointMatch[3]) : 1;
+             
+             // Clean description
+             let description = trimmed
+                 .replace(/\(\d+\s*(?:points?|pts?)\)/gi, '')
+                 .replace(/^\d+[\.\-\)\s]+/, '')
+                 .replace(/^[\-\*\•\◦\▪\▫\[\]\s]+/, '')
+                 .trim();
+             
+             if (description.length < 2) return null;
+             
+             // Generate examples based on content
+             const examples = generateSmartExamples(description);
+             
+             return {
+                 description: description,
+                 points: points,
+                 examples: examples
+             };
+         }
+
+         // Generate smart examples based on item description
+         function generateSmartExamples(description) {
+             const desc = description.toLowerCase();
+             
+             if (desc.includes('chief') || desc.includes('concern')) {
+                 return ["What brings you in today?", "Tell me about your main concern"];
+             } else if (desc.includes('vital') || desc.includes('signs')) {
+                 return ["I'll check your vital signs", "Let me take your blood pressure"];
+             } else if (desc.includes('exam') || desc.includes('examination')) {
+                 return [`I'm going to examine ${desc.replace(/exam.*|examination.*/gi, '').trim()}`, 
+                        `Physical assessment of ${description.toLowerCase()}`];
+             } else if (desc.includes('diagnosis') || desc.includes('diagnostic')) {
+                 return ["Based on my findings...", `Clinical reasoning for ${description.toLowerCase()}`];
+             } else {
+                 return [`Assessment of ${description.toLowerCase()}`, 
+                        `Evaluation related to ${description.toLowerCase()}`];
+             }
+         }
+
+         // Create structure when no clear sections found
+         function createStructureFromContent(lines, fileName) {
+             const items = [];
+             
+             for (const line of lines) {
+                 const item = parseRubricItem(line);
+                 if (item) items.push(item);
+             }
+             
+             // If items found, create a single general section
+             if (items.length > 0) {
+                 const totalPoints = items.reduce((sum, item) => sum + item.points, 0);
+                 
+                 return {
+                     system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+                     user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
+                     sections: [{
+                         name: "Assessment Criteria",
+                         code: "AC",
+                         maxPoints: totalPoints,
+                         items: items
+                     }],
+                     criteria: items.map(item => ({
+                         name: item.description,
+                         max_points: item.points,
+                         section: "Assessment Criteria",
+                         examples: item.examples
+                     })),
+                     rubric_analysis: {
+                         sections: [{
+                             name: "Assessment Criteria",
+                             maxPoints: totalPoints,
+                             items: items
+                         }]
+                     },
+                     assessment_type: 'Dynamic Assessment from Content',
+                     source_file: fileName,
+                     total_points: totalPoints,
+                     processing_method: 'Content-Based Dynamic Parsing'
+                 };
+             }
+             
+             // Last resort - create minimal structure
+             return createMinimalRubricStructure(fileName);
+         }
+
+         // Clean section names
+         function cleanSectionName(name) {
+             return name.replace(/^\d+[\.\-\)\s]*/, '')
+                       .replace(/[:;]/g, '')
+                       .trim();
+         }
+
+         // Create minimal structure for user to customize
+         function createMinimalRubricStructure(fileName) {
+             const basicSection = {
+                 name: "Assessment Criteria",
+                 code: "AC",
+                 maxPoints: 10,
+                 items: [
+                     {
+                         description: "Assessment criterion 1",
+                         points: 5,
+                         examples: ["Example assessment", "Evaluation criteria"]
+                     },
+                     {
+                         description: "Assessment criterion 2", 
+                         points: 5,
+                         examples: ["Example assessment", "Evaluation criteria"]
+                     }
+                 ]
+             };
+             
+             return {
+                 system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+                 user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
+                 sections: [basicSection],
+                 criteria: basicSection.items.map(item => ({
+                     name: item.description,
+                     max_points: item.points,
+                     section: basicSection.name,
+                     examples: item.examples
+                 })),
+                 rubric_analysis: { sections: [basicSection] },
+                 assessment_type: 'Editable Template',
+                 source_file: fileName,
+                 total_points: 10,
+                 processing_method: 'Minimal Template for Customization'
+             };
+         }
         
         // Enhanced section analysis based on file content
         async function enhanceSectionsFromContent(baseSections, extractedText, fileName) {
