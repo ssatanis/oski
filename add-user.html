@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Add User | Oski</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body style="font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto;">
+    <h1>Add User to Database</h1>
+    <p>This will add Sahaj Satani to the users table with the specified credentials.</p>
+    
+    <button onclick="addUser()" style="background: #007bff; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+        Add User to Database
+    </button>
+    
+    <div id="result" style="margin-top: 20px; padding: 15px; border-radius: 5px; display: none;"></div>
+    
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://yqioyjcriynhtirluyxb.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxaW95amNyaXluaHRpcmx1eXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNzk3NjEsImV4cCI6MjA2NTg1NTc2MX0.VOUimS9zIE1eIYIs_8taFF124qi943xRVxT8dqOnCkM';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function addUser() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Adding user...';
+            resultDiv.style.background = '#fff3cd';
+            resultDiv.style.color = '#856404';
+            resultDiv.style.border = '1px solid #ffeaa7';
+            
+            try {
+                // First check if user already exists
+                const { data: existingUsers, error: checkError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', 'sahaj.satani@utsouthwestern.edu');
+                
+                if (checkError) {
+                    throw checkError;
+                }
+                
+                if (existingUsers && existingUsers.length > 0) {
+                    resultDiv.innerHTML = '✅ User already exists in database!<br><br>' +
+                        `<strong>Details:</strong><br>` +
+                        `ID: ${existingUsers[0].id}<br>` +
+                        `Email: ${existingUsers[0].email}<br>` +
+                        `Created: ${new Date(existingUsers[0].created_at).toLocaleString()}<br>` +
+                        `Last Login: ${existingUsers[0].last_login_at ? new Date(existingUsers[0].last_login_at).toLocaleString() : 'Never'}`;
+                    resultDiv.style.background = '#d4edda';
+                    resultDiv.style.color = '#155724';
+                    resultDiv.style.border = '1px solid #c3e6cb';
+                    return;
+                }
+                
+                // Hash the password (simple base64 for development)
+                const passwordHash = btoa('1234');
+                
+                // Add the user
+                const { data, error } = await supabase
+                    .from('users')
+                    .insert([
+                        {
+                            email: 'sahaj.satani@utsouthwestern.edu',
+                            password_hash: passwordHash,
+                            created_at: new Date().toISOString()
+                        }
+                    ])
+                    .select();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                resultDiv.innerHTML = '✅ User added successfully!<br><br>' +
+                    `<strong>Details:</strong><br>` +
+                    `ID: ${data[0].id}<br>` +
+                    `Email: ${data[0].email}<br>` +
+                    `Created: ${new Date(data[0].created_at).toLocaleString()}<br><br>` +
+                    `<strong>Login Credentials:</strong><br>` +
+                    `Email: sahaj.satani@utsouthwestern.edu<br>` +
+                    `Password: 1234<br><br>` +
+                    `<a href="login.html" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Login Page</a>`;
+                
+                resultDiv.style.background = '#d4edda';
+                resultDiv.style.color = '#155724';
+                resultDiv.style.border = '1px solid #c3e6cb';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '❌ Error adding user:<br>' + error.message;
+                resultDiv.style.background = '#f8d7da';
+                resultDiv.style.color = '#721c24';
+                resultDiv.style.border = '1px solid #f5c6cb';
+            }
+        }
+    </script>
+</body>
+</html> 

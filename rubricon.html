@@ -1188,55 +1188,75 @@
 
     <!-- Simple Authentication Check -->
     <script>
-        // Simple authentication check that doesn't block the page
+        // Check authentication using our custom session system
         function checkAuth() {
-            // Only check auth if Supabase is available
-            if (!window.supabase) {
-                console.log('Supabase not available, skipping auth check');
-                return;
-            }
-            
             try {
-                const SUPABASE_URL = 'https://yqioyjcriynhtirluyxb.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxaW95amNyaXluaHRpcmx1eXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNzk3NjEsImV4cCI6MjA2NTg1NTc2MX0.VOUimS9zIE1eIYIs_8taFF124qi943xRVxT8dqOnCkM';
-                
-                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                
-                // Show auth overlay
+                // Show auth overlay immediately
                 showAuthOverlay();
                 
-                supabase.auth.getSession().then(({ data: { session }, error }) => {
+                console.log('Checking authentication...');
+                
+                // Check for stored session
+                const sessionData = localStorage.getItem('oski_session');
+                const userData = localStorage.getItem('oski_user');
+                
+                if (!sessionData || !userData) {
+                    console.log('No session found, redirecting to login');
                     hideAuthOverlay();
-                    
-                    if (error || !session || !session.user) {
-                        // Redirect to login if not authenticated
+                    window.location.replace('login.html');
+                    return;
+                }
+                
+                const session = JSON.parse(sessionData);
+                const user = JSON.parse(userData);
+                
+                // Check if session is still valid
+                if (!session.expires_at || Date.now() >= session.expires_at) {
+                    console.log('Session expired, redirecting to login');
+                    localStorage.removeItem('oski_session');
+                    localStorage.removeItem('oski_user');
+                    hideAuthOverlay();
+                    window.location.replace('login.html');
+                    return;
+                }
+                
+                console.log('User authenticated:', user.email);
+                
+                // Hide auth overlay with a brief delay for smooth UX
+                setTimeout(() => {
+                    hideAuthOverlay();
+                }, 800);
+                
+                // Add logout functionality
+                window.logout = function() {
+                    console.log('Logging out...');
+                    localStorage.removeItem('oski_session');
+                    localStorage.removeItem('oski_user');
+                    window.location.replace('login.html');
+                };
+                
+                // Set up session monitoring
+                setInterval(() => {
+                    const currentSession = localStorage.getItem('oski_session');
+                    if (!currentSession) {
+                        console.log('Session removed, redirecting to login');
                         window.location.replace('login.html');
-                        return;
-                    }
-                    
-                    console.log('User authenticated:', session.user.email);
-                    
-                    // Add logout functionality
-                    window.logout = async function() {
-                        await supabase.auth.signOut();
-                        window.location.replace('login.html');
-                    };
-                    
-                    // Listen for auth state changes
-                    supabase.auth.onAuthStateChange((event, session) => {
-                        if (event === 'SIGNED_OUT' || !session) {
+                    } else {
+                        const sessionObj = JSON.parse(currentSession);
+                        if (Date.now() >= sessionObj.expires_at) {
+                            console.log('Session expired during use, redirecting to login');
+                            localStorage.removeItem('oski_session');
+                            localStorage.removeItem('oski_user');
                             window.location.replace('login.html');
                         }
-                    });
-                }).catch((error) => {
-                    hideAuthOverlay();
-                    console.error('Auth check failed:', error);
-                    window.location.replace('login.html');
-                });
+                    }
+                }, 60000); // Check every minute
                 
             } catch (error) {
+                console.error('Auth check failed:', error);
+                localStorage.removeItem('oski_session');
+                localStorage.removeItem('oski_user');
                 hideAuthOverlay();
-                console.error('Auth initialization failed:', error);
                 window.location.replace('login.html');
             }
         }

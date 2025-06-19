@@ -544,6 +544,17 @@
 
                     <div class="error-message" id="errorMessage"></div>
                     <div class="success-message" id="successMessage"></div>
+                    
+                    <!-- Debug Console (hidden by default) -->
+                    <div id="debugConsole" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
+                        <h4 style="margin: 0 0 10px 0; color: #666;">Debug Console:</h4>
+                        <div id="debugOutput"></div>
+                    </div>
+                    
+                    <!-- Debug Toggle Button -->
+                    <button type="button" onclick="toggleDebug()" style="margin-top: 15px; padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 20px; font-size: 12px; cursor: pointer; opacity: 0.7;">
+                        Toggle Debug
+                    </button>
                 </form>
             </div>
         </div>
@@ -558,15 +569,62 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Check if user is already logged in
-        async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                window.location.href = 'rubricon.html';
+        function checkAuth() {
+            try {
+                const sessionData = localStorage.getItem('oski_session');
+                if (sessionData) {
+                    const session = JSON.parse(sessionData);
+                    // Check if session is still valid (not expired)
+                    if (session.expires_at && Date.now() < session.expires_at) {
+                        console.log('User already logged in, redirecting...');
+                        window.location.href = 'rubricon.html';
+                        return;
+                    } else {
+                        // Session expired, clear it
+                        localStorage.removeItem('oski_session');
+                        localStorage.removeItem('oski_user');
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                // Clear potentially corrupted session data
+                localStorage.removeItem('oski_session');
+                localStorage.removeItem('oski_user');
             }
         }
 
         // Call checkAuth on page load
-        checkAuth();
+        document.addEventListener('DOMContentLoaded', checkAuth);
+
+        // Debug functions
+        let debugOutput = [];
+        
+        function addDebugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugOutput.push(`[${timestamp}] ${message}`);
+            const debugElement = document.getElementById('debugOutput');
+            if (debugElement) {
+                debugElement.innerHTML = debugOutput.slice(-20).join('<br>'); // Show last 20 logs
+                debugElement.scrollTop = debugElement.scrollHeight;
+            }
+        }
+        
+        function toggleDebug() {
+            const debugConsole = document.getElementById('debugConsole');
+            if (debugConsole.style.display === 'none') {
+                debugConsole.style.display = 'block';
+                addDebugLog('Debug console enabled');
+            } else {
+                debugConsole.style.display = 'none';
+            }
+        }
+        
+        // Override console.log for debug
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            addDebugLog(args.join(' '));
+        };
 
         // Toggle password visibility
         function togglePassword() {
@@ -617,6 +675,14 @@
             }
         }
 
+        // Simple password verification function (for basic hashing)
+        function verifyPassword(inputPassword, storedHash) {
+            // For development - using simple base64 encoding
+            // In production, you should use proper bcrypt
+            const inputHash = btoa(inputPassword);
+            return inputHash === storedHash;
+        }
+
         // Handle login form submission
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -624,45 +690,86 @@
             hideMessages();
             setLoading(true);
             
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             
             try {
-                // Sign in with Supabase
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
+                console.log('Attempting login for:', email);
                 
-                if (error) {
-                    throw error;
+                // Query our custom users table
+                const { data: users, error: queryError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .limit(1);
+                
+                if (queryError) {
+                    console.error('Database query error:', queryError);
+                    throw new Error('Database connection failed. Please try again.');
                 }
                 
-                if (data.user) {
-                    showSuccess('Login successful! Redirecting...');
-                    
-                    // Update last login timestamp
-                    const { error: updateError } = await supabase
-                        .from('users')
-                        .update({ last_login_at: new Date().toISOString() })
-                        .eq('email', email);
-                    
-                    // Redirect to Rubricon page after short delay
-                    setTimeout(() => {
-                        window.location.href = 'rubricon.html';
-                    }, 1000);
-                } else {
-                    showError('Login failed. Please check your credentials.');
+                console.log('Query result:', users);
+                
+                if (!users || users.length === 0) {
+                    throw new Error('Invalid email or password. Please check your credentials.');
                 }
+                
+                const user = users[0];
+                console.log('Found user:', { id: user.id, email: user.email });
+                
+                // Verify password
+                const isValidPassword = verifyPassword(password, user.password_hash);
+                
+                if (!isValidPassword) {
+                    throw new Error('Invalid email or password. Please check your credentials.');
+                }
+                
+                console.log('Password verified successfully');
+                
+                // Create a session by signing in the user with Supabase Auth
+                // We'll use a workaround to create a session
+                const sessionData = {
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        created_at: user.created_at
+                    },
+                    access_token: 'custom_' + user.id + '_' + Date.now(),
+                    expires_at: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+                };
+                
+                // Store session in localStorage for persistence
+                localStorage.setItem('oski_session', JSON.stringify(sessionData));
+                localStorage.setItem('oski_user', JSON.stringify(sessionData.user));
+                
+                showSuccess('Login successful! Redirecting...');
+                
+                // Update last login timestamp
+                const { error: updateError } = await supabase
+                    .from('users')
+                    .update({ last_login_at: new Date().toISOString() })
+                    .eq('id', user.id);
+                
+                if (updateError) {
+                    console.warn('Failed to update last login:', updateError);
+                }
+                
+                console.log('Login successful, redirecting to Rubricon...');
+                
+                // Redirect to Rubricon page after short delay
+                setTimeout(() => {
+                    window.location.href = 'rubricon.html';
+                }, 1500);
                 
             } catch (error) {
                 console.error('Login error:', error);
+                
                 let errorMessage = 'Login failed. Please try again.';
                 
-                if (error.message.includes('Invalid login credentials')) {
+                if (error.message.includes('Invalid email or password')) {
                     errorMessage = 'Invalid email or password. Please check your credentials.';
-                } else if (error.message.includes('Email not confirmed')) {
-                    errorMessage = 'Please verify your email address before signing in.';
+                } else if (error.message.includes('Database connection failed')) {
+                    errorMessage = 'Unable to connect to the database. Please check your internet connection and try again.';
                 } else if (error.message.includes('Too many requests')) {
                     errorMessage = 'Too many login attempts. Please wait a moment and try again.';
                 }
