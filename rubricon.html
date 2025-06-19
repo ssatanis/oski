@@ -2367,7 +2367,10 @@
         let currentTaskId = null;
 
         // Backend URL - Points to the rubrics-to-prompts backend
-        const BACKEND_URL = 'http://localhost:8000';
+        // For production, you'll need to deploy the backend separately and update this URL
+        const BACKEND_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000'
+            : 'https://your-backend-api.vercel.app'; // Replace with your deployed backend URL
 
         // Perfect adaptive footer state management
         function updateFooterState(state) {
@@ -2394,16 +2397,24 @@
         function setupFileUpload() {
             const fileInput = document.getElementById('fileInput');
             
+            console.log('Setting up file upload listener...');
+            
             fileInput.addEventListener('change', function(e) {
+                console.log('File input changed:', e.target.files);
                 const file = e.target.files[0];
                 if (file) {
+                    console.log('File selected:', file.name, file.size, file.type);
                     handleFileSelection(file);
+                } else {
+                    console.log('No file selected');
                 }
             });
         }
 
         function setupDragAndDrop() {
             const uploadCard = document.getElementById('upload');
+            
+            console.log('Setting up drag and drop...');
 
             uploadCard.addEventListener('dragover', function(e) {
                 e.preventDefault();
@@ -2420,6 +2431,7 @@
                 uploadCard.classList.remove('dragover');
                 
                 const files = e.dataTransfer.files;
+                console.log('Files dropped:', files);
                 if (files.length > 0) {
                     handleFileSelection(files[0]);
                 }
@@ -2427,6 +2439,7 @@
         }
 
         function handleFileSelection(file) {
+            console.log('Handling file selection:', file);
             currentFile = file;
             
             // Update file preview
@@ -2435,10 +2448,35 @@
             const fileSize = document.getElementById('fileSize');
             const processButton = document.getElementById('processButton');
 
-            filePreview.style.display = 'flex';
-            fileName.textContent = file.name;
-            fileSize.textContent = formatFileSize(file.size);
-            processButton.disabled = false;
+            console.log('Updating UI elements...');
+            
+            if (filePreview) {
+                filePreview.style.display = 'flex';
+                console.log('File preview shown');
+            } else {
+                console.error('filePreview element not found!');
+            }
+            
+            if (fileName) {
+                fileName.textContent = file.name;
+                console.log('File name updated:', file.name);
+            } else {
+                console.error('fileName element not found!');
+            }
+            
+            if (fileSize) {
+                fileSize.textContent = formatFileSize(file.size);
+                console.log('File size updated:', formatFileSize(file.size));
+            } else {
+                console.error('fileSize element not found!');
+            }
+            
+            if (processButton) {
+                processButton.disabled = false;
+                console.log('Process button enabled');
+            } else {
+                console.error('processButton element not found!');
+            }
         }
 
         function formatFileSize(bytes) {

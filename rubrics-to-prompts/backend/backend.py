@@ -50,6 +50,11 @@ def upload_file(file_path):
             lambda row: " | ".join(str(v) for v in row if pd.notnull(v)), axis=1
         ).tolist()
 
+    elif suffix == ".txt":
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            results = [line.strip() for line in content.split("\n") if line.strip()]
+
     else:
         raise ValueError(f"Unsupported file format: {suffix}")
 

@@ -1,0 +1,31 @@
+# Large directories (over 300MB total)
+rubrics-to-prompts/
+venv/
+osce-video-grader/
+node_modules/
+
+# Backend files (not needed for frontend deployment)
+api/
+
+# Large files
+*.log
+logs/
+.DS_Store
+
+# Development files
+test-rubricon.html
+start-rubricon.sh
+
+# Git
+.git/
+
+# Cache directories
+.vercel/
+.cache/
+
+# Python files
+*.pyc
+__pycache__/
+
+# Keep only essential frontend files for deployment
+# The frontend will connect to a separate backend API 
