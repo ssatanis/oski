@@ -2380,10 +2380,7 @@
         
         // AWS Configuration for Textract + Comprehend Medical
         // SECURITY NOTE: AWS credentials are handled securely by the backend
-        // Backend should configure these environment variables:
-        // - AWS_ACCESS_KEY_ID=your_aws_access_key_here
-        // - AWS_SECRET_ACCESS_KEY=your_aws_secret_key_here
-        // - AWS_REGION=us-east-1
+
         const AWS_CONFIG = {
             region: 'us-east-1',
             // Credentials handled securely by backend service
@@ -2496,50 +2493,6 @@
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-
-        /* ============================================ */
-        /* ENHANCED RUBRIC PROCESSING SYSTEM         */
-        /* ============================================ */
-        
-        /*
-         * COMPREHENSIVE OSCE RUBRIC EXTRACTION
-         * 
-         * This enhanced system ensures ALL core OSCE sections are extracted:
-         * 1. History Taking - Patient communication and interview skills
-         * 2. Physical Examination - Clinical examination techniques  
-         * 3. Diagnostic Accuracy/Reasoning/Justification - Clinical reasoning
-         * 4. Management - Treatment planning and patient education
-         * 
-         * PROCESSING METHODS (in order of preference):
-         * 
-         * 1. ENHANCED BACKEND (Best for accuracy):
-         *    - Azure Computer Vision API for OCR
-         *    - OpenAI GPT-4 for intelligent section extraction
-         *    - Pattern matching for validation
-         * 
-         * 2. ALTERNATIVE APIS (Recommended for better accuracy):
-         *    a) Google Cloud Vision API + Document AI
-         *       - Free tier: 1,000 requests/month
-         *       - Excellent for medical documents
-         *       - Setup: https://cloud.google.com/vision
-         * 
-         *    b) AWS Textract + Comprehend Medical
-         *       - $1.50 per 1,000 pages
-         *       - Specialized for medical text
-         *       - Setup: https://aws.amazon.com/textract/
-         * 
-         *    c) OpenAI GPT-4 Vision (Most accurate)
-         *       - $0.01 per 1K tokens
-         *       - Direct document understanding
-         *       - Setup: https://platform.openai.com/docs/guides/vision
-         * 
-         * 3. ENHANCED LOCAL FALLBACK:
-         *    - Advanced pattern matching
-         *    - Content-based analysis
-         *    - Guaranteed all 4 core sections
-         * 
-         * CURRENT STATUS: Enhanced processing with guaranteed section extraction
-         */
 
         async function processRubric() {
             if (!currentFile) {
