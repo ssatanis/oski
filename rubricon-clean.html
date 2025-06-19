@@ -2194,7 +2194,7 @@
     <div class="page-wrapper">
         <!-- Header will be injected here -->
         <div id="header-container"></div>
-        
+
         <!-- Rubricon Section -->
         <section class="promptgen-section">
             <div class="promptgen-container">
@@ -2570,8 +2570,8 @@
                     // Continue polling
                     attempts++;
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                
-            } catch (error) {
+                    
+                } catch (error) {
                     console.error('Status polling error:', error);
                     throw error;
                 }
@@ -2647,7 +2647,7 @@
             const criteria = data.criteria || [];
             console.log('Loading criteria:', criteria);
             
-                loadCriteria(criteria);
+            loadCriteria(criteria);
             
             // Update total points
             updateTotalPoints();
@@ -2848,26 +2848,26 @@
             const criteria = [];
             
             Array.from(container.children).forEach((item, index) => {
-                    const nameInput = item.querySelector('.criterion-name');
-                    const pointsInput = item.querySelector('.criterion-points');
-                    const exampleInputs = item.querySelectorAll('.example-input');
-                    
-                    if (nameInput && nameInput.value.trim()) {
-                        const examples = Array.from(exampleInputs)
-                            .map(input => input.value.trim())
+                const nameInput = item.querySelector('.criterion-name');
+                const pointsInput = item.querySelector('.criterion-points');
+                const exampleInputs = item.querySelectorAll('.example-input');
+                
+                if (nameInput && nameInput.value.trim()) {
+                    const examples = Array.from(exampleInputs)
+                        .map(input => input.value.trim())
                         .filter(value => value.length > 0);
-                        
-                            criteria.push({
-                                name: nameInput.value.trim(),
+                    
+                    criteria.push({
+                        name: nameInput.value.trim(),
                         max_points: parseInt(pointsInput.value) || 1,
                         examples: examples
-                            });
+                    });
                 }
             });
             
             if (criteria.length > 0) {
-            const userMessage = generateUserMessage(criteria);
-            document.getElementById('userMessagePreview').textContent = userMessage;
+                const userMessage = generateUserMessage(criteria);
+                document.getElementById('userMessagePreview').textContent = userMessage;
             } else {
                 document.getElementById('userMessagePreview').textContent = 'No criteria defined yet. Add some criteria to see the preview.';
             }
@@ -2900,10 +2900,10 @@
                 const exampleInputs = item.querySelectorAll('.example-input');
                 
                 if (nameInput && nameInput.value.trim()) {
-                const examples = Array.from(exampleInputs)
-                    .map(input => input.value.trim())
+                    const examples = Array.from(exampleInputs)
+                        .map(input => input.value.trim())
                         .filter(value => value.length > 0);
-                
+                    
                     criteria.push({
                         criterion: nameInput.value.trim(),
                         max_points: parseInt(pointsInput.value) || 1,
