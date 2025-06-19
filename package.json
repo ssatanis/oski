@@ -31,23 +31,16 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-textract": "^3.658.1",
     "@google-cloud/vision": "^5.2.0",
-    "aws-sdk": "^2.1691.0",
     "csv-parse": "^5.6.0",
     "formidable": "^3.5.4",
     "jimp": "^1.6.0",
     "mammoth": "^1.9.1",
-    "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
     "pdf-parse": "^1.1.1",
     "pdf2pic": "^3.2.0",
     "sharp": "^0.34.2",
     "tesseract.js": "^6.0.1",
-    "xlsx": "^0.18.5",
-    "python-shell": "^5.0.0",
-    "express": "^4.21.1",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5"
+    "xlsx": "^0.18.5"
   }
 }

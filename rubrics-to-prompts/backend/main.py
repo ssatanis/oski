@@ -117,31 +117,6 @@ class ProcessingResponse(BaseModel):
 # In-memory task storage (use Redis in production)
 task_storage = {}
 
-def generate_yaml_from_criteria(criteria, filename):
-    """Generate YAML content from criteria list"""
-    yaml_lines = []
-    yaml_lines.append("system_message: |")
-    yaml_lines.append("  You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.")
-    yaml_lines.append("")
-    yaml_lines.append("user_message: |")
-    yaml_lines.append("  Analyze the following medical examination and provide scores for each criterion:")
-    yaml_lines.append("")
-    yaml_lines.append("criteria:")
-    
-    for i, criterion in enumerate(criteria):
-        yaml_lines.append(f"  - criterion: {criterion.get('name', 'Criterion')}")
-        yaml_lines.append(f"    max_points: {criterion.get('max_points', 1)}")
-        yaml_lines.append(f"    examples:")
-        examples = criterion.get('examples', [])
-        if examples:
-            for example in examples:
-                if example and example.strip():  # Only add non-empty examples
-                    yaml_lines.append(f"      - {example}")
-        else:
-            yaml_lines.append(f"      - Assessment of {criterion.get('name', 'criterion').lower()}")
-    
-    return '\n'.join(yaml_lines)
-
 async def extract_text_from_file(file_path: str, file_type: str) -> str:
     """Extract text from various file formats using OCR"""
     try:
@@ -467,58 +442,43 @@ response_config:
 async def upload_rubric(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     """Upload and process a rubric file"""
     
+    # Generate task ID
+    import uuid
+    task_id = str(uuid.uuid4())
+    
+    # Initialize task storage
+    task_storage[task_id] = {
+        'status': ProcessingStatus(
+            step="upload",
+            message="File uploaded successfully",
+            progress=10.0
+        ),
+        'result': None,
+        'error': None
+    }
+    
     # Validate file type
-    allowed_extensions = ['pdf', 'doc', 'docx', 'xlsx', 'xls', 'txt', 'png', 'jpg', 'jpeg']
+    allowed_extensions = ['pdf', 'xls', 'doc', 'docx', 'txt', 'xlsx', 'csv', 'png', 'jpg', 'jpeg']
     file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
     
     if file_extension not in allowed_extensions:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Unsupported file type: {file_extension}. Supported: PDF, Word, Excel, Text, Images"
-        )
+        task_storage[task_id]['error'] = f"Unsupported file type: {file_extension}"
+        raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}")
     
-    try:
-        # Read file content
-        file_content = await file.read()
-        
-        # Generate task ID
-        import uuid
-        task_id = str(uuid.uuid4())
-        
-        # Initialize task storage
-        task_storage[task_id] = {
-            'status': ProcessingStatus(
-                step="initializing",
-                message="File upload received",
-                progress=10.0
-            ),
-            'result': None,
-            'error': None
-        }
-        
-        # Start background processing
-        background_tasks.add_task(
-            process_rubric_background,
-            file_content,
-            file.filename,
-            task_id,
-            file_extension
-        )
-        
-        return ProcessingResponse(
-            task_id=task_id,
-            status="processing",
-            message="File upload successful. Processing started."
-        )
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to process file: {str(e)}"
-        )
+    # Read file content before background processing
+    file_content = await file.read()
+    
+    # Start background processing
+    background_tasks.add_task(process_rubric_background, file_content, file.filename, task_id, file_extension)
+    
+    return ProcessingResponse(
+        task_id=task_id,
+        status="processing",
+        message="File uploaded successfully. Processing started."
+    )
 
 async def process_rubric_background(file_content: bytes, filename: str, task_id: str, file_extension: str):
-    """Background task to process the rubric file using enhanced backend.py"""
+    """Background task to process the rubric file"""
     try:
         # Update status: File processing
         task_storage[task_id]['status'] = ProcessingStatus(
@@ -533,55 +493,37 @@ async def process_rubric_background(file_content: bytes, filename: str, task_id:
             temp_file_path = temp_file.name
         
         try:
-            # Update status: Text extraction and AI processing
+            # Update status: Text extraction
             task_storage[task_id]['status'] = ProcessingStatus(
-                step="ai_processing",
-                message="Extracting content and generating structured rubric...",
-                progress=60.0
+                step="ocr_processing",
+                message="Extracting text from document...",
+                progress=40.0
             )
             
-            # Use our enhanced backend.py to process the file
-            from backend import upload_file
-            result = upload_file(temp_file_path)
+            # Extract text
+            extracted_text = await extract_text_from_file(temp_file_path, file_extension)
             
-            if not result or not result.get('success'):
-                raise ValueError("Failed to process rubric file")
+            if not extracted_text.strip():
+                raise HTTPException(status_code=400, detail="No text could be extracted from the file")
             
-            logger.info(f"Successfully processed rubric: {filename}")
+            logger.info(f"Extracted text length: {len(extracted_text)} characters")
+            
+            # Generate YAML prompt
+            result = await generate_yaml_prompt(extracted_text, task_id)
             
             # Update final status
             task_storage[task_id]['status'] = ProcessingStatus(
-                step="completed", 
+                step="completed",
                 message="Processing completed successfully!",
                 progress=100.0,
                 completed=True
             )
             
-            # Store result in format expected by frontend
-            # Convert backend.py result to the format expected by rubricon.html
-            rubric_data = result.get('interactiveRubric', {})
-            
-            # Extract criteria from assessment domains
-            criteria = []
-            for domain in rubric_data.get('assessment_domains', []):
-                for criterion in domain.get('subcategories', []):
-                    criteria.append({
-                        'name': criterion.get('name', ''),
-                        'criterion': criterion.get('name', ''),
-                        'max_points': criterion.get('points', 1),
-                        'points': criterion.get('points', 1),
-                        'examples': [criterion.get('description', '')]  # Use real descriptions, not fake examples
-                    })
-            
-            # Generate YAML content
-            yaml_content = generate_yaml_from_criteria(criteria, filename)
-            
+            # Store result
             task_storage[task_id]['result'] = {
-                'parsed_yaml': {
-                    'system_message': "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                    'criteria': criteria
-                },
-                'yaml_content': yaml_content,
+                'original_text': extracted_text,
+                'yaml_content': result['yaml_content'],
+                'parsed_yaml': result['parsed_yaml'],
                 'filename': filename
             }
             
@@ -594,7 +536,7 @@ async def process_rubric_background(file_content: bytes, filename: str, task_id:
     
     except Exception as e:
         logger.error(f"Background processing failed: {e}")
-        error_message = f"Processing failed: {str(e)}"
+        error_message = f"Load failed: {str(e)}"
         task_storage[task_id]['error'] = error_message
         task_storage[task_id]['status'] = ProcessingStatus(
             step="error",
@@ -668,20 +610,9 @@ async def download_yaml(task_id: str):
     if not result:
         raise HTTPException(status_code=400, detail="No result found to download")
     
-    # Generate YAML content if not present
-    yaml_content = result.get('yaml_content')
-    if not yaml_content and result.get('parsed_yaml'):
-        # Generate YAML from parsed data
-        parsed = result['parsed_yaml']
-        criteria = parsed.get('criteria', [])
-        yaml_content = generate_yaml_from_criteria(criteria, result.get('filename', 'rubric'))
-    
-    if not yaml_content:
-        raise HTTPException(status_code=400, detail="No YAML content available")
-    
     # Create temporary YAML file
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as temp_file:
-        temp_file.write(yaml_content)
+        temp_file.write(result['yaml_content'])
         temp_file_path = temp_file.name
     
     # Generate filename
@@ -698,12 +629,12 @@ async def download_yaml(task_id: str):
 async def upload_file(file: UploadFile = File(...)):
     """Simple upload endpoint that returns extracted text immediately"""
     try:
-        # Validate file type - only PDF, Word, and Excel
-        allowed_extensions = ['pdf', 'doc', 'docx', 'xlsx', 'xls']
+        # Validate file type
+        allowed_extensions = ['pdf', 'xls', 'doc', 'docx', 'txt', 'xlsx', 'csv', 'png', 'jpg', 'jpeg']
         file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
         
         if file_extension not in allowed_extensions:
-            raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed: PDF, Word (.docx/.doc), Excel (.xlsx/.xls)")
+            raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}")
         
         # Read file content
         file_content = await file.read()
