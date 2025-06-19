@@ -2379,12 +2379,15 @@
         }
         
         // AWS Configuration for Textract + Comprehend Medical
+        // SECURITY NOTE: AWS credentials are handled securely by the backend
+        // Backend should configure these environment variables:
+        // - AWS_ACCESS_KEY_ID=AKIAWGXOJOSG5GSD3KZ3
+        // - AWS_SECRET_ACCESS_KEY=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
+        // - AWS_REGION=us-east-1
         const AWS_CONFIG = {
             region: 'us-east-1',
-            credentials: {
-                accessKeyId: 'AKIAWGXOJOSG5GSD3KZ3',
-                secretAccessKey: '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'
-            }
+            // Credentials handled securely by backend service
+            useBackendAuth: true
         };
 
         // Smart Backend Configuration - FREE VERCEL SERVERLESS FUNCTIONS!
@@ -2405,24 +2408,7 @@
         
         const BACKEND_URL = getBackendUrl();
 
-        // Load AWS SDK
-        function loadAWSSDK() {
-            return new Promise((resolve, reject) => {
-                if (window.AWS) {
-                    resolve(window.AWS);
-                    return;
-                }
-                
-                const script = document.createElement('script');
-                script.src = 'https://sdk.amazonaws.com/js/aws-sdk-2.1547.0.min.js';
-                script.onload = () => {
-                    window.AWS.config.update(AWS_CONFIG);
-                    resolve(window.AWS);
-                };
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        }
+
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -2746,72 +2732,55 @@
             }
         }
 
-        // AWS Textract + Comprehend Medical processing
+        // AWS Textract + Comprehend Medical processing via backend
         async function processWithAWSTextractComprehend(file, base64Content) {
-            console.log('Starting AWS Textract + Comprehend Medical processing...');
-            
-            // Load AWS SDK
-            const AWS = await loadAWSSDK();
-            
-            // Initialize services
-            const textract = new AWS.Textract({region: 'us-east-1'});
-            const comprehendMedical = new AWS.ComprehendMedical({region: 'us-east-1'});
+            console.log('Starting AWS processing via secure backend...');
             
             try {
-                // Step 1: Extract text using Textract
-                showStatus('processing', 'AWS Textract: Extracting text and tables from document...', true);
+                // Use backend for secure AWS processing
+                showStatus('processing', 'Backend: AWS Textract + Comprehend Medical analysis...', true);
                 
-                const textractParams = {
-                    Document: {
-                        Bytes: new Uint8Array(atob(base64Content).split('').map(char => char.charCodeAt(0)))
+                const response = await fetch(`${BACKEND_URL}/api/aws-processing`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
                     },
-                    FeatureTypes: ['TABLES', 'FORMS']
-                };
+                    body: JSON.stringify({
+                        fileContent: base64Content,
+                        fileName: file.name,
+                        fileType: file.type,
+                        services: ['textract', 'comprehend_medical'],
+                        extractTables: true,
+                        extractForms: true,
+                        analyzeMedicalEntities: true
+                    })
+                });
                 
-                const textractResult = await textract.analyzeDocument(textractParams).promise();
-                console.log('Textract result:', textractResult);
+                if (!response.ok) {
+                    throw new Error(`Backend AWS processing failed: ${response.status}`);
+                }
                 
-                // Extract text from Textract response
-                const extractedText = extractTextFromTextractResponse(textractResult);
-                console.log('Extracted text:', extractedText);
+                const { extracted_text, medical_entities, textract_data } = await response.json();
+                console.log('AWS processing completed via backend');
                 
-                // Step 2: Analyze medical entities using Comprehend Medical
-                showStatus('processing', 'AWS Comprehend Medical: Analyzing medical entities...', true);
-                
-                const comprehendParams = {
-                    Text: extractedText.substring(0, 20000) // Limit to 20k chars for API limits
-                };
-                
-                const medicalEntities = await comprehendMedical.detectEntitiesV2(comprehendParams).promise();
-                console.log('Medical entities:', medicalEntities);
-                
-                // Step 3: Parse rubric structure from text and entities
+                // Parse rubric structure from AWS results
                 showStatus('processing', 'Processing rubric structure with medical intelligence...', true);
                 
-                const rubricStructure = await parseRubricStructureAdvanced(extractedText, medicalEntities, file.name);
+                const rubricStructure = await parseRubricStructureAdvanced(
+                    extracted_text, 
+                    { Entities: medical_entities || [] }, 
+                    file.name
+                );
                 
                 return rubricStructure;
                 
             } catch (error) {
-                console.error('AWS processing error:', error);
+                console.error('Backend AWS processing error:', error);
                 throw new Error(`AWS processing failed: ${error.message}`);
             }
         }
 
-        // Extract text from Textract response
-        function extractTextFromTextractResponse(textractResult) {
-            let fullText = '';
-            
-            if (textractResult.Blocks) {
-                textractResult.Blocks.forEach(block => {
-                    if (block.BlockType === 'LINE') {
-                        fullText += block.Text + '\n';
-                    }
-                });
-            }
-            
-            return fullText;
-        }
+
 
         // Advanced rubric structure parsing with medical intelligence - DYNAMIC PARSING
         async function parseRubricStructureAdvanced(extractedText, medicalEntities, fileName) {
