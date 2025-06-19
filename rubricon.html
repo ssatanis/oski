@@ -2230,10 +2230,10 @@
                             </div>
                             <h2 class="upload-title">Upload Your Rubric</h2>
                             <p class="upload-description">Drag and drop your rubric file here, or click to browse.<br>
-                            Supports: PDF, Word (.docx/.doc), and Excel (.xlsx/.xls) files only.</p>
+                            Supports: PDF, Word (.docx/.doc), Excel (.xlsx/.xls), and Text (.txt) files.</p>
                             
-                            <input type="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
-                            <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+                            <input type="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt">
+                            <button class="upload-button" onclick="triggerFileInput()" id="uploadButton">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                     <polyline points="17 8 12 3 7 8"></polyline>
@@ -2384,19 +2384,48 @@
             console.log(`Footer state updated to: ${state}`);
         }
 
+        // Trigger file input click
+        function triggerFileInput() {
+            console.log('Upload button clicked!');
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                console.log('Triggering file input click...');
+                fileInput.click();
+            } else {
+                console.error('File input not found when trying to trigger!');
+            }
+        }
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - Initializing Rubricon...');
+            
             // Initialize footer state
             updateFooterState('initial');
             
             setupFileUpload();
             setupDragAndDrop();
+            
+            // Verify all elements are present
+            const fileInput = document.getElementById('fileInput');
+            const uploadButton = document.getElementById('uploadButton');
+            const processButton = document.getElementById('processButton');
+            
+            console.log('Element check:');
+            console.log('- fileInput:', fileInput ? 'FOUND' : 'NOT FOUND');
+            console.log('- uploadButton:', uploadButton ? 'FOUND' : 'NOT FOUND');
+            console.log('- processButton:', processButton ? 'FOUND' : 'NOT FOUND');
         });
 
         function setupFileUpload() {
             const fileInput = document.getElementById('fileInput');
             
-            console.log('Setting up file upload listener...');
+            if (!fileInput) {
+                console.error('CRITICAL: fileInput element not found!');
+                return;
+            }
+            
+            console.log('Setting up file upload listener...', fileInput);
             
             fileInput.addEventListener('change', function(e) {
                 console.log('File input changed:', e.target.files);
@@ -2408,12 +2437,21 @@
                     console.log('No file selected');
                 }
             });
+            
+            // Test the file input setup
+            console.log('File input setup complete. Element:', fileInput);
+            console.log('File input accept:', fileInput.accept);
         }
 
         function setupDragAndDrop() {
             const uploadCard = document.getElementById('upload');
             
-            console.log('Setting up drag and drop...');
+            if (!uploadCard) {
+                console.error('CRITICAL: upload card element not found!');
+                return;
+            }
+            
+            console.log('Setting up drag and drop...', uploadCard);
 
             uploadCard.addEventListener('dragover', function(e) {
                 e.preventDefault();
