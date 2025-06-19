@@ -1,3 +1,19 @@
+# Exclude everything except essential frontend files
+*
+
+# Include only essential frontend files
+!*.html
+!css/
+!css/**
+!js/
+!js/**
+!images/
+!images/**  
+!favicons/
+!favicons/**
+!fonts/
+!fonts/**
+
 # Large directories (over 300MB total)
 rubrics-to-prompts/
 venv/
