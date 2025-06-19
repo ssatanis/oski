@@ -2364,6 +2364,10 @@
     <script>
         let currentFile = null;
         let processedData = null;
+        let currentTaskId = null;
+
+        // Backend URL - Points to the rubrics-to-prompts backend
+        const BACKEND_URL = 'http://localhost:8000';
 
         // Perfect adaptive footer state management
         function updateFooterState(state) {
@@ -2377,20 +2381,6 @@
             
             console.log(`Footer state updated to: ${state}`);
         }
-        
-        // AWS Configuration for Textract + Comprehend Medical
-        // SECURITY NOTE: AWS credentials are handled securely by the backend
-
-        const AWS_CONFIG = {
-            region: 'us-east-1',
-            // Credentials handled securely by backend service
-            useBackendAuth: true
-        };
-        
-        // Backend URL - Points to the rubrics-to-prompts backend
-        const BACKEND_URL = 'http://localhost:8000';
-
-
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -2444,31 +2434,11 @@
             const fileName = document.getElementById('fileName');
             const fileSize = document.getElementById('fileSize');
             const processButton = document.getElementById('processButton');
-            const processingSection = document.getElementById('processingSection');
-            const contentGrid = document.querySelector('.content-grid');
 
+            filePreview.style.display = 'flex';
             fileName.textContent = file.name;
             fileSize.textContent = formatFileSize(file.size);
-            
-            filePreview.style.display = 'flex';
             processButton.disabled = false;
-            
-            // Update footer state for file selection
-            updateFooterState('processing');
-            
-            // Show processing section with animation
-            processingSection.classList.add('visible');
-            
-            // Add dynamic spacing
-            contentGrid.classList.add('file-uploaded');
-            
-            // Smooth scroll to processing section
-            setTimeout(() => {
-                processingSection.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
-            }, 300);
         }
 
         function formatFileSize(bytes) {
@@ -2477,6 +2447,24 @@
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showStatus(type, message, showSpinner = false) {
+            const statusMessages = document.getElementById('statusMessages');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status-message ${type}`;
+            
+            if (showSpinner && type === 'processing') {
+                statusDiv.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <span>${message}</span>
+                `;
+            } else {
+                statusDiv.innerHTML = `<span>${message}</span>`;
+            }
+            
+            statusMessages.appendChild(statusDiv);
+            statusDiv.scrollIntoView({ behavior: 'smooth' });
         }
 
         async function processRubric() {
@@ -2497,7 +2485,7 @@
             
             // Clear previous status messages
             statusMessages.innerHTML = '';
-            showStatus('processing', 'Processing rubric...', true);
+            showStatus('processing', 'Analyzing your rubric...', true);
 
             try {
                 // Create form data for the backend
@@ -2505,7 +2493,7 @@
                 formData.append('file', currentFile);
 
                 // Send to the rubrics-to-prompts backend
-                const response = await fetch('http://localhost:8000/upload-rubric', {
+                const response = await fetch(`${BACKEND_URL}/upload-rubric`, {
                     method: 'POST',
                     body: formData
                 });
@@ -2516,34 +2504,11 @@
                     throw new Error(result.detail || result.message || 'Processing failed');
                 }
 
-                // Convert the result to the format expected by the dashboard
-                const rubricData = convertToRubriconFormat(result);
+                // Store task ID for status polling
+                currentTaskId = result.task_id;
                 
-                // Show success message
-                showStatus('success', `Processed! Found ${rubricData.criteria?.length || 0} criteria from your rubric.`, true);
-                
-                // Update process button to show completion
-                processButton.classList.add('success');
-                processButton.innerHTML = `
-                    <svg class="checkmark" width="20" height="20" viewBox="0 0 52 52">
-                        <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none" stroke="#ffffff" stroke-width="2"/>
-                        <path class="checkmark__check" fill="none" stroke="#ffffff" stroke-width="2" d="m16 26 6 6 12-12"/>
-                    </svg>
-                    Processed!
-                `;
-                
-                // Keep the processing card visible but in success state
-                const processingSection = document.getElementById('processingSection');
-                processingSection.classList.add('processed-success');
-                
-                // Store processed data globally
-                window.currentRubricData = rubricData;
-                processedData = rubricData;
-                
-                // Populate the dashboard with extracted sections
-                setTimeout(() => {
-                    showDashboard(rubricData);
-                }, 500);
+                // Poll for completion
+                await pollProcessingStatus(currentTaskId);
                 
             } catch (error) {
                 console.error('Processing failed:', error);
@@ -2561,1310 +2526,128 @@
             }
         }
 
+        async function pollProcessingStatus(taskId) {
+            const maxAttempts = 120; // 2 minutes max
+            let attempts = 0;
+            
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/status/${taskId}`);
+                    const status = await response.json();
+                    
+                    if (status.completed) {
+                        // Processing completed successfully
+                        const rubricData = convertToRubriconFormat(status.result);
+                        
+                        // Show success message
+                        showStatus('success', `✅ Successfully processed! Found ${rubricData.criteria?.length || 0} criteria from your rubric.`);
+                        
+                        // Update process button to show completion
+                        const processButton = document.getElementById('processButton');
+                        processButton.classList.add('success');
+                        processButton.innerHTML = `
+                            <svg class="checkmark" width="20" height="20" viewBox="0 0 52 52">
+                                <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none" stroke="#ffffff" stroke-width="2"/>
+                                <path class="checkmark__check" fill="none" stroke="#ffffff" stroke-width="2" d="m16 26 6 6 12-12"/>
+                            </svg>
+                            Processed!
+                        `;
+                        
+                        // Store processed data globally
+                        window.currentRubricData = rubricData;
+                        processedData = rubricData;
+                        
+                        // Show the dashboard
+                        setTimeout(() => {
+                            showDashboard(rubricData);
+                        }, 500);
+                        
+                        return;
+                    } else if (status.error) {
+                        throw new Error(status.message || 'Processing failed');
+                    }
+                    
+                    // Continue polling
+                    attempts++;
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                } catch (error) {
+                    console.error('Status polling error:', error);
+                    throw error;
+                }
+            }
+            
+            throw new Error('Processing timeout - please try again');
+        }
+
         // Convert backend result to rubricon format
         function convertToRubriconFormat(backendResult) {
-            if (!backendResult.interactiveRubric) {
+            if (!backendResult || (!backendResult.parsed_yaml && !backendResult.criteria)) {
                 throw new Error('Invalid rubric data received from backend');
             }
 
-            const rubric = backendResult.interactiveRubric;
-            const criteria = [];
+            // Handle both old and new response formats
+            let criteria = [];
+            let systemMessage = "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.";
+            
+            if (backendResult.parsed_yaml) {
+                // New format with parsed_yaml
+                const parsed = backendResult.parsed_yaml;
+                systemMessage = parsed.system_message || systemMessage;
+                criteria = parsed.criteria || [];
+            } else if (backendResult.criteria) {
+                // Direct criteria format
+                criteria = backendResult.criteria;
+            }
 
-            // Extract all criteria from assessment domains
-            rubric.assessment_domains.forEach(domain => {
-                domain.subcategories.forEach(criterion => {
-                    criteria.push({
-                        name: criterion.name,
-                        description: criterion.description || criterion.name,
-                        points: criterion.points,
-                        category: criterion.category,
-                        section: domain.name
-                    });
-                });
-            });
+            // Ensure criteria have the required format
+            const formattedCriteria = criteria.map((criterion, index) => ({
+                name: criterion.name || criterion.criterion || `Criterion ${index + 1}`,
+                max_points: criterion.max_points || criterion.points || 1,
+                examples: criterion.examples || [],
+                description: criterion.description || criterion.name || ""
+            }));
 
             return {
-                system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+                system_message: systemMessage,
                 user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
-                criteria: criteria,
-                assessment_type: rubric.rubric_info?.station_info?.specialty || 'Medical Assessment',
+                criteria: formattedCriteria,
+                assessment_type: backendResult.assessment_type || 'Medical Assessment',
                 source_file: currentFile.name,
-                total_points: rubric.rubric_info?.total_points || criteria.reduce((sum, c) => sum + c.points, 0),
-                processing_method: 'Enhanced Backend Processing',
-                title: rubric.rubric_info?.title || 'Medical Assessment Rubric'
+                total_points: formattedCriteria.reduce((sum, c) => sum + c.max_points, 0),
+                processing_method: 'Backend API Processing',
+                title: backendResult.title || 'Medical Assessment Rubric'
             };
         }
 
-        // Comprehensive OCR processing with backend (Google Vision + AWS Textract + OCR)
-        async function processWithComprehensiveOCR(file, base64Content) {
-            console.log('Starting comprehensive OCR processing with backend...');
+        function showDashboard(data) {
+            console.log('Showing dashboard with data:', data);
             
-            try {
-                // Step 1: Upload file and get comprehensive OCR extraction
-                showStatus('processing', 'Backend: Using Google Vision + AWS Textract + OCR...', true);
-                
-                const uploadResponse = await fetch(`${BACKEND_URL}/api/comprehensive-ocr`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            fileContent: base64Content,
-                        fileName: file.name,
-                        fileType: file.type,
-                        useMultipleOCR: true,
-                        services: ['google_vision', 'aws_textract', 'pytesseract', 'azure_cv'],
-                        extractTables: true,
-                        extractForms: true
-                        })
-                    });
-                    
-                    if (!uploadResponse.ok) {
-                    throw new Error(`Backend OCR failed: ${uploadResponse.status}`);
-                    }
-                    
-                const { extracted_text, ocr_results } = await uploadResponse.json();
-                console.log('OCR extraction completed:', extracted_text.substring(0, 500) + '...');
-                    
-                // Step 2: Parse rubric structure from extracted text
-                showStatus('processing', 'Backend: Parsing rubric structure with AI...', true);
-                    
-                const parseResponse = await fetch(`${BACKEND_URL}/api/parse-rubric`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    body: JSON.stringify({
-                        extracted_text: extracted_text,
-                        file_name: file.name,
-                        ocr_results: ocr_results,
-                        parse_sections: true,
-                        extract_points: true,
-                        identify_medical_terms: true
-                    })
-                });
-                
-                if (!parseResponse.ok) {
-                    throw new Error(`Rubric parsing failed: ${parseResponse.status}`);
-                }
-                
-                const rubricStructure = await parseResponse.json();
-                console.log('Parsed rubric structure:', rubricStructure);
-                
-                return {
-                    system_message: rubricStructure.system_message || "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                    user_message_preamble: rubricStructure.user_message_preamble || "Analyze the following medical examination and provide scores for each criterion:",
-                    sections: rubricStructure.sections || [],
-                    criteria: rubricStructure.criteria || [],
-                    rubric_analysis: rubricStructure.rubric_analysis || { sections: [] },
-                    assessment_type: rubricStructure.assessment_type || 'Medical Assessment',
-                    source_file: file.name,
-                    total_points: rubricStructure.total_points || 0,
-                    processing_method: 'Comprehensive Backend OCR',
-                    ocr_services_used: rubricStructure.ocr_services_used || ['google_vision', 'aws_textract'],
-                    extraction_confidence: rubricStructure.extraction_confidence || 0.85
-                };
-                
-            } catch (error) {
-                console.error('Comprehensive OCR processing error:', error);
-                throw new Error(`Comprehensive OCR processing failed: ${error.message}`);
-            }
-        }
-
-        // AWS Textract + Comprehend Medical processing via backend
-        async function processWithAWSTextractComprehend(file, base64Content) {
-            console.log('Starting AWS processing via secure backend...');
-            
-            try {
-                // Use backend for secure AWS processing
-                showStatus('processing', 'Backend: AWS Textract + Comprehend Medical analysis...', true);
-                
-                const response = await fetch(`${BACKEND_URL}/api/aws-processing`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileContent: base64Content,
-                        fileName: file.name,
-                        fileType: file.type,
-                        services: ['textract', 'comprehend_medical'],
-                        extractTables: true,
-                        extractForms: true,
-                        analyzeMedicalEntities: true
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Backend AWS processing failed: ${response.status}`);
-                }
-                
-                const { extracted_text, medical_entities, textract_data } = await response.json();
-                console.log('AWS processing completed via backend');
-                
-                // Parse rubric structure from AWS results
-                showStatus('processing', 'Processing rubric structure with medical intelligence...', true);
-                
-                const rubricStructure = await parseRubricStructureAdvanced(
-                    extracted_text, 
-                    { Entities: medical_entities || [] }, 
-                    file.name
-                );
-                
-                return rubricStructure;
-                
-            } catch (error) {
-                console.error('Backend AWS processing error:', error);
-                throw new Error(`AWS processing failed: ${error.message}`);
-            }
-        }
-
-
-
-        // Advanced rubric structure parsing with medical intelligence - DYNAMIC PARSING
-        async function parseRubricStructureAdvanced(extractedText, medicalEntities, fileName) {
-            console.log('Parsing rubric structure with medical intelligence...');
-            console.log('Extracted text preview:', extractedText.substring(0, 1000));
-            
-            const lines = extractedText.split('\n').filter(line => line.trim());
-            const sections = [];
-            
-            // DYNAMIC section detection - find actual sections in the uploaded rubric
-            const detectedSections = detectSectionsFromText(lines);
-            console.log('Detected sections from actual rubric:', detectedSections);
-            
-            // Parse each detected section dynamically
-            for (const detectedSection of detectedSections) {
-                const section = {
-                    name: detectedSection.name,
-                    code: detectedSection.code,
-                    maxPoints: detectedSection.totalPoints,
-                    items: [],
-                    startLine: detectedSection.startLine,
-                    endLine: detectedSection.endLine
-                };
-                
-                // Extract actual items from this section
-                const sectionLines = lines.slice(detectedSection.startLine, detectedSection.endLine);
-                const items = extractActualItemsFromSection(sectionLines, medicalEntities, detectedSection.name);
-                section.items = items;
-                
-                // Calculate total points for section
-                section.maxPoints = items.reduce((sum, item) => sum + (item.points || 1), 0);
-                
-                sections.push(section);
-            }
-            
-            console.log('Dynamically parsed sections:', sections);
-            
-            // If no sections detected, try fallback parsing
-            if (sections.length === 0) {
-                console.log('No sections detected, trying fallback parsing...');
-                return parseRubricFallback(extractedText, medicalEntities, fileName);
-            }
-            
-            // Return comprehensive rubric structure
-            return {
-                system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
-                sections: sections,
-                criteria: sections.flatMap(section => 
-                    section.items.map(item => ({
-                        name: item.description,
-                        max_points: item.points,
-                        section: section.name,
-                        examples: item.examples || [`Assessment of ${item.description.toLowerCase()}`]
-                    }))
-                ),
-                rubric_analysis: {
-                    sections: sections.map(section => ({
-                        name: section.name,
-                        maxPoints: section.maxPoints,
-                        items: section.items
-                    }))
-                },
-                assessment_type: 'Dynamic Medical Assessment',
-                source_file: fileName,
-                total_points: sections.reduce((sum, section) => sum + section.maxPoints, 0),
-                processing_method: 'AWS Textract + Comprehend Medical - Dynamic Parsing',
-                medicalEntitiesFound: medicalEntities.Entities ? medicalEntities.Entities.length : 0,
-                sectionsDetected: sections.length
-            };
-        }
-
-        // DYNAMIC section detection from actual rubric text
-        function detectSectionsFromText(lines) {
-            const sections = [];
-            let currentSection = null;
-            
-            // Common section header patterns - these will match any rubric
-            const sectionPatterns = [
-                /^(history[\s\-_]*taking|patient[\s\-_]*history|history)/i,
-                /^(physical[\s\-_]*exam|physical[\s\-_]*examination|examination|exam)/i,
-                /^(diagnostic|diagnosis|reasoning|justification|clinical[\s\-_]*reasoning)/i,
-                /^(management|treatment|therapeutic|intervention|plan)/i,
-                /^(communication|interpersonal|professional)/i,
-                /^(documentation|recording|charting)/i,
-                /^(safety|infection[\s\-_]*control|sterile)/i,
-                /^(assessment|evaluation|scoring)/i
-            ];
-            
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                
-                // Check if this line is a section header
-                const isSection = sectionPatterns.some(pattern => pattern.test(line)) ||
-                                line.match(/^[A-Z][a-zA-Z\s\-_]{2,}:?\s*$/); // Generic section headers
-                
-                if (isSection && line.length > 2 && line.length < 100) {
-                    // End previous section
-                    if (currentSection) {
-                        currentSection.endLine = i;
-                        sections.push(currentSection);
-                    }
-                    
-                    // Start new section
-                    currentSection = {
-                        name: line.replace(/[:;]/g, '').trim(),
-                        code: generateSectionCode(line),
-                        startLine: i + 1,
-                        endLine: lines.length,
-                        totalPoints: 0
-                    };
-                }
-            }
-            
-            // Close last section
-            if (currentSection) {
-                sections.push(currentSection);
-            }
-            
-            return sections;
-        }
-
-        // Generate section code from name
-        function generateSectionCode(sectionName) {
-            return sectionName.replace(/[^A-Z]/g, '').substring(0, 3) || 
-                   sectionName.substring(0, 2).toUpperCase();
-        }
-
-        // Extract actual items from a section - DYNAMIC parsing
-        function extractActualItemsFromSection(sectionLines, medicalEntities, sectionName) {
-            const items = [];
-            
-            for (const line of sectionLines) {
-                const trimmedLine = line.trim();
-                if (!trimmedLine || trimmedLine.length < 3) continue;
-                
-                // Skip obvious non-items (headers, empty lines, etc.)
-                if (trimmedLine.match(/^(item|criteria|points|total|section)/i)) continue;
-                
-                // Extract points from line (look for numbers in parentheses or after keywords)
-                const pointMatches = trimmedLine.match(/\((\d+)\s*(?:points?|pts?)\)|(\d+)\s*(?:points?|pts?)|(\d+)$/);
-                const points = pointMatches ? parseInt(pointMatches[1] || pointMatches[2] || pointMatches[3]) : 1;
-                
-                // Clean description (remove points notation, bullets, numbers)
-                let description = trimmedLine
-                    .replace(/\(\d+\s*(?:points?|pts?)\)/g, '')
-                    .replace(/^\d+[\.\-\)\s]+/, '')
-                    .replace(/^[\-\*\•\◦\▪\▫\s]+/, '')
-                    .trim();
-                
-                if (description && description.length > 2) {
-                    // Generate contextual examples based on description and medical entities
-                    const examples = generateContextualExamples(description, medicalEntities, sectionName);
-                    
-                    items.push({
-                        description: description,
-                        points: points,
-                        examples: examples,
-                        category: generateSectionCode(sectionName)
-                    });
-                }
-            }
-            
-            return items;
-        }
-
-        // Generate contextual examples based on actual rubric content
-        function generateContextualExamples(description, medicalEntities, sectionName) {
-            const desc = description.toLowerCase();
-            const examples = [];
-            
-            // Use medical entities to enhance examples
-            const relevantEntities = medicalEntities.Entities ? 
-                medicalEntities.Entities.filter(entity => 
-                    desc.includes(entity.Text.toLowerCase()) ||
-                    entity.Category === 'MEDICAL_CONDITION' || 
-                    entity.Category === 'MEDICATION' ||
-                    entity.Category === 'ANATOMY'
-                ).slice(0, 2) : [];
-            
-            // Generate examples based on actual rubric content
-            if (desc.includes('chief') || desc.includes('concern') || desc.includes('complaint')) {
-                examples.push("What brings you in today?", "Can you tell me about your main concern?");
-            } else if (desc.includes('history') && desc.includes('present')) {
-                examples.push("Tell me more about this problem", "When did this start?");
-            } else if (desc.includes('vital') || desc.includes('signs')) {
-                examples.push("I'm going to check your vital signs", "Let me take your blood pressure");
-            } else if (desc.includes('exam') || desc.includes('examination')) {
-                examples.push(`I'm going to examine ${desc.replace(/examination?|exam/gi, '').trim()}`, 
-                            `Physical assessment of ${description.toLowerCase()}`);
-            } else if (desc.includes('diagnosis') || desc.includes('diagnostic')) {
-                examples.push("Based on my findings, I believe...", `Clinical reasoning for ${description.toLowerCase()}`);
-            } else if (desc.includes('treatment') || desc.includes('management') || desc.includes('plan')) {
-                examples.push("The treatment plan includes...", `Management approach for ${description.toLowerCase()}`);
-            } else {
-                // Generic examples based on section and description
-                examples.push(`Assessment of ${description.toLowerCase()}`, 
-                             `Evaluation related to ${description.toLowerCase()}`);
-            }
-            
-            // Add entity-specific examples
-            relevantEntities.forEach(entity => {
-                examples.push(`Assessment involving ${entity.Text}`);
-            });
-            
-            return examples.length > 0 ? examples.slice(0, 3) : [`Assessment of ${description}`];
-        }
-
-        // Find section content in text
-        function findSectionContent(lines, sectionPattern) {
-            const sectionLines = [];
-            let inSection = false;
-            let sectionStart = -1;
-            
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                
-                // Check if this line matches any section pattern
-                const matchesPattern = sectionPattern.patterns.some(pattern => pattern.test(line));
-                
-                if (matchesPattern && !inSection) {
-                    inSection = true;
-                    sectionStart = i;
-                    sectionLines.push(line);
-                } else if (inSection) {
-                    // Check if we've hit another section
-                    const hitsOtherSection = line.match(/^(History|Physical|Diagnostic|Management)/i) && 
-                                           !sectionPattern.patterns.some(pattern => pattern.test(line));
-                    
-                    if (hitsOtherSection) {
-                        break;
-                    }
-                    
-                    sectionLines.push(line);
-                    
-                    // Stop if we've collected enough lines
-                    if (sectionLines.length > 50) break;
-                }
-            }
-            
-            return sectionLines;
-        }
-
-        // Extract items from section text
-        function extractItemsFromSection(sectionLines, medicalEntities, sectionPattern) {
-            const items = [];
-            
-            for (const line of sectionLines) {
-                const trimmedLine = line.trim();
-                if (!trimmedLine) continue;
-                
-                // Skip header lines
-                if (trimmedLine.match(/^(History|Physical|Diagnostic|Management)/i)) continue;
-                
-                // Look for point values in parentheses
-                const pointsMatch = trimmedLine.match(/\((\d+)\s*points?\)/i);
-                const points = pointsMatch ? parseInt(pointsMatch[1]) : 1;
-                
-                // Extract description (remove points notation)
-                let description = trimmedLine.replace(/\(\d+\s*points?\)/i, '').trim();
-                
-                // Remove checkbox symbols and numbers
-                description = description.replace(/^[\d\s\.\-\*\[\]☐☑]+/, '').trim();
-                
-                if (description && description.length > 3) {
-                    // Generate examples based on medical entities and section type
-                    const examples = generateExamplesForItem(description, medicalEntities, sectionPattern);
-                    
-                    items.push({
-                        description: description,
-                        points: points,
-                        examples: examples,
-                        category: sectionPattern.code
-                    });
-                }
-            }
-            
-            // If no items found, add default items for the section
-            if (items.length === 0) {
-                items.push({
-                    description: `${sectionPattern.name} Assessment`,
-                    points: Math.floor(sectionPattern.points / 2),
-                    examples: [`Assessment of ${sectionPattern.name.toLowerCase()}`],
-                    category: sectionPattern.code
-                });
-            }
-            
-            return items;
-        }
-
-        // Generate examples for rubric items based on medical entities
-        function generateExamplesForItem(description, medicalEntities, sectionPattern) {
-            const examples = [];
-            const desc = description.toLowerCase();
-            
-            // Use medical entities to enhance examples
-            const relevantEntities = medicalEntities.Entities ? 
-                medicalEntities.Entities.filter(entity => 
-                    entity.Category === 'MEDICAL_CONDITION' || 
-                    entity.Category === 'MEDICATION' ||
-                    entity.Category === 'ANATOMY'
-                ).slice(0, 2) : [];
-            
-            // Section-specific example generation
-            switch (sectionPattern.code) {
-                case 'HT': // History Taking
-                    if (desc.includes('chief') || desc.includes('concern')) {
-                        examples.push("What brings you in today?", "Can you tell me about your main concern?");
-                    } else if (desc.includes('rash') || desc.includes('skin')) {
-                        examples.push("When did you first notice the rash?", "Has the rash changed over time?");
-                    } else if (desc.includes('pain')) {
-                        examples.push("On a scale of 1-10, how would you rate your pain?", "What makes the pain better or worse?");
-                    } else {
-                        examples.push(`Assessment of ${description.toLowerCase()}`, `Questions about ${description.toLowerCase()}`);
-                    }
-                    break;
-                    
-                case 'PE': // Physical Examination
-                    if (desc.includes('vitals')) {
-                        examples.push("I'm going to check your vital signs", "Let me take your blood pressure");
-                    } else if (desc.includes('rash') || desc.includes('skin')) {
-                        examples.push("I'm going to examine your skin", "Let me look at the affected area");
-                    } else {
-                        examples.push(`I'm going to examine ${description.toLowerCase()}`, `Physical assessment of ${description.toLowerCase()}`);
-                    }
-                    break;
-                    
-                case 'DA': // Diagnostic Accuracy
-                    if (desc.includes('diagnosis')) {
-                        examples.push("Based on my examination, I believe you have...", "The most likely diagnosis is...");
-                    } else {
-                        examples.push(`Clinical reasoning for ${description.toLowerCase()}`, `Diagnostic assessment of ${description.toLowerCase()}`);
-                    }
-                    break;
-                    
-                case 'M': // Management
-                    if (desc.includes('biopsy')) {
-                        examples.push("I recommend we do a skin biopsy", "We should take a tissue sample");
-                    } else if (desc.includes('medication') || desc.includes('treatment')) {
-                        examples.push("I'm going to prescribe...", "The treatment plan includes...");
-                    } else {
-                        examples.push(`Treatment plan for ${description.toLowerCase()}`, `Management of ${description.toLowerCase()}`);
-                    }
-                    break;
-            }
-            
-            // Add entity-based examples if relevant
-            relevantEntities.forEach(entity => {
-                if (desc.includes(entity.Text.toLowerCase())) {
-                    examples.push(`Assessment related to ${entity.Text}`);
-                }
-            });
-            
-            return examples.length > 0 ? examples : [`Assessment of ${description}`];
-        }
-
-                 // DYNAMIC fallback rubric generation - NO TEMPLATES
-         async function generateEnhancedFallbackRubric(file, base64Content) {
-             console.log('Generating DYNAMIC fallback rubric for:', file.name);
-             
-             // Try to extract actual text from the file
-             let extractedText = '';
-             try {
-                 if (file.type.includes('text') || file.name.endsWith('.txt')) {
-                     extractedText = await file.text();
-                 } else {
-                     // For binary files, try basic text extraction if possible
-                     console.log('Binary file detected, using filename-based analysis');
-                     extractedText = file.name;
-                 }
-             } catch (error) {
-                 console.warn('Could not extract text, using filename-based analysis');
-                 extractedText = file.name;
-             }
-             
-             console.log('Extracted text for fallback processing:', extractedText.substring(0, 500));
-             
-             // Parse the actual content dynamically
-             const dynamicStructure = parseRubricFallback(extractedText, { Entities: [] }, file.name);
-             
-             return dynamicStructure;
-         }
-
-         // DYNAMIC fallback parsing without templates
-         function parseRubricFallback(extractedText, medicalEntities, fileName) {
-             console.log('Parsing rubric with dynamic fallback - NO TEMPLATES');
-             
-             const lines = extractedText.split('\n').filter(line => line.trim());
-             
-             // If we have actual content, parse it
-             if (lines.length > 3 && extractedText.length > 100) {
-                 return parseContentBasedRubric(lines, medicalEntities, fileName);
-             }
-             
-             // If no content, create a minimal structure for user to fill in
-             return createMinimalRubricStructure(fileName);
-         }
-
-         // Parse actual content from the rubric
-         function parseContentBasedRubric(lines, medicalEntities, fileName) {
-             const sections = [];
-             let currentSection = null;
-             
-             // More comprehensive section detection
-             const sectionIndicators = [
-                 /history|patient.*history|taking.*history/i,
-                 /physical.*exam|examination|clinical.*exam/i,
-                 /diagnostic|diagnosis|reasoning|clinical.*reasoning/i,
-                 /management|treatment|therapeutic|intervention/i,
-                 /communication|interpersonal|professional/i,
-                 /documentation|recording|notes/i,
-                 /technical.*skills|procedural/i,
-                 /assessment|evaluation|overall/i
-             ];
-             
-             for (let i = 0; i < lines.length; i++) {
-                 const line = lines[i].trim();
-                 
-                 // Detect section headers (various formats)
-                 const isSection = sectionIndicators.some(pattern => pattern.test(line)) ||
-                                 line.match(/^[A-Z][A-Za-z\s\-_]{3,}:?\s*$/) ||
-                                 line.match(/^\d+[\.\-\)]\s*[A-Z][A-Za-z\s]{3,}/) ||
-                                 (line.length > 5 && line.length < 80 && line === line.toUpperCase());
-                 
-                 if (isSection) {
-                     // Save previous section
-                     if (currentSection && currentSection.items.length > 0) {
-                         sections.push(currentSection);
-                     }
-                     
-                     // Start new section
-                     currentSection = {
-                         name: cleanSectionName(line),
-                         code: generateSectionCode(line),
-                         maxPoints: 0,
-                         items: []
-                     };
-                 } else if (currentSection && line.length > 3) {
-                     // Parse potential rubric item
-                     const item = parseRubricItem(line);
-                     if (item) {
-                         currentSection.items.push(item);
-                         currentSection.maxPoints += item.points;
-                     }
-                 }
-             }
-             
-             // Add final section
-             if (currentSection && currentSection.items.length > 0) {
-                 sections.push(currentSection);
-             }
-             
-             // If no sections found, create structure from content
-             if (sections.length === 0) {
-                 return createStructureFromContent(lines, fileName);
-             }
-             
-             console.log('Parsed sections from actual content:', sections);
-             
-             return {
-                 system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                 user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
-                 sections: sections,
-                 criteria: sections.flatMap(section => 
-                     section.items.map(item => ({
-                         name: item.description,
-                         max_points: item.points,
-                         section: section.name,
-                         examples: item.examples
-                     }))
-                 ),
-                 rubric_analysis: { sections: sections },
-                 assessment_type: 'Dynamic Medical Assessment from Content',
-                 source_file: fileName,
-                 total_points: sections.reduce((sum, section) => sum + section.maxPoints, 0),
-                 processing_method: 'Dynamic Content Parsing'
-             };
-         }
-
-         // Parse individual rubric items from lines
-         function parseRubricItem(line) {
-             const trimmed = line.trim();
-             
-             // Skip obvious non-items
-             if (trimmed.length < 3 || 
-                 trimmed.match(/^(total|points|section|criteria|item|score)/i) ||
-                 trimmed.match(/^[\-=\*\+\s]+$/)) {
-                 return null;
-             }
-             
-             // Extract points
-             const pointMatch = trimmed.match(/\((\d+)\s*(?:points?|pts?)\)|(\d+)\s*(?:points?|pts?)|\b(\d+)\s*$/);
-             const points = pointMatch ? parseInt(pointMatch[1] || pointMatch[2] || pointMatch[3]) : 1;
-             
-             // Clean description
-             let description = trimmed
-                 .replace(/\(\d+\s*(?:points?|pts?)\)/gi, '')
-                 .replace(/^\d+[\.\-\)\s]+/, '')
-                 .replace(/^[\-\*\•\◦\▪\▫\[\]\s]+/, '')
-                 .trim();
-             
-             if (description.length < 2) return null;
-             
-             // Generate examples based on content
-             const examples = generateSmartExamples(description);
-             
-             return {
-                 description: description,
-                 points: points,
-                 examples: examples
-             };
-         }
-
-         // Generate smart examples based on item description
-         function generateSmartExamples(description) {
-             const desc = description.toLowerCase();
-             
-             if (desc.includes('chief') || desc.includes('concern')) {
-                 return ["What brings you in today?", "Tell me about your main concern"];
-             } else if (desc.includes('vital') || desc.includes('signs')) {
-                 return ["I'll check your vital signs", "Let me take your blood pressure"];
-             } else if (desc.includes('exam') || desc.includes('examination')) {
-                 return [`I'm going to examine ${desc.replace(/exam.*|examination.*/gi, '').trim()}`, 
-                        `Physical assessment of ${description.toLowerCase()}`];
-             } else if (desc.includes('diagnosis') || desc.includes('diagnostic')) {
-                 return ["Based on my findings...", `Clinical reasoning for ${description.toLowerCase()}`];
-             } else {
-                 return [`Assessment of ${description.toLowerCase()}`, 
-                        `Evaluation related to ${description.toLowerCase()}`];
-             }
-         }
-
-         // Create structure when no clear sections found
-         function createStructureFromContent(lines, fileName) {
-             const items = [];
-             
-             for (const line of lines) {
-                 const item = parseRubricItem(line);
-                 if (item) items.push(item);
-             }
-             
-             // If items found, create a single general section
-             if (items.length > 0) {
-                 const totalPoints = items.reduce((sum, item) => sum + item.points, 0);
-                 
-                 return {
-                     system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                     user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
-                     sections: [{
-                         name: "Assessment Criteria",
-                         code: "AC",
-                         maxPoints: totalPoints,
-                         items: items
-                     }],
-                     criteria: items.map(item => ({
-                         name: item.description,
-                         max_points: item.points,
-                         section: "Assessment Criteria",
-                         examples: item.examples
-                     })),
-                     rubric_analysis: {
-                         sections: [{
-                             name: "Assessment Criteria",
-                             maxPoints: totalPoints,
-                             items: items
-                         }]
-                     },
-                     assessment_type: 'Dynamic Assessment from Content',
-                     source_file: fileName,
-                     total_points: totalPoints,
-                     processing_method: 'Content-Based Dynamic Parsing'
-                 };
-             }
-             
-             // Last resort - create minimal structure
-             return createMinimalRubricStructure(fileName);
-         }
-
-         // Clean section names
-         function cleanSectionName(name) {
-             return name.replace(/^\d+[\.\-\)\s]*/, '')
-                       .replace(/[:;]/g, '')
-                       .trim();
-         }
-
-         // Create minimal structure for user to customize
-         function createMinimalRubricStructure(fileName) {
-             const basicSection = {
-                 name: "Assessment Criteria",
-                 code: "AC",
-                 maxPoints: 10,
-                 items: [
-                     {
-                         description: "Assessment criterion 1",
-                         points: 5,
-                         examples: ["Example assessment", "Evaluation criteria"]
-                     },
-                     {
-                         description: "Assessment criterion 2", 
-                         points: 5,
-                         examples: ["Example assessment", "Evaluation criteria"]
-                     }
-                 ]
-             };
-             
-             return {
-                 system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                 user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
-                 sections: [basicSection],
-                 criteria: basicSection.items.map(item => ({
-                     name: item.description,
-                     max_points: item.points,
-                     section: basicSection.name,
-                     examples: item.examples
-                 })),
-                 rubric_analysis: { sections: [basicSection] },
-                 assessment_type: 'Editable Template',
-                 source_file: fileName,
-                 total_points: 10,
-                 processing_method: 'Minimal Template for Customization'
-             };
-         }
-        
-        // Enhanced section analysis based on file content
-        async function enhanceSectionsFromContent(baseSections, extractedText, fileName) {
-            const textLower = extractedText.toLowerCase();
-            const enhancedSections = [...baseSections];
-            
-            // Specialty-specific enhancements based on filename and content
-            const specialtyPatterns = {
-                'cardiology': {
-                    'Physical Examination': {
-                        examples: [
-                            "I'm going to listen to your heart",
-                            "Let me check your pulse",
-                            "I'll examine your chest now",
-                            "Any chest pain when I press here?"
-                        ]
-                    }
-                },
-                'respiratory': {
-                    'Physical Examination': {
-                        examples: [
-                            "I'm going to listen to your lungs",
-                            "Take a deep breath for me",
-                            "I'll examine your breathing",
-                            "Any shortness of breath?"
-                        ]
-                    }
-                },
-                'neurology': {
-                    'Physical Examination': {
-                        examples: [
-                            "I'm going to test your reflexes",
-                            "Follow my finger with your eyes",
-                            "Can you feel this touch?",
-                            "Try to resist my movement"
-                        ]
-                    }
-                },
-                'abdomen': {
-                    'Physical Examination': {
-                        examples: [
-                            "I'm going to examine your abdomen",
-                            "Let me feel for any tenderness",
-                            "I'll listen to your bowel sounds",
-                            "Any pain when I press here?"
-                        ]
-                    }
-                }
-            };
-            
-            // Check for specialty indicators
-            for (const [specialty, enhancements] of Object.entries(specialtyPatterns)) {
-                if (textLower.includes(specialty) || fileName.toLowerCase().includes(specialty)) {
-                    for (const [sectionName, updates] of Object.entries(enhancements)) {
-                        const section = enhancedSections.find(s => s.name === sectionName);
-                        if (section && updates.examples) {
-                            section.examples = [...section.examples, ...updates.examples];
-                        }
-                    }
-                    break;
-                }
-            }
-            
-            return enhancedSections;
-        }
-        
-        // Generate a fallback rubric structure when backend is not available (legacy)
-        function generateFallbackRubric(fileName) {
-            const baseName = fileName.replace(/\.[^/.]+$/, "");
-            
-            // Create realistic medical criteria based on filename or default
-            const criteria = [
-                {
-                    name: "History Taking",
-                    max_points: 3,
-                    examples: [
-                        "Can you tell me about your symptoms?",
-                        "When did this start?",
-                        "On a scale of 1-10, how would you rate your discomfort?"
-                    ]
-                },
-                {
-                    name: "Physical Examination",
-                    max_points: 2,
-                    examples: [
-                        "I'm going to examine you now",
-                        "Let me check this area", 
-                        "I'll be using my stethoscope"
-                    ]
-                },
-                {
-                    name: "Diagnostic Accuracy/Reasoning/Justification",
-                    max_points: 2,
-                    examples: [
-                        "Based on what you've told me and my examination findings",
-                        "The most likely explanation for your symptoms is",
-                        "I want to consider a few different possibilities"
-                    ]
-                },
-                {
-                    name: "Management",
-                    max_points: 2,
-                    examples: [
-                        "I recommend we start with this treatment approach",
-                        "Here's what I think we should do next",
-                        "Let me explain your treatment options"
-                    ]
-                }
-            ];
-            
-            return {
-                system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
-                criteria: criteria,
-                rubric_analysis: {
-                    sections: criteria.map((criterion, index) => ({
-                        name: criterion.name,
-                        maxPoints: criterion.max_points,
-                        items: criterion.examples.map((example, exIndex) => ({
-                            description: example,
-                            points: 1,
-                            examples: [`Example for ${example}`, `Assessment of ${example.toLowerCase()}`]
-                        }))
-                    }))
-                }
-            };
-        }
-
-        let currentRubricData = null;
-
-        function showDashboard(parsedData) {
-            console.log('Showing dashboard with data:', parsedData);
-            
-            // Hide processing, show dashboard
-            document.getElementById('processingSection').style.display = 'none';
-            const dashboardSection = document.getElementById('dashboardSection');
-            
-            // Store current data globally for updates
-            window.currentRubricData = parsedData;
-            
-            // Populate basic information
-            const systemMessage = parsedData.system_message || 
-                'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
-            document.getElementById('systemMessage').value = systemMessage;
-            
-            // Clear and populate assessment criteria
-            const criteriaContainer = document.getElementById('criteriaContainer');
-            criteriaContainer.innerHTML = '';
-            
-            // Check if we have rubric_analysis for better section organization
-            if (parsedData.rubric_analysis && parsedData.rubric_analysis.sections) {
-                console.log('Displaying rubric sections:', parsedData.rubric_analysis.sections);
-                displayRubricSections(parsedData.rubric_analysis.sections, criteriaContainer);
-            } else if (parsedData.criteria && parsedData.criteria.length > 0) {
-                console.log('Displaying criteria:', parsedData.criteria);
-                displayCriteria(parsedData.criteria, criteriaContainer);
-            } else {
-                console.log('No criteria found, adding default criterion');
-                // Add a default criterion if none exist
-                addNewCriterion();
-            }
-            
-            // Update footer state for dashboard
+            // Update footer state
             updateFooterState('dashboard');
             
-            // Add maximum spacing for dashboard
-            const contentGrid = document.querySelector('.content-grid');
-            contentGrid.classList.add('dashboard-visible');
-            
-            // Show dashboard section with visibility class
+            // Show dashboard section
+            const dashboardSection = document.getElementById('dashboardSection');
             dashboardSection.style.display = 'block';
-            dashboardSection.classList.add('visible');
             
-            // Update preview and total points
-            setTimeout(() => {
-                updateUserMessagePreview();
-                updateTotalPoints();
-            }, 100);
+            // Scroll to dashboard
+            dashboardSection.scrollIntoView({ behavior: 'smooth' });
             
-            // Smooth scroll to dashboard
-            setTimeout(() => {
-                dashboardSection.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
-                });
-            }, 300);
-            
-            console.log('Dashboard display completed');
-        }
-
-        function displayRubricSections(sections, container) {
-            sections.forEach((section, sectionIndex) => {
-                const sectionDiv = document.createElement('div');
-                sectionDiv.className = 'rubric-section';
-                sectionDiv.dataset.sectionIndex = sectionIndex;
-                
-                // Section header with edit capability
-                const sectionHeader = document.createElement('div');
-                sectionHeader.className = 'section-header-editable';
-                sectionHeader.innerHTML = `
-                    <div class="section-title-row">
-                        <input type="text" 
-                               class="section-name-input" 
-                               value="${section.name}" 
-                               data-section-index="${sectionIndex}"
-                               onchange="updateSectionName(${sectionIndex}, this.value)">
-                        <div class="section-points">
-                            <label>Section Total:</label>
-                            <input type="number" 
-                                   class="section-max-points" 
-                                   value="${section.maxPoints || 0}" 
-                                   min="0" 
-                                   max="100"
-                                   data-section-index="${sectionIndex}"
-                                   onchange="updateSectionPoints(${sectionIndex}, this.value)">
-                            <span>points</span>
-                        </div>
-                        <button class="remove-section-btn" onclick="removeSection(${sectionIndex})">Remove Section</button>
-                    </div>
-                `;
-                sectionDiv.appendChild(sectionHeader);
-                
-                // Items container
-                const itemsContainer = document.createElement('div');
-                itemsContainer.className = 'section-items';
-                
-                // Display items
-                if (section.items && section.items.length > 0) {
-                    section.items.forEach((item, itemIndex) => {
-                        const itemDiv = createItemElement(item, sectionIndex, itemIndex);
-                        itemsContainer.appendChild(itemDiv);
-                    });
-                }
-                
-                // Add item button
-                const addItemBtn = document.createElement('button');
-                addItemBtn.className = 'add-item-btn';
-                addItemBtn.textContent = '+ Add Item';
-                addItemBtn.onclick = () => addItemToSection(sectionIndex);
-                itemsContainer.appendChild(addItemBtn);
-                
-                sectionDiv.appendChild(itemsContainer);
-                container.appendChild(sectionDiv);
-            });
-            
-            // Add new section button
-            const addSectionBtn = document.createElement('button');
-            addSectionBtn.className = 'add-section-btn';
-            addSectionBtn.textContent = '+ Add New Section';
-            addSectionBtn.onclick = addNewSection;
-            container.appendChild(addSectionBtn);
-        }
-
-        function displayCriteria(criteria, container) {
-            // Fallback display for criteria without rubric analysis
-            if (criteria && criteria.length > 0) {
-                criteria.forEach((criterion, index) => {
-                    const criterionElement = createCriterionElement(criterion, index);
-                    container.appendChild(criterionElement);
-                });
-            }
-        }
-
-        function createItemElement(item, sectionIndex, itemIndex) {
-            const div = document.createElement('div');
-            div.className = 'rubric-item';
-            div.innerHTML = `
-                <div class="item-header">
-                    <span class="item-number">${itemIndex + 1}.</span>
-                    <div class="item-content">
-                        <input type="text" 
-                               class="item-description" 
-                               value="${item.description}" 
-                               placeholder="Item description"
-                               data-section="${sectionIndex}" 
-                               data-item="${itemIndex}"
-                               onchange="updateItemDescription(${sectionIndex}, ${itemIndex}, this.value)">
-                        <div class="item-points-container">
-                            <label>Points:</label>
-                            <input type="number" 
-                                   class="item-points" 
-                                   value="${item.points || 0}" 
-                                   min="0" 
-                                   max="20"
-                                   data-section="${sectionIndex}" 
-                                   data-item="${itemIndex}"
-                                   onchange="updateItemPoints(${sectionIndex}, ${itemIndex}, this.value)">
-                        </div>
-                    </div>
-                    <button class="remove-item-btn" onclick="removeItem(${sectionIndex}, ${itemIndex})">×</button>
-                </div>
-                <div class="item-examples">
-                    <label>Examples/Criteria:</label>
-                    <div class="examples-list">
-                        ${(item.examples || []).concat(item.criteria || []).map((ex, exIndex) => `
-                            <div class="example-item">
-                                <input type="text" 
-                                       value="${ex}" 
-                                       placeholder="Example or criterion"
-                                       onchange="updateExample(${sectionIndex}, ${itemIndex}, ${exIndex}, this.value)">
-                                <button class="remove-example" onclick="removeExample(${sectionIndex}, ${itemIndex}, ${exIndex})">×</button>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button class="add-example-btn" onclick="addExample(${sectionIndex}, ${itemIndex})">+ Add Example</button>
-                </div>
-            `;
-            return div;
-        }
-
-        // Add these functions to handle updates
-        function updateSectionName(sectionIndex, newName) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].name = newName;
-            }
-            regenerateCriteria();
-        }
-
-        function updateSectionPoints(sectionIndex, newPoints) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].maxPoints = parseInt(newPoints) || 0;
-            }
-            updateTotalPoints();
-            regenerateCriteria();
-        }
-
-        function updateItemDescription(sectionIndex, itemIndex, newDescription) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex].description = newDescription;
-            }
-            regenerateCriteria();
-        }
-
-        function updateItemPoints(sectionIndex, itemIndex, newPoints) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex].points = parseInt(newPoints) || 0;
-            }
-            updateTotalPoints();
-            regenerateCriteria();
-        }
-
-        function updateExample(sectionIndex, itemIndex, exampleIndex, newExample) {
-            if (window.currentRubricData.rubric_analysis) {
-                const item = window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex];
-                const allExamples = (item.examples || []).concat(item.criteria || []);
-                allExamples[exampleIndex] = newExample;
-                
-                // Update the appropriate array
-                if (item.examples && exampleIndex < item.examples.length) {
-                    item.examples[exampleIndex] = newExample;
-                } else {
-                    const criteriaIndex = exampleIndex - (item.examples || []).length;
-                    if (item.criteria) item.criteria[criteriaIndex] = newExample;
-                }
-            }
-            regenerateCriteria();
-        }
-
-        function addExample(sectionIndex, itemIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                const item = window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex];
-                if (!item.examples) item.examples = [];
-                item.examples.push('New example');
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function removeExample(sectionIndex, itemIndex, exampleIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                const item = window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex];
-                const allExamples = (item.examples || []).concat(item.criteria || []);
-                
-                if (exampleIndex < (item.examples || []).length) {
-                    item.examples.splice(exampleIndex, 1);
-                } else {
-                    const criteriaIndex = exampleIndex - (item.examples || []).length;
-                    if (item.criteria) item.criteria.splice(criteriaIndex, 1);
-                }
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function removeItem(sectionIndex, itemIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].items.splice(itemIndex, 1);
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function removeSection(sectionIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections.splice(sectionIndex, 1);
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function addItemToSection(sectionIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                const newItem = {
-                    description: 'New criterion',
-                    points: 1,
-                    examples: ['Example 1'],
-                    criteria: []
-                };
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].items.push(newItem);
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function addNewSection() {
-            if (!window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis = { sections: [] };
-            }
-            
-            const newSection = {
-                name: 'New Section',
-                maxPoints: 5,
-                items: [
-                    {
-                        description: 'New criterion',
-                        points: 1,
-                        examples: ['Example 1']
-                    }
-                ]
-            };
-            
-            window.currentRubricData.rubric_analysis.sections.push(newSection);
-            showDashboard(window.currentRubricData);
-        }
-
-        function regenerateCriteria() {
-            // This would call the backend to regenerate the criteria based on updated sections
-            updateUserMessagePreview();
-        }
-
-        function createCriterionElement(criterion, index) {
-            const div = document.createElement('div');
-            div.className = 'criterion-card';
-            div.innerHTML = `
-                <div class="criterion-header">
-                    <span class="criterion-number">${index + 1}</span>
-                    <input type="text" 
-                           class="criterion-name" 
-                           value="${criterion.itemName || criterion.name}" 
-                           data-criterion-id="${criterion.id}"
-                           onchange="updateUserMessagePreview()">
-                    <button class="remove-btn" onclick="removeCriterionNew(this)">×</button>
-                </div>
-                <div class="criterion-body">
-                    <div class="points-container">
-                        <label>Max Points:</label>
-                        <input type="number" 
-                               class="max-points" 
-                               value="${criterion.max_points}" 
-                               min="0" 
-                               max="20"
-                               onchange="updateUserMessagePreview(); updateTotalPoints();">
-                    </div>
-                    <div class="description-container">
-                        <label>Description:</label>
-                        <textarea class="criterion-description" 
-                                  rows="2"
-                                  onchange="updateUserMessagePreview()">${criterion.description || ''}</textarea>
-                    </div>
-                    <div class="examples-container">
-                        <label>Examples:</label>
-                        <div class="examples-list">
-                            ${criterion.examples.map(ex => `
-                                <div class="example-item">
-                                    <input type="text" value="${ex}" onchange="updateUserMessagePreview()">
-                                    <button class="remove-example" onclick="removeExampleNew(this)">×</button>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <button class="add-example-btn" onclick="addExampleNew(this)">+ Add Example</button>
-                    </div>
-                </div>
-            `;
-            
-            return div;
-        }
-
-        function removeCriterionNew(button) {
-            const criterionCard = button.closest('.criterion-card');
-            criterionCard.remove();
-            updateUserMessagePreview();
-            updateTotalPoints();
-        }
-
-        function addExampleNew(button) {
-            const examplesList = button.previousElementSibling;
-            const exampleDiv = document.createElement('div');
-            exampleDiv.className = 'example-item';
-            exampleDiv.innerHTML = `
-                <input type="text" value="" onchange="updateUserMessagePreview()">
-                <button class="remove-example" onclick="removeExampleNew(this)">×</button>
-            `;
-            examplesList.appendChild(exampleDiv);
-        }
-
-        function removeExampleNew(button) {
-            const exampleItem = button.closest('.example-item');
-            exampleItem.remove();
-            updateUserMessagePreview();
+            // Initialize dashboard with processed data
+            initializeDashboard(data);
         }
 
         function initializeDashboard(data) {
             console.log('Initializing dashboard with data:', data);
             
-            // Set basic information - no key field needed for this format
-            document.getElementById('systemMessage').value = data.parsed_yaml?.system_message || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
+            // Set basic information
+            document.getElementById('systemMessage').value = data.system_message || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
             
-            // Load criteria with better error handling
-            const criteria = data.parsed_yaml?.criteria || [];
+            // Load criteria
+            const criteria = data.criteria || [];
             console.log('Loading criteria:', criteria);
             
-            if (criteria.length > 0) {
-                loadCriteria(criteria);
-                console.log(`Successfully loaded ${criteria.length} criteria`);
-            } else {
-                console.warn('No criteria found in parsed data');
-                loadCriteria([]);
-            }
+            loadCriteria(criteria);
             
             // Update total points
             updateTotalPoints();
@@ -3911,15 +2694,15 @@
             criterionDiv.dataset.index = index;
             
             // Ensure criterion has required fields
-            const safeGriterion = {
+            const safeCriterion = {
                 name: criterion?.name || '',
                 max_points: criterion?.max_points || 1,
                 examples: criterion?.examples || ['']
             };
             
             // Escape HTML in values to prevent issues
-            const escapedName = safeGriterion.name.replace(/"/g, '&quot;');
-            const escapedExamples = safeGriterion.examples.map(ex => ex.replace(/"/g, '&quot;'));
+            const escapedName = safeCriterion.name.replace(/"/g, '&quot;');
+            const escapedExamples = safeCriterion.examples.map(ex => (ex || '').replace(/"/g, '&quot;'));
             
             criterionDiv.innerHTML = `
                 <div class="criterion-header">
@@ -3931,7 +2714,7 @@
                             </div>
                             <div class="input-group" style="margin-bottom: 0;">
                                 <label>Max Points:</label>
-                                <input type="number" class="form-input criterion-points" min="1" max="10" value="${safeGriterion.max_points}" oninput="updateCriterion(${index})" style="width: 80px;">
+                                <input type="number" class="form-input criterion-points" min="1" max="10" value="${safeCriterion.max_points}" oninput="updateCriterion(${index})" style="width: 80px;">
                             </div>
                         </div>
                     </div>
@@ -3975,6 +2758,40 @@
             }
         }
 
+        function reindexCriteria() {
+            const container = document.getElementById('criteriaContainer');
+            Array.from(container.children).forEach((item, newIndex) => {
+                item.dataset.index = newIndex;
+                const numberSpan = item.querySelector('.criterion-number');
+                if (numberSpan) {
+                    numberSpan.textContent = newIndex + 1;
+                }
+                
+                // Update onclick handlers
+                const nameInput = item.querySelector('.criterion-name');
+                const pointsInput = item.querySelector('.criterion-points');
+                const removeBtn = item.querySelector('.btn-remove-criterion');
+                const addExampleBtn = item.querySelector('.btn-add-example');
+                
+                if (nameInput) nameInput.setAttribute('oninput', `updateCriterion(${newIndex})`);
+                if (pointsInput) pointsInput.setAttribute('oninput', `updateCriterion(${newIndex})`);
+                if (removeBtn) removeBtn.setAttribute('onclick', `removeCriterion(${newIndex})`);
+                if (addExampleBtn) addExampleBtn.setAttribute('onclick', `addExample(${newIndex})`);
+                
+                // Update example handlers
+                const exampleInputs = item.querySelectorAll('.example-input');
+                const removeExampleBtns = item.querySelectorAll('.btn-remove-example');
+                
+                exampleInputs.forEach(input => {
+                    input.setAttribute('oninput', `updateCriterion(${newIndex})`);
+                });
+                
+                removeExampleBtns.forEach((btn, exampleIndex) => {
+                    btn.setAttribute('onclick', `removeExample(${newIndex}, ${exampleIndex})`);
+                });
+            });
+        }
+
         function addExample(criterionIndex) {
             const container = document.getElementById('criteriaContainer');
             const criterionItem = container.children[criterionIndex];
@@ -3999,278 +2816,34 @@
             if (exampleItem) {
                 exampleItem.remove();
                 updateCriterion(criterionIndex);
-            }
-        }
-
-        function reindexCriteria() {
-            const container = document.getElementById('criteriaContainer');
-            Array.from(container.children).forEach((item, index) => {
-                item.dataset.index = index;
-                const numberSpan = item.querySelector('.criterion-number');
-                if (numberSpan) numberSpan.textContent = index + 1;
                 
-                // Update onclick handlers
-                item.innerHTML = item.innerHTML
-                    .replace(/updateCriterion\(\d+\)/g, `updateCriterion(${index})`)
-                    .replace(/removeCriterion\(\d+\)/g, `removeCriterion(${index})`)
-                    .replace(/addExample\(\d+\)/g, `addExample(${index})`)
-                    .replace(/removeExample\(\d+,\s*\d+\)/g, (match) => {
-                        const exampleIndex = match.split(',')[1].replace(/\D/g, '');
-                        return `removeExample(${index}, ${exampleIndex})`;
-                    });
-            });
+                // Reindex remaining examples
+                const remainingExamples = examplesList.querySelectorAll('.btn-remove-example');
+                remainingExamples.forEach((btn, newIndex) => {
+                    btn.setAttribute('onclick', `removeExample(${criterionIndex}, ${newIndex})`);
+                });
+            }
         }
 
         function updateTotalPoints() {
             const container = document.getElementById('criteriaContainer');
             let total = 0;
             
-            // Handle both old structure (.criterion-points) and new structure (.max-points)
             Array.from(container.children).forEach(item => {
-                const pointsInputOld = item.querySelector('.criterion-points');
-                const pointsInputsNew = item.querySelectorAll('.max-points');
-                const itemPointsInputs = item.querySelectorAll('.item-points');
-                
-                if (pointsInputOld) {
-                    total += parseInt(pointsInputOld.value) || 0;
+                const pointsInput = item.querySelector('.criterion-points');
+                if (pointsInput) {
+                    total += parseInt(pointsInput.value) || 0;
                 }
-                
-                pointsInputsNew.forEach(input => {
-                    total += parseInt(input.value) || 0;
-                });
-                
-                itemPointsInputs.forEach(input => {
-                    total += parseInt(input.value) || 0;
-                });
             });
             
-            // Update both total points displays
-            const totalPointsElements = document.querySelectorAll('#totalPoints');
-            totalPointsElements.forEach(element => {
-                element.textContent = total;
-            });
-            
-            console.log('Total points updated:', total);
+            const totalPointsElement = document.getElementById('totalPoints');
+            if (totalPointsElement) {
+                totalPointsElement.textContent = total;
+            }
         }
 
         function updateUserMessagePreview() {
-            const container = document.getElementById('criteriaContainer');
-            const criteria = [];
-            
-            console.log('Updating user message preview...');
-            
-            // Handle both old structure and new sectioned structure
-            Array.from(container.children).forEach((item, index) => {
-                // Skip the add section button
-                if (item.classList.contains('add-section-btn')) {
-                    return;
-                }
-                
-                // Check if this is a rubric section
-                if (item.classList.contains('rubric-section')) {
-                    const sectionNameInput = item.querySelector('.section-name-input');
-                    const sectionName = sectionNameInput ? sectionNameInput.value.trim() : 'Section';
-                    
-                    // Get all items in this section
-                    const itemElements = item.querySelectorAll('.rubric-item');
-                    itemElements.forEach(itemElement => {
-                        const itemDescription = itemElement.querySelector('.item-description');
-                        const itemPoints = itemElement.querySelector('.item-points');
-                        const exampleInputs = itemElement.querySelectorAll('.example-item input');
-                        
-                        if (itemDescription && itemDescription.value.trim()) {
-                        const examples = Array.from(exampleInputs)
-                            .map(input => input.value.trim())
-                            .filter(value => value);
-                        
-                            criteria.push({
-                                examId: itemDescription.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'),
-                                name: itemDescription.value.trim(),
-                                section: sectionName,
-                                max_points: parseInt(itemPoints ? itemPoints.value : 1) || 1,
-                                examples: examples.length > 0 ? examples : [`Assessment of ${itemDescription.value.trim().toLowerCase()}`]
-                            });
-                        }
-                    });
-                } else if (item.classList.contains('criterion-item')) {
-                    // Handle old structure
-                    const nameInput = item.querySelector('.criterion-name');
-                    const pointsInput = item.querySelector('.criterion-points');
-                    const exampleInputs = item.querySelectorAll('.example-input');
-                    
-                    if (nameInput && nameInput.value.trim()) {
-                        const examples = Array.from(exampleInputs)
-                            .map(input => input.value.trim())
-                            .filter(value => value);
-                        
-                            criteria.push({
-                                examId: nameInput.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'),
-                                name: nameInput.value.trim(),
-                            max_points: parseInt(pointsInput ? pointsInput.value : 1) || 1,
-                            examples: examples.length > 0 ? examples : [`Assessment of ${nameInput.value.trim().toLowerCase()}`]
-                            });
-                    }
-                }
-            });
-            
-            console.log('Extracted criteria for preview:', criteria);
-            
-            if (criteria.length > 0) {
-            const userMessage = generateUserMessage(criteria);
-            document.getElementById('userMessagePreview').textContent = userMessage;
-            } else {
-                document.getElementById('userMessagePreview').textContent = 'No criteria defined yet. Add some assessment criteria to see the preview.';
-            }
-        }
-
-        function generateUserMessage(criteria) {
-            const examsList = criteria.map(c => c.examId || c.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'));
-            
-            return `
-Your task is to identify the start and end times of specific physical exams within the conversation and provide the reasoning behind your choices. Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam. This station consists of the following physical exams: ${examsList.join(', ')}
-
-Important Instructions:
-- When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions (e.g., "I'm going to look at your nose and eyes").
-- Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam.
-- Always pay close attention to surrounding context and related physical examinations mentioned.
-   
-You need to identify the following physical exams from this transcript: 
-${criteria.map((criterion, index) => `	 ${index + 1}. ${criterion.examId || criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}: Did the doctor ${criterion.name.toLowerCase().includes('did') ? criterion.name.toLowerCase() : `perform ${criterion.name.toLowerCase()}`}? 
-	 - Verbalization examples: ${criterion.examples.join(', ')}`).join('\n\n')}
-
-
-If no exam is detected, you can say "no exam was performed", start_time: "nan", end_time: "nan", score: 0.
-
-### Formatting Instructions
-
-- Ensure strict adherence to JSON formatting.
-- Do not use double quotes for multiple statements within a single field.
-- Use commas, single quotes, or other appropriate delimiters for multiple statements.
-- Do not include any text before or after the JSON output. Provide ONLY the json response.
-
-Please provide a response in the following format with keys: ${examsList.join(', ')}
-
-and the schema: 
-{
-     "statement": "statement extracted from the transcript that supports this specific exam",
-     "start_time": "timepoint for start of the exam (MM:SS only)",
-     "end_time": "timepoint for end of the exam (MM:SS only)",
-     "rationale": "reasoning behind scoring the physical exam",
-     "score": "score of the exam (0 or 1)"
-}`;
-        }
-
-        async function downloadYaml() {
-            console.log('Generating YAML from current dashboard content...');
-            
-            // Get current dashboard criteria
-            const dashboardCriteria = getCurrentDashboardCriteria();
-            
-            if (dashboardCriteria.length === 0) {
-                alert('No criteria available for download. Please add some assessment criteria first.');
-                return;
-            }
-            
-            try {
-                // Try backend first, then fallback to local generation
-                let yamlContent = null;
-                
-                try {
-                    console.log('Attempting to generate YAML via backend...');
-                    const response = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            dashboard_criteria: dashboardCriteria
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        yamlContent = data.yaml_content;
-                        console.log('Backend YAML generation successful');
-                    } else {
-                        throw new Error('Backend not available');
-                    }
-                } catch (backendError) {
-                    console.warn('Backend YAML generation failed, using local fallback:', backendError.message);
-                    
-                    // Generate YAML locally
-                    yamlContent = generateYamlLocally(dashboardCriteria);
-                    console.log('Local YAML generation completed');
-                }
-                
-                if (yamlContent) {
-                    downloadFile(yamlContent, 'assessment-rubric.yaml', 'text/yaml');
-                    console.log('YAML downloaded successfully');
-                    
-                    // Show success message
-                    showStatus('success', 'YAML file downloaded successfully!');
-                } else {
-                    throw new Error('Failed to generate YAML content');
-                }
-                
-            } catch (error) {
-                console.error('Error generating YAML:', error);
-                showStatus('error', 'Failed to generate YAML file. Please try again.');
-            }
-        }
-
-        function generateYamlLocally(criteria) {
-            console.log('Generating YAML locally with criteria:', criteria);
-            
-            const systemMessage = document.getElementById('systemMessage').value || 
-                'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
-            
-            // Generate the user message
-            const userMessage = generateUserMessage(criteria);
-            const examsList = criteria.map(c => c.examId || c.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'));
-            
-            // Create YAML content
-            const yamlContent = `system_message: |
-  ${systemMessage}
-
-user_message: |
-  ${userMessage.split('\n').map(line => '  ' + line).join('\n')}
-
-response_config:
-  structured_output: true
-  format: json
-  schema:
-    type: object
-    properties:
-${examsList.map(examId => `      ${examId}:
-        type: object
-        properties:
-          statement:
-            type: string
-            description: statement extracted from the transcript that supports this specific exam
-          start_time:
-            type: string
-            description: timepoint for start of the exam (MM:SS only)
-          end_time:
-            type: string
-            description: timepoint for end of the exam (MM:SS only)
-          rationale:
-            type: string
-            description: reasoning behind scoring the physical exam
-          score:
-            type: integer
-            description: score of the exam (0 or 1)
-        required: [statement, start_time, end_time, rationale, score]`).join('\n')}
-    required: [${examsList.map(id => `"${id}"`).join(', ')}]
-
-# Generated by Oski Rubricon - Medical Assessment Platform
-# Date: ${new Date().toISOString()}
-# Criteria Count: ${criteria.length}
-# Total Points: ${criteria.reduce((sum, c) => sum + (c.max_points || 1), 0)}`;
-
-            return yamlContent;
-        }
-
-        function getCurrentDashboardCriteria() {
+            const systemMessage = document.getElementById('systemMessage').value;
             const container = document.getElementById('criteriaContainer');
             const criteria = [];
             
@@ -4279,164 +2852,148 @@ ${examsList.map(examId => `      ${examId}:
                 const pointsInput = item.querySelector('.criterion-points');
                 const exampleInputs = item.querySelectorAll('.example-input');
                 
-                const examples = Array.from(exampleInputs)
-                    .map(input => input.value.trim())
-                    .filter(value => value);
-                
-                if (nameInput.value.trim()) {
-                    const examId = nameInput.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+                if (nameInput && nameInput.value.trim()) {
+                    const examples = Array.from(exampleInputs)
+                        .map(input => input.value.trim())
+                        .filter(value => value.length > 0);
+                    
                     criteria.push({
-                        examId: examId,
                         name: nameInput.value.trim(),
                         max_points: parseInt(pointsInput.value) || 1,
-                        examples: examples.length > 0 ? examples : [`I'm going to assess your ${nameInput.value.trim().toLowerCase()}`]
+                        examples: examples
                     });
                 }
             });
             
-            return criteria;
-        }
-
-        function generateCurrentYaml() {
-            const systemMessage = document.getElementById('systemMessage').value || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
-            const userMessage = document.getElementById('userMessagePreview').textContent;
-            
-            return `system_message: 
-   ${systemMessage}
-   
-user_message: 
-  |${userMessage}
-response_config:
-  structured_output: True`;
-        }
-
-        // Missing utility function for converting file to base64
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    // Remove the data URL prefix to get just the base64 content
-                    const base64 = reader.result.split(',')[1];
-                    resolve(base64);
-                };
-                reader.onerror = (error) => reject(error);
-            });
-        }
-
-
-
-        // Enhanced status display function
-        function showStatus(type, message, persistent = false) {
-            const statusMessages = document.getElementById('statusMessages');
-            
-            // Create status element
-            const statusElement = document.createElement('div');
-            statusElement.className = `status-message ${type}`;
-            
-            // Add appropriate icon based on type
-            let icon = '';
-            switch(type) {
-                case 'processing':
-                    icon = '<div class="loading-spinner"></div>';
-                    break;
-                case 'success':
-                    icon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="m9 12 2 2 4-4"/>
-                              <circle cx="12" cy="12" r="10"/>
-                            </svg>`;
-                    break;
-                case 'error':
-                    icon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <circle cx="12" cy="12" r="10"/>
-                              <line x1="15" y1="9" x2="9" y2="15"/>
-                              <line x1="9" y1="9" x2="15" y2="15"/>
-                            </svg>`;
-                    break;
-            }
-            
-            statusElement.innerHTML = `${icon}<span>${message}</span>`;
-            
-            // If not persistent, clear previous non-persistent messages
-            if (!persistent) {
-                const existingMessages = statusMessages.querySelectorAll('.status-message:not([data-persistent])');
-                existingMessages.forEach(msg => msg.remove());
+            if (criteria.length > 0) {
+                const userMessage = generateUserMessage(criteria);
+                document.getElementById('userMessagePreview').textContent = userMessage;
             } else {
-                statusElement.setAttribute('data-persistent', 'true');
-            }
-            
-            // Add the new status message
-            statusMessages.appendChild(statusElement);
-            
-            // Add animation class
-            statusElement.classList.add('fade-in');
-            
-            // Auto-remove non-persistent error messages after 5 seconds
-            if (type === 'error' && !persistent) {
-            setTimeout(() => {
-                    if (statusElement.parentNode) {
-                        statusElement.remove();
-                    }
-                }, 5000);
+                document.getElementById('userMessagePreview').textContent = 'No criteria defined yet. Add some criteria to see the preview.';
             }
         }
 
+        function generateUserMessage(criteria) {
+            let message = "Analyze the following medical examination and provide scores for each criterion:\n\n";
+            
+            criteria.forEach((criterion, index) => {
+                message += `${index + 1}. ${criterion.name} (${criterion.max_points} points)\n`;
+                if (criterion.examples && criterion.examples.length > 0) {
+                    message += `   Examples: ${criterion.examples.join(', ')}\n`;
+                }
+                message += '\n';
+            });
+            
+            message += 'Provide your response in JSON format with scores and justifications for each criterion.';
+            
+            return message;
+        }
 
-
-        // Event listeners for editor updates
-        document.addEventListener('DOMContentLoaded', function() {
-            // Listen for changes in form inputs to update preview
-            document.addEventListener('input', function(e) {
-                if (e.target.matches('#systemMessage')) {
-                    updateUserMessagePreview();
+        function getCurrentRubricData() {
+            const systemMessage = document.getElementById('systemMessage').value;
+            const container = document.getElementById('criteriaContainer');
+            const criteria = [];
+            
+            Array.from(container.children).forEach((item, index) => {
+                const nameInput = item.querySelector('.criterion-name');
+                const pointsInput = item.querySelector('.criterion-points');
+                const exampleInputs = item.querySelectorAll('.example-input');
+                
+                if (nameInput && nameInput.value.trim()) {
+                    const examples = Array.from(exampleInputs)
+                        .map(input => input.value.trim())
+                        .filter(value => value.length > 0);
+                    
+                    criteria.push({
+                        criterion: nameInput.value.trim(),
+                        max_points: parseInt(pointsInput.value) || 1,
+                        examples: examples
+                    });
                 }
             });
-        });
-
-        function downloadFile(content, filename, mimeType) {
-            const blob = new Blob([content], { type: mimeType });
-            const url = URL.createObjectURL(blob);
             
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            URL.revokeObjectURL(url);
-            
-            // Show success message
-            showStatus('success', `${filename} downloaded successfully!`);
+            return {
+                system_message: systemMessage,
+                user_message: generateUserMessage(criteria.map(c => ({
+                    name: c.criterion,
+                    max_points: c.max_points,
+                    examples: c.examples
+                }))),
+                criteria: criteria
+            };
         }
 
-        // Reset functionality
+        async function downloadYaml() {
+            try {
+                if (!currentTaskId) {
+                    alert('No rubric data available for download. Please process a rubric first.');
+                    return;
+                }
+
+                // Get the YAML from the backend
+                const response = await fetch(`${BACKEND_URL}/download-yaml/${currentTaskId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to download YAML file');
+                }
+
+                // Get the YAML content
+                const blob = await response.blob();
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'assessment-rubric.yaml';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                console.log('YAML file downloaded successfully');
+                
+            } catch (error) {
+                console.error('Download failed:', error);
+                alert('Failed to download YAML file. Please try again.');
+            }
+        }
+
         function resetUpload() {
+            // Reset all state
             currentFile = null;
             processedData = null;
+            currentTaskId = null;
             
-            const contentGrid = document.querySelector('.content-grid');
+            // Reset UI
+            const fileInput = document.getElementById('fileInput');
+            const filePreview = document.getElementById('filePreview');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const processButton = document.getElementById('processButton');
+            const statusMessages = document.getElementById('statusMessages');
+            const dashboardSection = document.getElementById('dashboardSection');
             
-            document.getElementById('fileInput').value = '';
-            document.getElementById('filePreview').style.display = 'none';
-            document.getElementById('processButton').disabled = true;
-            document.getElementById('statusMessages').innerHTML = '';
-            document.getElementById('processingSection').classList.remove('visible');
-            document.getElementById('dashboardSection').classList.remove('visible');
+            fileInput.value = '';
+            filePreview.style.display = 'none';
+            fileName.textContent = 'No file selected';
+            fileSize.textContent = 'Select a file to continue';
+            processButton.disabled = true;
+            processButton.classList.remove('success');
+            processButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Process Rubric
+            `;
+            statusMessages.innerHTML = '';
+            dashboardSection.style.display = 'none';
             
-            // Reset footer state to initial
+            // Update footer state
             updateFooterState('initial');
             
-            // Reset spacing classes
-            contentGrid.classList.remove('file-uploaded', 'processing-active', 'dashboard-visible');
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
-        // Add keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                resetUpload();
-            }
-        });
     </script>
 </body>
 </html> 
