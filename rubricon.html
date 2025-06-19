@@ -2307,15 +2307,26 @@
 
         async function processRubric() {
             const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
+            const file = fileInput.files[0] || currentFile;
             
             if (!file) {
                 showStatus('error', 'Please select a file first');
                 return;
             }
             
+            console.log('Starting rubric processing for file:', file.name);
+            
+            // Disable the process button and show loading state
+            const processButton = document.getElementById('processButton');
+            const originalButtonText = processButton.innerHTML;
+            processButton.disabled = true;
+            processButton.innerHTML = `
+                <div class="loading-spinner"></div>
+                Processing...
+            `;
+            
             // Show processing UI
-            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('upload').style.display = 'none';
             document.getElementById('processingSection').style.display = 'block';
             
             try {
@@ -2323,57 +2334,79 @@
                 showStatus('processing', 'Extracting text from document...');
                 
                 const base64Content = await fileToBase64(file);
-                const uploadResponse = await fetch(`${BACKEND_URL}/api/upload`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileContent: base64Content,
-                        fileName: file.name
-                    })
-                });
                 
-                if (!uploadResponse.ok) {
-                    const error = await uploadResponse.json();
-                    throw new Error(error.details || error.error || 'Upload failed');
+                try {
+                    const uploadResponse = await fetch(`${BACKEND_URL}/api/upload`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            fileContent: base64Content,
+                            fileName: file.name
+                        })
+                    });
+                    
+                    if (!uploadResponse.ok) {
+                        const error = await uploadResponse.json();
+                        throw new Error(error.details || error.error || 'Upload failed');
+                    }
+                    
+                    const { extracted_text } = await uploadResponse.json();
+                    
+                    // Step 2: Generate AI prompt
+                    showStatus('processing', 'Analyzing rubric structure with AI...');
+                    
+                    const promptResponse = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ extracted_text })
+                    });
+                    
+                    if (!promptResponse.ok) {
+                        const error = await promptResponse.json();
+                        throw new Error(error.details || error.error || 'Prompt generation failed');
+                    }
+                    
+                    const { parsed_yaml } = await promptResponse.json();
+                    
+                    // Show success and display dashboard
+                    showStatus('success', 'Rubric processed successfully!');
+                    setTimeout(() => {
+                        showDashboard(parsed_yaml);
+                    }, 1500);
+                    
+                } catch (networkError) {
+                    console.error('Backend connection failed:', networkError);
+                    throw new Error('Cannot connect to server. Please ensure the backend is running and try again.');
                 }
-                
-                const { extracted_text } = await uploadResponse.json();
-                
-                // Step 2: Generate AI prompt
-                showStatus('processing', 'Analyzing rubric structure with AI...');
-                
-                const promptResponse = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ extracted_text })
-                });
-                
-                if (!promptResponse.ok) {
-                    const error = await promptResponse.json();
-                    throw new Error(error.details || error.error || 'Prompt generation failed');
-                }
-                
-                const { parsed_yaml } = await promptResponse.json();
-                
-                // Show success and display dashboard
-                showStatus('success', 'Rubric processed successfully!');
-                setTimeout(() => {
-                    showDashboard(parsed_yaml);
-                }, 1500);
                 
             } catch (error) {
                 console.error('Processing error:', error);
-                showStatus('error', `Failed to process rubric: ${error.message}`);
                 
-                // Allow retry
+                // Reset button state
+                processButton.disabled = false;
+                processButton.innerHTML = originalButtonText;
+                
+                // Show user-friendly error message
+                let errorMessage = 'Failed to process rubric. Please try again.';
+                if (error.message.includes('fetch')) {
+                    errorMessage = 'Cannot connect to server. Please check your internet connection.';
+                } else if (error.message.includes('Upload failed')) {
+                    errorMessage = 'File upload failed. Please try uploading a different file.';
+                } else if (error.message.includes('Prompt generation failed')) {
+                    errorMessage = 'AI analysis failed. Please try again or contact support.';
+                }
+                
+                showStatus('error', errorMessage);
+                
+                // Allow retry after a shorter delay
                 setTimeout(() => {
-                    document.getElementById('uploadSection').style.display = 'block';
+                    document.getElementById('upload').style.display = 'block';
                     document.getElementById('processingSection').style.display = 'none';
-                }, 3000);
+                }, 2000);
             }
         }
 
@@ -3108,6 +3141,22 @@ user_message:
 response_config:
   structured_output: True`;
         }
+
+        // Missing utility function for converting file to base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    // Remove the data URL prefix to get just the base64 content
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = (error) => reject(error);
+            });
+        }
+
+
 
         function showStatus(type, message, withSpinner = false) {
             const statusMessages = document.getElementById('statusMessages');

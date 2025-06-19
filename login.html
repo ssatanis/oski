@@ -554,16 +554,9 @@
                     <div class="error-message" id="errorMessage"></div>
                     <div class="success-message" id="successMessage"></div>
                     
-                    <!-- Debug Console (hidden by default) -->
-                    <div id="debugConsole" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
-                        <h4 style="margin: 0 0 10px 0; color: #666;">Debug Console:</h4>
-                        <div id="debugOutput"></div>
-                    </div>
+
                     
-                    <!-- Debug Toggle Button -->
-                    <button type="button" onclick="toggleDebug()" style="margin-top: 15px; padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 20px; font-size: 12px; cursor: pointer; opacity: 0.7;">
-                        Toggle Debug
-                    </button>
+
                 </form>
             </div>
         </div>
@@ -605,35 +598,7 @@
         // Call checkAuth on page load
         document.addEventListener('DOMContentLoaded', checkAuth);
 
-        // Debug functions
-        let debugOutput = [];
-        
-        function addDebugLog(message) {
-            const timestamp = new Date().toLocaleTimeString();
-            debugOutput.push(`[${timestamp}] ${message}`);
-            const debugElement = document.getElementById('debugOutput');
-            if (debugElement) {
-                debugElement.innerHTML = debugOutput.slice(-20).join('<br>'); // Show last 20 logs
-                debugElement.scrollTop = debugElement.scrollHeight;
-            }
-        }
-        
-        function toggleDebug() {
-            const debugConsole = document.getElementById('debugConsole');
-            if (debugConsole.style.display === 'none') {
-                debugConsole.style.display = 'block';
-                addDebugLog('Debug console enabled');
-            } else {
-                debugConsole.style.display = 'none';
-            }
-        }
-        
-        // Override console.log for debug
-        const originalConsoleLog = console.log;
-        console.log = function(...args) {
-            originalConsoleLog.apply(console, args);
-            addDebugLog(args.join(' '));
-        };
+
 
         // Toggle password visibility
         function togglePassword() {
@@ -718,10 +683,8 @@
             setTimeout(function() {
                 if (typeof bcrypt === 'undefined') {
                     console.warn('bcrypt.js failed to load - using fallback verification');
-                    addDebugLog('⚠️ bcrypt.js failed to load - using fallback verification');
                 } else {
                     console.log('bcrypt.js loaded successfully');
-                    addDebugLog('✅ bcrypt.js loaded successfully');
                 }
             }, 500);
         });
@@ -752,18 +715,14 @@
                 }
                 
                 console.log('Query result:', users);
-                addDebugLog(`Database query returned ${users ? users.length : 0} users`);
                 
                 if (!users || users.length === 0) {
-                    addDebugLog('❌ No user found with this email');
                     throw new Error('Invalid email or password. Please check your credentials.');
                 }
                 
                 const user = users[0];
                 console.log('Found user:', { id: user.id, email: user.email });
                 console.log('Password hash from database:', user.password_hash);
-                addDebugLog(`✅ Found user: ID=${user.id}, Email=${user.email}`);
-                addDebugLog(`Hash: ${user.password_hash}`);
                 
                 // Verify password
                 console.log('Verifying password...');
