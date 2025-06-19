@@ -13,19 +13,16 @@ azure_openai_key = os.getenv("AZURE_OPENAI_KEY")
 azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT") 
 azure_openai_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
 
-if azure_openai_key and azure_openai_endpoint:
+if azure_openai_key and azure_openai_endpoint and azure_openai_deployment:
     try:
         client = AzureOpenAI(
             api_version="2024-12-01-preview",
             azure_endpoint=azure_openai_endpoint,
             api_key=azure_openai_key
         )
-        print("✅ Azure OpenAI client initialized successfully")
     except Exception as e:
-        print(f"❌ Failed to initialize Azure OpenAI client: {e}")
         client = None
 else:
-    print("⚠️ Azure OpenAI configuration missing. Please set AZURE_OPENAI_KEY and AZURE_OPENAI_ENDPOINT")
     client = None
 
 
@@ -191,133 +188,84 @@ def generate_rubric_with_llm(chunks):
     {combined_text}
     """
 
-    if not client:
-        print("❌ Azure OpenAI client not available. Using fallback structure.")
-        return create_fallback_structure(combined_text)
-    
-    try:
-        print(f"🤖 Processing rubric with Azure OpenAI...")
-        print(f"📄 Text length: {len(combined_text)} characters")
-        
-        response = client.chat.completions.create(
-            model=azure_openai_deployment,
-            messages=[
-                {
-                    "role": "system", 
-                    "content": "You are an expert medical education assistant specializing in OSCE rubric analysis. Analyze the provided rubric text thoroughly and extract ALL criteria with their point values. Return only valid JSON without markdown formatting."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.1,
-            max_tokens=4000
-        )
-        
-        response_text = response.choices[0].message.content.strip()
-        print(f"✅ Received AI response: {len(response_text)} characters")
-        
-        # Clean up the response to ensure it's valid JSON
-        if response_text.startswith('```json'):
-            response_text = response_text[7:]
-        if response_text.endswith('```'):
-            response_text = response_text[:-3]
-        response_text = response_text.strip()
-        
-        # Parse to validate JSON
-        parsed_json = json.loads(response_text)
-        print(f"✅ Successfully parsed JSON rubric structure")
-        
-        # Validate the structure has actual content
-        total_criteria = sum(len(domain.get('subcategories', [])) for domain in parsed_json.get('assessment_domains', []))
-        if total_criteria == 0:
-            print("⚠️ No criteria found in AI response, using text-based extraction")
-            return create_structured_rubric_from_text(combined_text)
-        
-        print(f"✅ Extracted {total_criteria} criteria across domains")
-        return parsed_json
-        
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON parsing error: {e}")
-        print(f"Raw response: {response_text[:500]}...")
-        return create_structured_rubric_from_text(combined_text)
-        
-    except Exception as e:
-        print(f"❌ Error in LLM processing: {e}")
-        return create_structured_rubric_from_text(combined_text)
+    # Always use text-based extraction for reliable results
+    return create_structured_rubric_from_text(combined_text)
 
-def create_fallback_structure(text):
-    """Create a basic structure when AI is not available"""
-    print("🔄 Creating fallback structure from text analysis...")
-    return create_structured_rubric_from_text(text)
+
 
 def create_structured_rubric_from_text(text):
-    """Extract criteria from text when AI processing fails"""
-    print("🔍 Analyzing text manually to extract criteria...")
-    
+    """Extract criteria from text using pattern matching"""
     lines = text.split('\n')
     criteria = []
+    title = "Medical Assessment Rubric"
     
-    # Look for patterns that indicate criteria (points in parentheses, numbered items, etc.)
+    # Try to extract title from first few lines
+    for line in lines[:5]:
+        line = line.strip()
+        if line and ("station" in line.lower() or "rubric" in line.lower() or "assessment" in line.lower()):
+            title = line
+            break
+    
+    # Look for criteria patterns
     for i, line in enumerate(lines):
         line = line.strip()
-        if not line:
+        if not line or len(line) < 5:
             continue
             
-        # Look for point values in parentheses
-        if '(' in line and ')' in line:
+        # Pattern 1: Points in parentheses - e.g., "Chief complaint (2 pts)"
+        if '(' in line and ')' in line and any(char.isdigit() for char in line):
             try:
-                # Extract point value
                 point_start = line.rfind('(')
                 point_end = line.rfind(')')
                 if point_start < point_end:
                     point_text = line[point_start+1:point_end]
                     if any(char.isdigit() for char in point_text):
                         criterion_name = line[:point_start].strip()
-                        # Extract numeric value
                         points = int(''.join(filter(str.isdigit, point_text)))
                         if criterion_name and points > 0:
                             criteria.append({
                                 "id": len(criteria) + 1,
                                 "name": criterion_name,
-                                "category": "General",
+                                "category": determine_category(criterion_name),
                                 "points": points,
                                 "editable": True,
                                 "description": criterion_name,
                                 "current_points": 0
                             })
+                            continue
             except:
-                continue
-    
-    # If no criteria found with parentheses, look for other patterns
-    if not criteria:
-        numbered_pattern = False
-        for line in lines:
-            line = line.strip()
-            if line and (line[0].isdigit() or line.startswith('-') or line.startswith('•')):
+                pass
+        
+        # Pattern 2: Numbered items - e.g., "1. History taking"
+        if (line[0].isdigit() and '.' in line[:3]) or line.startswith('-') or line.startswith('•'):
+            clean_line = line.lstrip('0123456789.-• ').strip()
+            if clean_line and len(clean_line) > 3:
                 criteria.append({
                     "id": len(criteria) + 1,
-                    "name": line,
-                    "category": "General",
-                    "points": 1,
+                    "name": clean_line,
+                    "category": determine_category(clean_line),
+                    "points": extract_points_from_text(clean_line),
                     "editable": True,
-                    "description": line,
+                    "description": clean_line,
                     "current_points": 0
                 })
-                numbered_pattern = True
-        
-        # If still no criteria, create from any non-empty lines
-        if not criteria and not numbered_pattern:
-            for line in lines[:10]:  # Take first 10 meaningful lines
-                line = line.strip()
-                if len(line) > 10:  # Skip very short lines
-                    criteria.append({
-                        "id": len(criteria) + 1,
-                        "name": line,
-                        "category": "General", 
-                        "points": 1,
-                        "editable": True,
-                        "description": line,
-                        "current_points": 0
-                    })
+    
+    # If no criteria found, create from meaningful lines
+    if not criteria:
+        for line in lines:
+            line = line.strip()
+            if len(line) > 10 and not line.lower().startswith(('total', 'score', 'points')):
+                criteria.append({
+                    "id": len(criteria) + 1,
+                    "name": line[:100],  # Limit length
+                    "category": determine_category(line),
+                    "points": 1,
+                    "editable": True,
+                    "description": line[:200],
+                    "current_points": 0
+                })
+                if len(criteria) >= 15:  # Limit to reasonable number
+                    break
     
     # Distribute criteria across domains
     history_criteria = []
@@ -325,29 +273,41 @@ def create_structured_rubric_from_text(text):
     diagnostic_criteria = []
     management_criteria = []
     
-    for i, criterion in enumerate(criteria):
-        if i % 4 == 0:
-            criterion["category"] = "HPI"
+    for criterion in criteria:
+        category = criterion["category"]
+        if category in ["CC", "HPI", "PMH", "Med", "All", "FH", "SH"]:
             history_criteria.append(criterion)
-        elif i % 4 == 1:
-            criterion["category"] = "PE"
+        elif category == "PE":
             physical_criteria.append(criterion)
-        elif i % 4 == 2:
-            criterion["category"] = "DA"
+        elif category in ["DA", "DR"]:
             diagnostic_criteria.append(criterion)
-        else:
-            criterion["category"] = "M"
+        elif category == "M":
             management_criteria.append(criterion)
+        else:
+            # Distribute remaining evenly
+            domain_idx = len(criterion["name"]) % 4
+            if domain_idx == 0:
+                criterion["category"] = "HPI"
+                history_criteria.append(criterion)
+            elif domain_idx == 1:
+                criterion["category"] = "PE"
+                physical_criteria.append(criterion)
+            elif domain_idx == 2:
+                criterion["category"] = "DA"
+                diagnostic_criteria.append(criterion)
+            else:
+                criterion["category"] = "M"
+                management_criteria.append(criterion)
     
     total_points = sum(c["points"] for c in criteria)
     
-    result = {
+    return {
         "rubric_info": {
-            "title": "Extracted Medical Assessment Rubric",
+            "title": title,
             "station_info": {
                 "station_number": "Extracted",
-                "condition": "Medical Assessment",
-                "specialty": "General Medicine"
+                "condition": extract_condition(text),
+                "specialty": extract_specialty(text)
             },
             "total_points": total_points,
             "creation_timestamp": pd.Timestamp.now().isoformat(),
@@ -384,9 +344,59 @@ def create_structured_rubric_from_text(text):
             }
         ]
     }
+
+def determine_category(text):
+    """Determine the category based on text content"""
+    text_lower = text.lower()
     
-    print(f"✅ Manually extracted {len(criteria)} criteria")
-    return result
+    if any(word in text_lower for word in ["chief", "complaint", "presenting"]):
+        return "CC"
+    elif any(word in text_lower for word in ["history", "present", "illness", "symptom"]):
+        return "HPI"
+    elif any(word in text_lower for word in ["past", "medical", "previous"]):
+        return "PMH"
+    elif any(word in text_lower for word in ["medication", "drug", "allergy"]):
+        return "Med"
+    elif any(word in text_lower for word in ["family", "hereditary"]):
+        return "FH"
+    elif any(word in text_lower for word in ["social", "smoking", "alcohol"]):
+        return "SH"
+    elif any(word in text_lower for word in ["examination", "physical", "inspect", "palpat", "auscult"]):
+        return "PE"
+    elif any(word in text_lower for word in ["diagnosis", "differential", "reasoning"]):
+        return "DA"
+    elif any(word in text_lower for word in ["management", "treatment", "plan", "follow"]):
+        return "M"
+    else:
+        return "General"
+
+def extract_points_from_text(text):
+    """Extract point values from text"""
+    numbers = [int(s) for s in text.split() if s.isdigit()]
+    if numbers:
+        return min(numbers[0], 10)  # Cap at 10 points
+    return 1
+
+def extract_condition(text):
+    """Extract medical condition from text"""
+    text_lower = text.lower()
+    conditions = ["psoriasis", "eczema", "dermatitis", "rash", "tinea", "acne", "diabetes", "hypertension"]
+    for condition in conditions:
+        if condition in text_lower:
+            return condition.title()
+    return "Medical Assessment"
+
+def extract_specialty(text):
+    """Extract medical specialty from text"""
+    text_lower = text.lower()
+    if any(word in text_lower for word in ["dermatology", "skin", "rash", "psoriasis"]):
+        return "Dermatology"
+    elif any(word in text_lower for word in ["cardiology", "heart", "cardiac"]):
+        return "Cardiology"
+    elif any(word in text_lower for word in ["internal", "medicine"]):
+        return "Internal Medicine"
+    else:
+        return "General Medicine"
 
 
 def main():

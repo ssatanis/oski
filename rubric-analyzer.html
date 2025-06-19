@@ -426,11 +426,7 @@
             font-weight: 600;
         }
 
-        .loading-details {
-            color: #666;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
+
 
         .error-message {
             background: #fff5f5;
@@ -552,10 +548,7 @@
         <!-- Loading -->
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <div class="loading-text">Analyzing Your Rubrics...</div>
-            <div class="loading-details">
-                Processing with advanced OCR engines (Tesseract, AWS Textract, Google Vision)
-            </div>
+            <div class="loading-text">Processing rubric...</div>
         </div>
 
         <!-- Error/Success Messages -->
@@ -691,7 +684,6 @@
                 
                 for (let i = 0; i < selectedFiles.length; i++) {
                     const file = selectedFiles[i];
-                    updateLoadingText(`Processing ${file.name}... Please wait.`);
                     
                     // Prepare form data for single file
                     const formData = new FormData();
@@ -799,12 +791,7 @@
             };
         }
 
-        function updateLoadingText(text) {
-            const loadingDetails = document.querySelector('.loading-details');
-            if (loadingDetails) {
-                loadingDetails.textContent = text;
-            }
-        }
+
 
         function displayAnalysisResults(result) {
             // Show analysis section

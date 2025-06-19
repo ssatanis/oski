@@ -453,8 +453,6 @@ async def upload_rubric(file: UploadFile = File(...)):
         )
     
     try:
-        logger.info(f"📄 Processing file: {file.filename} ({file_extension})")
-        
         # Save uploaded file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as temp_file:
             content = await file.read()
@@ -464,14 +462,11 @@ async def upload_rubric(file: UploadFile = File(...)):
         try:
             # Use our enhanced backend.py to process the file
             from backend import upload_file
-            logger.info("🤖 Starting comprehensive rubric analysis...")
-            
             result = upload_file(temp_file_path)
             
             if not result or not result.get('success'):
                 raise ValueError("Failed to process rubric file")
             
-            logger.info(f"✅ Successfully processed rubric: {file.filename}")
             return result
             
         finally:
@@ -482,7 +477,6 @@ async def upload_rubric(file: UploadFile = File(...)):
                 pass
             
     except Exception as e:
-        logger.error(f"❌ File processing error: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Failed to process file: {str(e)}"
