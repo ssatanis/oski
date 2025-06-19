@@ -691,7 +691,7 @@
                 
                 for (let i = 0; i < selectedFiles.length; i++) {
                     const file = selectedFiles[i];
-                    updateLoadingText(`Processing file ${i + 1} of ${selectedFiles.length}: ${file.name}`);
+                    updateLoadingText(`Processing ${file.name}... Please wait.`);
                     
                     // Prepare form data for single file
                     const formData = new FormData();
@@ -709,14 +709,8 @@
                         throw new Error(result.detail || result.message || 'Analysis failed');
                     }
 
-                    // If task-based processing, poll for completion
-                    if (result.task_id) {
-                        updateLoadingText(`Processing ${file.name}... Please wait.`);
-                        const taskResult = await pollTaskStatus(result.task_id);
-                        results.push(taskResult);
-                    } else {
-                        results.push(result);
-                    }
+                    // Direct result processing
+                    results.push(result);
                 }
 
                 // Hide loading
@@ -743,38 +737,7 @@
             }
         }
 
-        async function pollTaskStatus(taskId) {
-            const maxAttempts = 60; // 5 minutes max
-            let attempts = 0;
-            
-            while (attempts < maxAttempts) {
-                try {
-                    const response = await fetch(`http://localhost:8000/status/${taskId}`);
-                    const status = await response.json();
-                    
-                    if (status.status === 'completed' && status.result) {
-                        return status.result;
-                    } else if (status.status === 'error') {
-                        throw new Error(status.error || 'Processing failed');
-                    }
-                    
-                    // Update progress if available
-                    if (status.progress !== undefined) {
-                        updateLoadingProgress(status.progress, status.message);
-                    }
-                    
-                    // Wait before next poll
-                    await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second intervals
-                    attempts++;
-                    
-                } catch (error) {
-                    console.error('Polling error:', error);
-                    throw error;
-                }
-            }
-            
-            throw new Error('Processing timed out');
-        }
+
 
         function combineMultipleResults(results) {
             // Combine multiple rubric results
@@ -841,10 +804,6 @@
             if (loadingDetails) {
                 loadingDetails.textContent = text;
             }
-        }
-
-        function updateLoadingProgress(progress, message) {
-            updateLoadingText(`${message} (${Math.round(progress)}%)`);
         }
 
         function displayAnalysisResults(result) {
@@ -1014,6 +973,27 @@
             document.getElementById('currentTotalScore').textContent = totalScore;
         }
 
+        function calculateTotalScores() {
+            const scores = {
+                total: 0,
+                domains: {}
+            };
+
+            for (const domain of currentRubric.assessment_domains) {
+                let domainScore = 0;
+                for (const criterion of domain.subcategories) {
+                    domainScore += criterion.current_points || 0;
+                }
+                scores.domains[domain.name] = {
+                    score: domainScore,
+                    max_score: domain.total_points || 0
+                };
+                scores.total += domainScore;
+            }
+
+            return scores;
+        }
+
         function exportToJSON() {
             const exportData = {
                 rubric: currentRubric,
@@ -1025,27 +1005,73 @@
         }
 
         function exportToYAML() {
-            // Simple YAML export (for production, use a proper YAML library)
-            const scores = getCurrentScores();
-            let yamlContent = `# Medical Assessment Rubric Export\n`;
-            yamlContent += `title: "${currentRubric.rubric_info.title}"\n`;
-            yamlContent += `total_score: ${scores.total}\n`;
-            yamlContent += `max_score: ${currentRubric.rubric_info.total_points}\n\n`;
-            
-            yamlContent += `domains:\n`;
-            for (const domain of currentRubric.assessment_domains) {
-                yamlContent += `  - name: "${domain.name}"\n`;
-                yamlContent += `    criteria:\n`;
-                for (const criterion of domain.subcategories) {
-                    yamlContent += `      - id: ${criterion.id}\n`;
-                    yamlContent += `        name: "${criterion.name}"\n`;
-                    yamlContent += `        score: ${criterion.current_points || 0}\n`;
-                    yamlContent += `        max_score: ${criterion.points}\n`;
-                }
-                yamlContent += `\n`;
+            if (!currentRubric) {
+                showError('No rubric data available to export.');
+                return;
             }
 
-            downloadFile(yamlContent, 'rubric_analysis.yaml', 'text/yaml');
+            try {
+                console.log('🔄 Generating YAML from current rubric...');
+                
+                const scores = getCurrentScores();
+                
+                // Generate comprehensive YAML content
+                let yamlContent = `# Medical Assessment Rubric Export\n`;
+                yamlContent += `# Generated on: ${new Date().toISOString()}\n\n`;
+                
+                yamlContent += `rubric_info:\n`;
+                yamlContent += `  title: "${currentRubric.rubric_info.title}"\n`;
+                yamlContent += `  station_number: "${currentRubric.rubric_info.station_info?.station_number || 'N/A'}"\n`;
+                yamlContent += `  medical_condition: "${currentRubric.rubric_info.station_info?.condition || 'N/A'}"\n`;
+                yamlContent += `  specialty: "${currentRubric.rubric_info.station_info?.specialty || 'General Medicine'}"\n`;
+                yamlContent += `  total_possible_points: ${currentRubric.rubric_info.total_points}\n`;
+                yamlContent += `  current_total_score: ${scores.total}\n`;
+                yamlContent += `  completion_percentage: ${Math.round((scores.total / currentRubric.rubric_info.total_points) * 100)}%\n`;
+                yamlContent += `  creation_timestamp: "${currentRubric.rubric_info.creation_timestamp}"\n\n`;
+
+                yamlContent += `assessment_domains:\n`;
+                
+                for (const domain of currentRubric.assessment_domains) {
+                    if (domain.subcategories && domain.subcategories.length > 0) {
+                        const domainScore = scores.domains[domain.name]?.score || 0;
+                        
+                        yamlContent += `  - name: "${domain.name}"\n`;
+                        yamlContent += `    description: "${domain.description}"\n`;
+                        yamlContent += `    total_possible_points: ${domain.total_points || 0}\n`;
+                        yamlContent += `    current_score: ${domainScore}\n`;
+                        yamlContent += `    criteria:\n`;
+                        
+                        for (const criterion of domain.subcategories) {
+                            yamlContent += `      - id: ${criterion.id}\n`;
+                            yamlContent += `        name: "${criterion.name}"\n`;
+                            yamlContent += `        category: "${criterion.category || 'General'}"\n`;
+                            yamlContent += `        max_points: ${criterion.points}\n`;
+                            yamlContent += `        current_points: ${criterion.current_points || 0}\n`;
+                            yamlContent += `        description: "${criterion.description || criterion.name}"\n`;
+                        }
+                        yamlContent += `\n`;
+                    }
+                }
+
+                // Add assessment summary
+                yamlContent += `assessment_summary:\n`;
+                yamlContent += `  domains_assessed: ${currentRubric.assessment_domains.length}\n`;
+                yamlContent += `  total_criteria: ${currentRubric.assessment_domains.reduce((sum, domain) => sum + (domain.subcategories?.length || 0), 0)}\n`;
+                yamlContent += `  export_timestamp: "${new Date().toISOString()}"\n`;
+
+                console.log('✅ YAML content generated successfully');
+                
+                // Generate filename based on rubric title
+                const cleanTitle = currentRubric.rubric_info.title.replace(/[^a-zA-Z0-9]/g, '_');
+                const filename = `${cleanTitle}_assessment.yaml`;
+                
+                downloadFile(yamlContent, filename, 'text/yaml');
+                showSuccess('YAML file exported successfully!');
+                
+            } catch (error) {
+                console.error('❌ Error generating YAML:', error);
+                showError('Failed to export YAML file. Please try again.');
+            }
         }
 
         function exportToPDF() {

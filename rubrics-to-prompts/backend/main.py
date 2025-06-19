@@ -439,43 +439,54 @@ response_config:
     raise HTTPException(status_code=500, detail="Failed to generate valid YAML")
 
 @app.post("/upload-rubric")
-async def upload_rubric(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-    """Upload and process a rubric file"""
-    
-    # Generate task ID
-    import uuid
-    task_id = str(uuid.uuid4())
-    
-    # Initialize task storage
-    task_storage[task_id] = {
-        'status': ProcessingStatus(
-            step="upload",
-            message="File uploaded successfully",
-            progress=10.0
-        ),
-        'result': None,
-        'error': None
-    }
+async def upload_rubric(file: UploadFile = File(...)):
+    """Upload and process a rubric file directly with enhanced backend.py"""
     
     # Validate file type - only PDF, Word, and Excel
     allowed_extensions = ['pdf', 'doc', 'docx', 'xlsx', 'xls']
     file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
     
     if file_extension not in allowed_extensions:
-        task_storage[task_id]['error'] = f"Unsupported file type: {file_extension}"
-        raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed: PDF, Word (.docx/.doc), Excel (.xlsx/.xls)")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file type: {file_extension}. Only PDF, Word (.docx/.doc), and Excel (.xlsx/.xls) files are supported."
+        )
     
-    # Read file content before background processing
-    file_content = await file.read()
-    
-    # Start background processing
-    background_tasks.add_task(process_rubric_background, file_content, file.filename, task_id, file_extension)
-    
-    return ProcessingResponse(
-        task_id=task_id,
-        status="processing",
-        message="File uploaded successfully. Processing started."
-    )
+    try:
+        logger.info(f"📄 Processing file: {file.filename} ({file_extension})")
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as temp_file:
+            content = await file.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Use our enhanced backend.py to process the file
+            from backend import upload_file
+            logger.info("🤖 Starting comprehensive rubric analysis...")
+            
+            result = upload_file(temp_file_path)
+            
+            if not result or not result.get('success'):
+                raise ValueError("Failed to process rubric file")
+            
+            logger.info(f"✅ Successfully processed rubric: {file.filename}")
+            return result
+            
+        finally:
+            # Cleanup temporary file
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass
+            
+    except Exception as e:
+        logger.error(f"❌ File processing error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process file: {str(e)}"
+        )
 
 async def process_rubric_background(file_content: bytes, filename: str, task_id: str, file_extension: str):
     """Background task to process the rubric file using enhanced backend.py"""
