@@ -1,0 +1,93 @@
+system_message: You are an AI assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+user_message: |
+  Your goal is to assess and score the medical student's communication skills in several key areas. You should do this by identifying and extracting relevant statements from the transcript, providing a rationale for your assessment, and assigning a score for each of the described skills.
+  
+   The key communication skills to identify are:
+
+   ## CS_18. Student spoke at a reasonable pace
+   	 The student should speak at a pace that is appropriate for the conversation.
+     Scoring criteria:
+      - score 0: Student spoke too fast for me to understand them 2 or more times or speech seemed pressured or hurried
+      - score 1: There was at least one time where the student spoke too fast for me to understand them
+      - score 2: Student spoke at a pace that was appropriate
+
+   ## CS_19. Student spoke at a reasonable volume
+   	 The student should speak at a volume that is appropriate for the conversation.
+     Scoring criteria:
+      - score 0: The student spoke at a volume that was either too loud or too soft throughout the conversation
+      - score 1: There were times when the student was too loud or too soft
+      - score 2: The student spoke at an appropriate volume during the entire conversation
+
+   ## CS_20. Students questions were direct and clear
+   	 The student should ask questions that are direct and clear.
+     Scoring criteria:
+     - score 0: Student asked 3 or more questions that were long-winded or difficult to understand
+     - score 1: Student asked 1-2 questions that was too long or difficult to understand
+     - score 2: All of the student's questions were clear and direct
+   
+   ## CS_21. Student spoke clearly and communicated effectively
+   	 The student should speak clearly and communicate effectively.
+     Scoring criteria:
+     - score 0: Student frequently (5 or more times) struggled with word choice or forming their thoughts; or patient had difficulty understanding the student throughout much of the interview
+     - score 1: Student stumbled or struggled with word choice (3-4 times)
+     - score 2: Student stumbled or struggled with word choice only 1-2 times
+     - score 3: Student never struggled with word choice or forming their thoughts 	
+
+   ## CS_22. Student had a good understanding of the patiet's language.
+     Examples of having trouble understanding the patient:
+      - Asking the patient to repeat themselves
+      - Being confused by the patients responses
+
+     Scoring criteria:
+     - score 0: Student frequently (5 or more times) struggled to understand my responses or asked me to clarify an excessive amount
+     - score 1: Student at times appeared to have difficulty understanding my responses or repeatedly asked me to clarify (3-4 times)
+     - score 2: Student infrequently had difficulty understanding my responses (only 1-2 times)
+     - score 3: Student demonstrated a strong ability to understand my responses
+
+    ## CS_23. The patient was able to understand the student's responses
+    
+     Scoring criteria:
+      - score 0: The patient asked the student to repeat themselves often throughout the conversation or frequently said, "I don't understand."
+      - score 1: The patient asked the student to repeat themselves at times during the conversation or at times said, "I don't understand."
+      - score 2: The patient understood the student throughout the conversation without difficulty.
+
+    For each of these skills:
+    - List ALL relevant statements from the transcript that demonstrate the skill being evaluated
+    - Identify the start and end time stamps for each statement
+    - Provide a rationale that explains your reasoning for why each extracted statement demonstrates the skill or lack thereof
+    - Count the total number of instances (where applicable) and assign the appropriate score based on the criteria above
+    - If no relevant statements exist in the transcript, use "None" for the statement field and explain why in the rationale
+    - Your assessments should be based only on information provided in the transcript. Do not make inferences or assumptions beyond what is directly stated. 
+    - Consider both the skill description as well as scoring criteria in your rationale and final decisions.
+   
+    # Formatting instructions
+   
+    - Ensure strict adherence to JSON formatting.
+    - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+    Format your analysis of each skill in the following JSON format:
+    {
+    "CS_x": {
+      "statements": [
+        {
+          "text": "statement 1 extracted from transcript",
+          "start_time": "start time stamp of statement (NUM ONLY)",
+          "end_time": "end time stamp of statement (NUM ONLY)",
+          "rationale": "explanation for why this statement demonstrates the relevant skill"
+        },
+        {
+          "text": "statement 2 extracted from transcript",,
+          "start_time": "start time stamp of statement (NUM ONLY)",
+          "end_time": "end time stamp of statement (NUM ONLY)",
+          "rationale": "explanation for why this statement demonstrates the relevant skill"
+        }, ...
+      ],
+      "total_count": "number of such statements identified",
+      "rationale": "overall rationale for score based on scoring criteria and extracted statements",
+      "score": "score obtained by student"
+    },
+   
+    }
+response_config:
+  structured_output: True
+  schema: prompts.data_models.LSResponse

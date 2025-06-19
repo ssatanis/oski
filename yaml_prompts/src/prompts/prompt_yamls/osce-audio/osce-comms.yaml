@@ -1,0 +1,233 @@
+system_message: You are an AI assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+user_message: |
+  Your goal is to assess and score the medical student's communication skills in several key areas. You should do this by identifying and extracting relevant statements from the transcript, providing a rationale for your assessment, and assigning a score for each of the described skills.
+  
+   The key communication skills to identify are:
+   
+    ## CS_1. Introduced themselves 
+   	 The student should introduce themselves at the begining of the encounter with their name and role.
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not mention either name or role
+   	 - score 1: Student announced either name or role but not both
+   	 - score 2: Student announced both name and role
+   
+   
+   ## CS_2. Allowed patient to speak without interruption 
+   	 The student must not interrupt the patient. They should allow the patient to complete their sentences or thoughts. For evaluating this skill - extract statements that CLEARLY show the student interrupting the patient and not allowing them to complete their sentences. If there are NO such interruptions, then return ["None"]. 
+    
+   	 Scoring criteria:
+   	 - score 0: Student interrupted the patient 3 or more times
+   	 - score 1: Student interrupted the patient once or twice
+   	 - score 2: Student never interrupted the patient, always allowing them to complete their thoughts
+   
+   
+   ## CS_3. Used statements of understanding and emotional support 
+   	 The student must use supportive language throughout the interaction.
+   For example, they may say things like things like
+   - "I can't imagine how difficult that must have been"
+   - "We are going to get you through this"
+   - "That must have been difficult"
+    
+   	 Scoring criteria:
+   	 - score 0: Student neglected to use any statements of emotional support
+   	 - score 1: Student used only one statement of emotional support
+   	 - score 2: Student used 2 or more statements of emotional support
+   	 - score 3: Student used 3 or more statements of emotional support
+   
+   
+   ## CS_4. Used open ended questions at the beggining 
+   	 At the beginning of the interview, the student asked questions that allowed the patient to reply in a few sentences, telling their own story. The student should attempt to keep the interview open-ended to solicit most of the elements of the history of patient illness. They may need to move to more closed-ended questions to gather specific information about the history or to clarify details of the patient's history as the interview progresses. 
+   
+    In general, open-ended questions are not able to be answered with a "yes" or "no". Examples of open-ended questions that do not control the direction of the interview:
+     - What brings you in today?
+     - How have you been feeling?
+     - Tell me more about that.
+     - What concerns you about that?
+     - Do you have any thoughts about what might be causing that?
+     - When did you first observe that?
+    
+   	 Scoring criteria:
+   	 - score 0: Student neglected to use any open ended questions or only used a single open-ended question to begin the interview.
+   	 - score 1: Student used only one open-ended question after the initial question.
+   	 - score 2: Student used 2-3 open ended questions during the interview after the initial question.
+   	 - score 3: Student appropriately used at least 4 open-ended questions during the interview after the initial question.
+   
+   
+   ## CS_5. Used strategic silence 
+   	 Student used silence and remained attentive during silence as a means to encourage patient to keep talking. Note: awkward silence or searching for words does not count as strategic silence
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not use any strategic silence during the interview
+   	 - score 1: Student used strategic silence at least once at the beginning of the interview
+   
+   
+   ## CS_6. Used neutral utterances 
+   	 The student should use neutral utterances to encourage the patient to keep talking during their interaction.
+   Expressions like "uh-huh," "yes," or "hmm" are examples of neutral utterances that the student can use to encourage the patient to keep talking.
+   You do not need to extract all instances of neutral utterances, just one or two is enough.
+   	 Scoring criteria:
+   	 - score 0: Student did not use any neutral utterances
+   	 - score 1: Student used at least one neutral utterance
+   
+   
+   ## CS_7. Used echoing 
+   	 The student must demonstrate 'echoing' during their interaction. Echoing is the practice of repeating a word or phrase immediately after spoken by the patient to encouraging the patient to elaborate further.
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not exhibit any echoing during the interview
+   	 - score 1: Student used echoing at least once during the interview
+   
+   
+   ## CS_8. Avoided using leading questions 
+   	 The student must not use leading questions that bias the patient towards a certain answer. For example, "You don't have any pain, do you?" is a leading question. 
+    
+   	 Scoring criteria:
+   	 - score 0: Student used 4 or more leading questions during the interview
+   	 - score 1: Student used 2-3 leading questions during the interview
+   	 - score 2: Student used only 1 leading question during the interview
+   	 - score 3: Student used no leading question during the interview
+   
+   
+   ## CS_9. Avoided using multiple or compound questions 
+   	 The student should not ask compound questions or multiple questions at the same time. For example: "Have you had fever, headache, or pain?", or, "When did it start and how bad would you rate it?" are examples of compound questions that ask several things in one go. 
+    
+   	 Scoring criteria:
+   	 - score 0: Student used 3 or more compound questions during interview
+   	 - score 1: Student 2 compound questions during interview
+   	 - score 2: Student used 1 compund question during interview
+   	 - score 3: Student used no compound questions during interview
+   
+   
+   ## CS_10. Summarized the history 
+   	 Near the end of the discussion, the student should repeat or rephrase key information that the patient provided during the encounter to show they were listening and understand the patient's history. The aim of providing such a summary is to ensure that they understand the patient's symptoms accurately and give them a chance to verify this information.
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not attempt to summarize the history of the present illness (HPI)
+   	 - score 1: Student gave an incomplete attempt at summarizing the HPI, mentioned four or fewer elements in their summary
+   	 - score 2: Student performed an adequate summary of the HPI noting five or more elements of the history in their summary
+   
+   
+   ## CS_11. Used transitional statements 
+   	 The student should use transitional statements to indicate when the conversation was moving from one topic to another.
+   Examples of transitional statements are:
+   - "Now, let me ask you about your past medical history.""
+   - "I'd like to ask you some questions about your family's medical history."
+   - "Let's talk about your symptoms"
+   Transitional statements may be used several times throughout the interview.
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not use any transitional statements
+   	 - score 1: Student used one transition statement during the interview
+   	 - score 2: Student used at least two transition statements during the interview
+   
+   
+   ## CS_12. Avoided using medical jargon unless immediately defined 
+   	 The student spoke to me on a level the patient could understand. If the student uses terms that only someone a high-school level of education or higher would understand, they should define them in more plain language. If medical terms were used, the student explained them immediately.
+    
+   	 Scoring criteria:
+   	 - score 0: Student used jargon or complex language 5 or more times without immediately explaining
+   	 - score 1: Student used jargon or complex language 3 to 4 times without immediately explaining
+   	 - score 2: Student used jargon or complex language 1 to 2 times without immediately explaining
+   	 - score 3: All instances of jargon or complex language (if any) were immediately explained or redefined
+   
+   
+   ## CS_13. Discussed diagnositc possibilities 
+   	 At the end of the history or the encounter, the student informed the patient what they thought could be the cause of their symptoms.
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not provide any diagnostic possibilities
+   	 - score 1: Student provided only one diagnostic possibility. The suggested diagnosis was not reasonable based on the clinical scenario.
+   	 - score 2: Student provided only one diagnostic possibility. The suggested diagnosis was reasonable based on the clinical scenario.
+   	 - score 3: Student provided more than one diagnostic possibility but did not suggest which they felt was most likely. At least one of the diagnoses they suggested was reasonable based on the clinical scenario.
+   	 - score 4: Student provided what they felt was the most likely diagnosis and also discussed at least one alternative diagnosis. Some but not all diagnoses that were discussed were reasonable based on the clinical scenario.
+   	 - score 5: Student provided what they felt was the most likely diagnosis and also discussed at least one alternative diagnosis. All the diagnoses that were discussed were reasonable based on the clinical scenario.
+   
+   
+   ## CS_14. Proposed a workup and/or management plan 
+   	 The student should propose what they felt would be the best next steps for further work-up and management of the patients condition. (Note: saying they are going to go speak to their attending or supervisor does not count as a specific next step.)
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not propose any specific tests or interventions (including watching and waiting) for my condition.
+   	 - score 1: Student proposed only one specific interventions such as a specific lab test, imaging study, referral, or medication as the best next step to manage the patient at this time. What was proposed was not a reasonable next step.
+   	 - score 2: Student proposed at least two specific interventions such as specific lab tests, imaging studies, referral, or medications as the best next step to manage the patient at this time. None of what was proposed was a reasonable next step.
+   	 - score 3: Student proposed only one specific interventions such as a specific lab test, imaging study, referral, or medication as the best next step to manage the patient at this time. What was proposed was a reasonable next step.
+   	 - score 4: Student proposed at least two specific interventions such as specific lab tests, imaging studies, referral, or medications as the best next step to manage the patient at this time. Some but not all of what was proposed was a reasonable next step.
+   	 - score 5: Student proposed at least two specific interventions such as specific lab tests, imaging studies, referral, or medications as the best next step to manage the patient at this time. Everything that was proposed was a reasonable next step.
+   
+   
+   ## CS_15. Explained the reasoning for next steps clearly and in lay language. 
+   	 Student explained the reasons for the next steps they are proposing clearly and in lay language in order to allow the patient to be involved in decision-making. For example,
+   - "I think a chest xray and a CBC will help rule out something serious like a pneumonia or lung infection and would be a good next step."
+    
+   	 Scoring criteria:
+   	 - score 0: Student provided unreasonable rationale for the specific interventions they proposed for management at this time, potentially misleading them.
+   	 - score 1: Student did not provide rationale for the specific interventions they proposed for management at this time.
+   	 - score 2: Student provided the rationale for some but not all of the specific interventions they proposed for management at this time. Their rationale was reasonable and supported the patient's involvement in the decision-making.
+   	 - score 3: Student provided the rationale for each of the specific interventions they proposed for management at this time. Their rationale was reasonable.
+   
+   
+   ## CS_16. Gave the patient a chance to ask questions towards the end of the interview 
+   	 Toward the end of the interview, the student specifically ask a question such as: 
+   - "Do you have any questions?" or
+   - "Is there anything else I can help you with?"
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not allow me to ask any questions
+   	 - score 1: Student specificially solicited questions from the patient with one of the key phrases
+   
+   
+   ## CS_17. Identified barriers to the patient's ability to follow through on the plan 
+   	 Example:
+   - "How does this sound to you?" would get a score of 1 since it is only an inquiry but does not try to identify any specific barriers 
+   - "How does this sound to you? Do you have any concerns with the plan?" would get a score of 2
+   - "Do you anticipate any challenges to being able to follow-through with this plan?" would get a score of 2
+    
+   	 Scoring criteria:
+   	 - score 0: Did not inquire about the patient's willingness or ability to follow through the plan.
+   	 - score 1: Student inquired about the patient's perspective on the plan but did not try to identify any specific barriers.
+   	 - score 2: Student tried to understand the patient's perspective on the plan and whether or not there were any barriers to them following through with it.
+   
+   
+    
+   
+    For each of these skills:
+    - List ALL relevant statements from the transcript that demonstrate the skill being evaluated
+    - Identify the start and end time stamps for each statement
+    - Provide a rationale that explains your reasoning for why each extracted statement demonstrates the skill or lack thereof
+    - Count the total number of instances (where applicable) and assign the appropriate score based on the criteria above
+    - If no relevant statements exist in the transcript, use "None" for the statement field and explain why in the rationale
+    - Your assessments should be based only on information provided in the transcript. Do not make inferences or assumptions beyond what is directly stated. 
+    - Consider both the skill description as well as scoring criteria in your rationale and final decisions.
+   
+    # Formatting instructions
+   
+    - Ensure strict adherence to JSON formatting.
+    - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+    Format your analysis of each skill in the following JSON format:
+    {
+    "CS_x": {
+      "statements": [
+        {
+          "text": "statement 1 extracted from transcript",
+          "start_time": "start time stamp of statement (NUM ONLY)",
+          "end_time": "end time stamp of statement (NUM ONLY)",
+          "rationale": "explanation for why this statement demonstrates the relevant skill"
+        },
+        {
+          "text": "statement 2 extracted from transcript",,
+          "start_time": "start time stamp of statement (NUM ONLY)",
+          "end_time": "end time stamp of statement (NUM ONLY)",
+          "rationale": "explanation for why this statement demonstrates the relevant skill"
+        }, ...
+      ],
+      "total_count": "number of such statements identified",
+      "rationale": "overall rationale for score based on scoring criteria and extracted statements",
+      "score": "score obtained by student"
+    },
+   
+    }
+response_config:
+  structured_output: True
+  schema: prompts.data_models.Response

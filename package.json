@@ -1,53 +1,67 @@
 {
-  "name": "oski-complete-suite",
+  "name": "rubricon-standalone",
   "version": "1.0.0",
-  "description": "Complete Oski application suite with PromptGen and OSCE Video Grader",
+  "description": "Standalone AI Rubric to Prompt Converter - Transform medical assessment rubrics into AI-ready YAML prompts",
+  "main": "index.html",
   "scripts": {
-    "dev": "./start-all-services.sh",
-    "start": "./start-all-services.sh",
-    "start:all": "./start-all-services.sh",
-    "start:promptgen": "cd rubrics-to-prompts && ./start-all.sh",
-    "start:osce": "cd osce-video-grader && echo 'Starting OSCE Video Grader...' && cd web && npm run dev -- --port 3001",
-    "install:all": "npm run install:promptgen && npm run install:osce",
-    "install:promptgen": "cd rubrics-to-prompts/frontend && npm install && cd ../backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
-    "install:osce": "cd osce-video-grader/web && npm install",
-    "clean": "rm -rf logs && rm -rf rubrics-to-prompts/frontend/node_modules && rm -rf rubrics-to-prompts/backend/venv && rm -rf osce-video-grader/web/node_modules",
-    "health": "curl -s http://localhost:3000 && curl -s http://localhost:8000/docs && curl -s http://localhost:3001 && curl -s http://localhost:8001/docs"
+    "start": "python3 -m http.server 8000",
+    "serve": "npx http-server -p 8000",
+    "dev": "python3 -m http.server 3000",
+    "build": "echo 'No build required - this is a standalone client-side application'",
+    "test": "echo 'Open index.html in browser to test functionality'"
   },
   "keywords": [
-    "oski",
     "medical",
-    "osce",
+    "assessment",
+    "rubric",
     "ai",
-    "rubrics",
-    "prompts",
     "yaml",
-    "ocr"
+    "osce",
+    "healthcare",
+    "education",
+    "prompt",
+    "converter"
   ],
-  "author": "Sahaj Satani & Aarash Zakeri",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+  "author": "Oski Development Team",
+  "license": "Proprietary",
+  "homepage": ".",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oski/rubricon-standalone"
   },
+  "bugs": {
+    "url": "https://github.com/oski/rubricon-standalone/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "config": {
+    "port": "8000"
+  },
+  "devDependencies": {},
   "dependencies": {
-    "@aws-sdk/client-textract": "^3.658.1",
-    "@google-cloud/vision": "^5.2.0",
-    "aws-sdk": "^2.1691.0",
-    "csv-parse": "^5.6.0",
-    "formidable": "^3.5.4",
-    "jimp": "^1.6.0",
-    "mammoth": "^1.9.1",
-    "multer": "^1.4.5-lts.1",
-    "node-fetch": "^3.3.2",
+    "@google-cloud/vision": "^4.0.2",
+    "formidable": "^3.5.1",
     "pdf-parse": "^1.1.1",
-    "pdf2pic": "^3.2.0",
-    "sharp": "^0.34.2",
-    "tesseract.js": "^6.0.1",
+    "pdf2pic": "^3.1.3",
+    "mammoth": "^1.6.0",
     "xlsx": "^0.18.5",
-    "python-shell": "^5.0.0",
-    "express": "^4.21.1",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5"
-  }
-}
+    "csv-parse": "^5.5.3",
+    "sharp": "^0.33.1",
+    "tesseract.js": "^5.0.4",
+    "node-fetch": "^3.3.2"
+  },
+  "files": [
+    "index.html",
+    "js/",
+    "api/",
+    "css/",
+    "images/",
+    "README.md"
+  ]
+} 

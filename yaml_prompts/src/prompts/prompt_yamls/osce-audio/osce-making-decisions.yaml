@@ -1,0 +1,78 @@
+system_message: You are an AI assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+user_message: |
+  Your goal is to assess and score the medical student's communication skills in several key areas. You should do this by identifying and extracting relevant statements from the transcript, providing a rationale for your assessment, and assigning a score for each of the described skills.
+  
+   The key communication skills to identify are:
+   
+   ## CS_15. Explained the reasoning for next steps clearly and in lay language. 
+   	 Student explained the reasons for the next steps they are proposing clearly and in lay language in order to allow the patient to be involved in decision-making. For example,
+   - "I think a chest xray and a CBC will help rule out something serious like a pneumonia or lung infection and would be a good next step."
+    
+   	 Scoring criteria:
+   	 - score 0: Student provided unreasonable rationale for the specific interventions they proposed for management at this time, potentially misleading them.
+   	 - score 1: Student did not provide rationale for the specific interventions they proposed for management at this time.
+   	 - score 2: Student provided the rationale for some but not all of the specific interventions they proposed for management at this time. Their rationale was reasonable and supported the patient's involvement in the decision-making.
+   	 - score 3: Student provided the rationale for each of the specific interventions they proposed for management at this time. Their rationale was reasonable.
+   
+   
+   ## CS_16. Gave the patient a chance to ask questions towards the end of the interview 
+   	 Toward the end of the interview, the student specifically ask a question such as: 
+   - "Do you have any questions?" or
+   - "Is there anything else I can help you with?"
+    
+   	 Scoring criteria:
+   	 - score 0: Student did not allow me to ask any questions
+   	 - score 1: Student specificially solicited questions from the patient with one of the key phrases
+   
+   
+   ## CS_17. Identified barriers to the patient's ability to follow through on the plan 
+   	 Example:
+   - "How does this sound to you?" would get a score of 1 since it is only an inquiry but does not try to identify any specific barriers 
+   - "How does this sound to you? Do you have any concerns with the plan?" would get a score of 2
+   - "Do you anticipate any challenges to being able to follow-through with this plan?" would get a score of 2
+    
+   	 Scoring criteria:
+   	 - score 0: Did not inquire about the patient's willingness or ability to follow through the plan.
+   	 - score 1: Student inquired about the patient's perspective on the plan but did not try to identify any specific barriers.
+   	 - score 2: Student tried to understand the patient's perspective on the plan and whether or not there were any barriers to them following through with it.
+     
+     For each of these skills:
+    - List ALL relevant statements from the transcript that demonstrate the skill being evaluated
+    - Identify the start and end time stamps for each statement
+    - Provide a rationale that explains your reasoning for why each extracted statement demonstrates the skill or lack thereof
+    - Count the total number of instances (where applicable) and assign the appropriate score based on the criteria above
+    - If no relevant statements exist in the transcript, use "None" for the statement field and explain why in the rationale
+    - Your assessments should be based only on information provided in the transcript. Do not make inferences or assumptions beyond what is directly stated. 
+    - Consider both the skill description as well as scoring criteria in your rationale and final decisions.
+   
+    # Formatting instructions
+   
+    - Ensure strict adherence to JSON formatting.
+    - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+    Format your analysis of each skill in the following JSON format:
+    {
+    "CS_x": {
+      "statements": [
+        {
+          "text": "statement 1 extracted from transcript",
+          "start_time": "start time stamp of statement (NUM ONLY)",
+          "end_time": "end time stamp of statement (NUM ONLY)",
+          "rationale": "explanation for why this statement demonstrates the relevant skill"
+        },
+        {
+          "text": "statement 2 extracted from transcript",,
+          "start_time": "start time stamp of statement (NUM ONLY)",
+          "end_time": "end time stamp of statement (NUM ONLY)",
+          "rationale": "explanation for why this statement demonstrates the relevant skill"
+        }, ...
+      ],
+      "total_count": "number of such statements identified",
+      "rationale": "overall rationale for score based on scoring criteria and extracted statements",
+      "score": "score obtained by student"
+    },
+   
+    }
+response_config:
+  structured_output: True
+  schema: prompts.data_models.MDResponse
