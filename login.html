@@ -15,6 +15,9 @@
     <!-- Supabase -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
+    <!-- bcrypt.js for password verification -->
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+    
     <!-- Dynamic Favicon -->
     <script>
     function setFavicon() {
@@ -675,13 +678,34 @@
             }
         }
 
-        // Simple password verification function (for basic hashing)
+        // Bcrypt password verification function
         function verifyPassword(inputPassword, storedHash) {
-            // For development - using simple base64 encoding
-            // In production, you should use proper bcrypt
-            const inputHash = btoa(inputPassword);
-            return inputHash === storedHash;
+            try {
+                // Check if bcrypt is available
+                if (typeof bcrypt === 'undefined') {
+                    console.error('bcrypt.js not loaded');
+                    throw new Error('Password verification library not available');
+                }
+                
+                // Use bcrypt.js to verify the password against the hash
+                console.log('Using bcrypt to verify password');
+                return bcrypt.compareSync(inputPassword, storedHash);
+            } catch (error) {
+                console.error('Password verification error:', error);
+                return false;
+            }
         }
+        
+        // Check if bcrypt loaded properly
+        window.addEventListener('load', function() {
+            if (typeof bcrypt === 'undefined') {
+                console.error('bcrypt.js failed to load');
+                addDebugLog('❌ bcrypt.js failed to load - password verification will fail');
+            } else {
+                console.log('bcrypt.js loaded successfully');
+                addDebugLog('✅ bcrypt.js loaded successfully');
+            }
+        });
 
         // Handle login form submission
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -716,9 +740,12 @@
                 
                 const user = users[0];
                 console.log('Found user:', { id: user.id, email: user.email });
+                console.log('Password hash from database:', user.password_hash);
                 
                 // Verify password
+                console.log('Verifying password...');
                 const isValidPassword = verifyPassword(password, user.password_hash);
+                console.log('Password verification result:', isValidPassword);
                 
                 if (!isValidPassword) {
                     throw new Error('Invalid email or password. Please check your credentials.');
