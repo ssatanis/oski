@@ -117,6 +117,31 @@ class ProcessingResponse(BaseModel):
 # In-memory task storage (use Redis in production)
 task_storage = {}
 
+def generate_yaml_from_criteria(criteria, filename):
+    """Generate YAML content from criteria list"""
+    yaml_lines = []
+    yaml_lines.append("system_message: |")
+    yaml_lines.append("  You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.")
+    yaml_lines.append("")
+    yaml_lines.append("user_message: |")
+    yaml_lines.append("  Analyze the following medical examination and provide scores for each criterion:")
+    yaml_lines.append("")
+    yaml_lines.append("criteria:")
+    
+    for i, criterion in enumerate(criteria):
+        yaml_lines.append(f"  - criterion: {criterion.get('name', 'Criterion')}")
+        yaml_lines.append(f"    max_points: {criterion.get('max_points', 1)}")
+        yaml_lines.append(f"    examples:")
+        examples = criterion.get('examples', [])
+        if examples:
+            for example in examples:
+                if example and example.strip():  # Only add non-empty examples
+                    yaml_lines.append(f"      - {example}")
+        else:
+            yaml_lines.append(f"      - Assessment of {criterion.get('name', 'criterion').lower()}")
+    
+    return '\n'.join(yaml_lines)
+
 async def extract_text_from_file(file_path: str, file_type: str) -> str:
     """Extract text from various file formats using OCR"""
     try:
@@ -439,43 +464,53 @@ response_config:
     raise HTTPException(status_code=500, detail="Failed to generate valid YAML")
 
 @app.post("/upload-rubric")
-async def upload_rubric(file: UploadFile = File(...)):
-    """Upload and process a rubric file directly with enhanced backend.py"""
+async def upload_rubric(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    """Upload and process a rubric file"""
     
-    # Validate file type - only PDF, Word, and Excel
-    allowed_extensions = ['pdf', 'doc', 'docx', 'xlsx', 'xls']
+    # Validate file type
+    allowed_extensions = ['pdf', 'doc', 'docx', 'xlsx', 'xls', 'txt', 'png', 'jpg', 'jpeg']
     file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
     
     if file_extension not in allowed_extensions:
         raise HTTPException(
             status_code=400, 
-            detail=f"Unsupported file type: {file_extension}. Only PDF, Word (.docx/.doc), and Excel (.xlsx/.xls) files are supported."
+            detail=f"Unsupported file type: {file_extension}. Supported: PDF, Word, Excel, Text, Images"
         )
     
     try:
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as temp_file:
-            content = await file.read()
-            temp_file.write(content)
-            temp_file_path = temp_file.name
+        # Read file content
+        file_content = await file.read()
         
-        try:
-            # Use our enhanced backend.py to process the file
-            from backend import upload_file
-            result = upload_file(temp_file_path)
-            
-            if not result or not result.get('success'):
-                raise ValueError("Failed to process rubric file")
-            
-            return result
-            
-        finally:
-            # Cleanup temporary file
-            try:
-                os.unlink(temp_file_path)
-            except:
-                pass
-            
+        # Generate task ID
+        import uuid
+        task_id = str(uuid.uuid4())
+        
+        # Initialize task storage
+        task_storage[task_id] = {
+            'status': ProcessingStatus(
+                step="initializing",
+                message="File upload received",
+                progress=10.0
+            ),
+            'result': None,
+            'error': None
+        }
+        
+        # Start background processing
+        background_tasks.add_task(
+            process_rubric_background,
+            file_content,
+            file.filename,
+            task_id,
+            file_extension
+        )
+        
+        return ProcessingResponse(
+            task_id=task_id,
+            status="processing",
+            message="File upload successful. Processing started."
+        )
+        
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -523,12 +558,30 @@ async def process_rubric_background(file_content: bytes, filename: str, task_id:
             )
             
             # Store result in format expected by frontend
+            # Convert backend.py result to the format expected by rubricon.html
+            rubric_data = result.get('interactiveRubric', {})
+            
+            # Extract criteria from assessment domains
+            criteria = []
+            for domain in rubric_data.get('assessment_domains', []):
+                for criterion in domain.get('subcategories', []):
+                    criteria.append({
+                        'name': criterion.get('name', ''),
+                        'criterion': criterion.get('name', ''),
+                        'max_points': criterion.get('points', 1),
+                        'points': criterion.get('points', 1),
+                        'examples': [criterion.get('description', '')]  # Use real descriptions, not fake examples
+                    })
+            
+            # Generate YAML content
+            yaml_content = generate_yaml_from_criteria(criteria, filename)
+            
             task_storage[task_id]['result'] = {
-                'success': True,
-                'interactiveRubric': result['interactiveRubric'],
-                'processedFiles': 1,
-                'timestamp': result['timestamp'],
-                'analysisResult': result['analysisResult'],
+                'parsed_yaml': {
+                    'system_message': "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+                    'criteria': criteria
+                },
+                'yaml_content': yaml_content,
                 'filename': filename
             }
             
@@ -615,9 +668,20 @@ async def download_yaml(task_id: str):
     if not result:
         raise HTTPException(status_code=400, detail="No result found to download")
     
+    # Generate YAML content if not present
+    yaml_content = result.get('yaml_content')
+    if not yaml_content and result.get('parsed_yaml'):
+        # Generate YAML from parsed data
+        parsed = result['parsed_yaml']
+        criteria = parsed.get('criteria', [])
+        yaml_content = generate_yaml_from_criteria(criteria, result.get('filename', 'rubric'))
+    
+    if not yaml_content:
+        raise HTTPException(status_code=400, detail="No YAML content available")
+    
     # Create temporary YAML file
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as temp_file:
-        temp_file.write(result['yaml_content'])
+        temp_file.write(yaml_content)
         temp_file_path = temp_file.name
     
     # Generate filename

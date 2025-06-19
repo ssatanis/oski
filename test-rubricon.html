@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Rubricon Backend</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Test Rubricon Backend Connection</h1>
+    
+    <div>
+        <h2>1. Test Backend Health</h2>
+        <button onclick="testHealth()">Test Health</button>
+        <div id="healthResult" class="result"></div>
+    </div>
+    
+    <div>
+        <h2>2. Test File Upload</h2>
+        <input type="file" id="testFile" accept=".pdf,.docx,.xlsx,.txt">
+        <button onclick="testUpload()">Test Upload</button>
+        <div id="uploadResult" class="result"></div>
+    </div>
+    
+    <div>
+        <h2>3. Test Download YAML</h2>
+        <input type="text" id="taskId" placeholder="Enter task ID">
+        <button onclick="testDownload()">Test Download</button>
+        <div id="downloadResult" class="result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:8000';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                const data = await response.json();
+                resultDiv.innerHTML = `<span class="success">✓ Backend is healthy: ${JSON.stringify(data)}</span>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Backend error: ${error.message}</span>`;
+            }
+        }
+        
+        async function testUpload() {
+            const resultDiv = document.getElementById('uploadResult');
+            const fileInput = document.getElementById('testFile');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<span class="error">Please select a file</span>';
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                
+                const response = await fetch(`${BACKEND_URL}/upload-rubric`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<span class="success">✓ Upload successful! Task ID: ${data.task_id}</span>`;
+                document.getElementById('taskId').value = data.task_id;
+                
+                // Poll for status
+                pollStatus(data.task_id);
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Upload error: ${error.message}</span>`;
+            }
+        }
+        
+        async function pollStatus(taskId) {
+            const resultDiv = document.getElementById('uploadResult');
+            let attempts = 0;
+            
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/status/${taskId}`);
+                    const status = await response.json();
+                    
+                    resultDiv.innerHTML += `<br>Status: ${status.message} (${status.progress}%)`;
+                    
+                    if (status.status === 'completed') {
+                        clearInterval(interval);
+                        resultDiv.innerHTML += `<br><span class="success">✓ Processing complete!</span>`;
+                        resultDiv.innerHTML += `<br>Result: <pre>${JSON.stringify(status.result, null, 2)}</pre>`;
+                    } else if (status.error) {
+                        clearInterval(interval);
+                        resultDiv.innerHTML += `<br><span class="error">✗ Error: ${status.error}</span>`;
+                    }
+                    
+                    attempts++;
+                    if (attempts > 60) {
+                        clearInterval(interval);
+                        resultDiv.innerHTML += `<br><span class="error">✗ Timeout</span>`;
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    resultDiv.innerHTML += `<br><span class="error">✗ Poll error: ${error.message}</span>`;
+                }
+            }, 1000);
+        }
+        
+        async function testDownload() {
+            const resultDiv = document.getElementById('downloadResult');
+            const taskId = document.getElementById('taskId').value;
+            
+            if (!taskId) {
+                resultDiv.innerHTML = '<span class="error">Please enter a task ID</span>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/download-yaml/${taskId}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'test-rubric.yaml';
+                    a.click();
+                    resultDiv.innerHTML = '<span class="success">✓ Download started!</span>';
+                } else {
+                    const error = await response.json();
+                    resultDiv.innerHTML = `<span class="error">✗ Download error: ${error.detail}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Download error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html> 
