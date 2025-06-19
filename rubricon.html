@@ -2230,9 +2230,9 @@
                             </div>
                             <h2 class="upload-title">Upload Your Rubric</h2>
                             <p class="upload-description">Drag and drop your rubric file here, or click to browse.<br>
-                            Supports: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, and image formats.</p>
+                            Supports: PDF, Word (.docx/.doc), and Excel (.xlsx/.xls) files only.</p>
                             
-                            <input type="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.png,.jpg,.jpeg">
+                            <input type="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
                             <button class="upload-button" onclick="document.getElementById('fileInput').click()">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -2387,23 +2387,8 @@
             useBackendAuth: true
         };
         
-        // Smart Backend Configuration - FREE VERCEL SERVERLESS FUNCTIONS!
-        const getBackendUrl = () => {
-            // Check if we're on localhost or deployed
-            const hostname = window.location.hostname;
-            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
-            
-            if (isLocal) {
-                // Local development - use localhost backend
-                return 'http://localhost:8000';
-            } else {
-                // Production - use Vercel serverless functions (FREE!)
-                // The API routes will be at /api/ on the same domain
-                return window.location.origin; // Uses same domain as frontend
-            }
-        };
-        
-        const BACKEND_URL = getBackendUrl();
+        // Backend URL - Points to the rubrics-to-prompts backend
+        const BACKEND_URL = 'http://localhost:8000';
 
 
 
@@ -2512,63 +2497,30 @@
             
             // Clear previous status messages
             statusMessages.innerHTML = '';
-            
-            // Show progress steps
-            showProcessingSteps();
+            showStatus('processing', 'Processing rubric...', true);
 
             try {
-                // Step 1: File Analysis
-                updateProgressStep('step-extract', 'active');
-                showStatus('processing', 'Analyzing file structure and extracting text...', true);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                const base64Content = await fileToBase64(currentFile);
-                updateProgressStep('step-extract', 'completed');
-                
-                // Step 2: Section Extraction  
-                updateProgressStep('step-analyze', 'active');
-                showStatus('processing', 'Extracting all OSCE sections with enhanced AI...', true);
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
-                let rubricData = null;
-                
-                try {
-                    // Try comprehensive backend processing with multiple OCR services first
-                    console.log('Attempting comprehensive OCR processing with backend...');
-                    rubricData = await processWithComprehensiveOCR(currentFile, base64Content);
-                    console.log('Comprehensive OCR processing successful!');
-                } catch (backendError) {
-                    console.warn('Backend OCR processing failed, trying direct AWS:', backendError.message);
-                    
-                    try {
-                        // Try AWS Textract + Comprehend Medical directly
-                        console.log('Attempting direct AWS Textract + Comprehend Medical processing...');
-                        rubricData = await processWithAWSTextractComprehend(currentFile, base64Content);
-                        console.log('AWS processing successful!');
-                    } catch (awsError) {
-                        console.warn('AWS processing failed, trying local OCR fallback:', awsError.message);
-                    }
+                // Create form data for the backend
+                const formData = new FormData();
+                formData.append('file', currentFile);
+
+                // Send to the rubrics-to-prompts backend
+                const response = await fetch('http://localhost:8000/upload-rubric', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.detail || result.message || 'Processing failed');
                 }
+
+                // Convert the result to the format expected by the dashboard
+                const rubricData = convertToRubriconFormat(result);
                 
-                // If all OCR methods failed, use dynamic local processing
-                if (!rubricData) {
-                    showStatus('processing', 'Using dynamic local content analysis...', true);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    rubricData = await generateEnhancedFallbackRubric(currentFile, base64Content);
-                }
-                
-                updateProgressStep('step-analyze', 'completed');
-                
-                // Step 3: Complete
-                updateProgressStep('step-complete', 'active');
-                showStatus('processing', 'Finalizing rubric structure...', true);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                updateProgressStep('step-complete', 'completed');
-                
-                // Show final success message
-                const sectionNames = rubricData.sections ? rubricData.sections.map(s => s.name).join(', ') : 
-                                   rubricData.criteria ? rubricData.criteria.map(c => c.name).join(', ') : 'All core sections';
-                showStatus('success', `Processed! Found ${rubricData.sections?.length || rubricData.criteria?.length || 4} sections: ${sectionNames}`, true);
+                // Show success message
+                showStatus('success', `Processed! Found ${rubricData.criteria?.length || 0} criteria from your rubric.`, true);
                 
                 // Update process button to show completion
                 processButton.classList.add('success');
@@ -2591,11 +2543,11 @@
                 // Populate the dashboard with extracted sections
                 setTimeout(() => {
                     showDashboard(rubricData);
-                }, 1000);
+                }, 500);
                 
             } catch (error) {
                 console.error('Processing failed:', error);
-                showStatus('error', 'Processing failed. Please try again.');
+                showStatus('error', `Processing failed: ${error.message}`);
                 
                 // Reset button
                 processButton.disabled = false;
@@ -2607,6 +2559,40 @@
                     Process Rubric
                 `;
             }
+        }
+
+        // Convert backend result to rubricon format
+        function convertToRubriconFormat(backendResult) {
+            if (!backendResult.interactiveRubric) {
+                throw new Error('Invalid rubric data received from backend');
+            }
+
+            const rubric = backendResult.interactiveRubric;
+            const criteria = [];
+
+            // Extract all criteria from assessment domains
+            rubric.assessment_domains.forEach(domain => {
+                domain.subcategories.forEach(criterion => {
+                    criteria.push({
+                        name: criterion.name,
+                        description: criterion.description || criterion.name,
+                        points: criterion.points,
+                        category: criterion.category,
+                        section: domain.name
+                    });
+                });
+            });
+
+            return {
+                system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+                user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
+                criteria: criteria,
+                assessment_type: rubric.rubric_info?.station_info?.specialty || 'Medical Assessment',
+                source_file: currentFile.name,
+                total_points: rubric.rubric_info?.total_points || criteria.reduce((sum, c) => sum + c.points, 0),
+                processing_method: 'Enhanced Backend Processing',
+                title: rubric.rubric_info?.title || 'Medical Assessment Rubric'
+            };
         }
 
         // Comprehensive OCR processing with backend (Google Vision + AWS Textract + OCR)
@@ -4395,53 +4381,7 @@ response_config:
             }
         }
 
-        // Enhanced function to add processing progress steps
-        function showProcessingSteps() {
-            const statusMessages = document.getElementById('statusMessages');
-            
-            const progressContainer = document.createElement('div');
-            progressContainer.className = 'progress-steps';
-            progressContainer.innerHTML = `
-                <div class="progress-step completed" id="step-upload">
-                    <div class="progress-step-icon">✓</div>
-                    <span>File Upload</span>
-                </div>
-                <div class="progress-step" id="step-extract">
-                    <div class="progress-step-icon">2</div>
-                    <span>Text Extraction</span>
-                </div>
-                <div class="progress-step" id="step-analyze">
-                    <div class="progress-step-icon">3</div>
-                    <span>OSCE Analysis</span>
-                </div>
-                <div class="progress-step" id="step-complete">
-                    <div class="progress-step-icon">4</div>
-                    <span>Complete</span>
-                </div>
-            `;
-            
-            statusMessages.appendChild(progressContainer);
-        }
 
-        // Function to update progress steps
-        function updateProgressStep(stepId, state = 'active') {
-            const step = document.getElementById(stepId);
-            if (step) {
-                step.classList.remove('active', 'completed');
-                step.classList.add(state);
-                
-                if (state === 'completed') {
-                    const icon = step.querySelector('.progress-step-icon');
-                    icon.innerHTML = '✓';
-                } else if (state === 'active') {
-                    const icon = step.querySelector('.progress-step-icon');
-                    // Keep the original number for active state
-                    if (stepId === 'step-extract') icon.innerHTML = '2';
-                    if (stepId === 'step-analyze') icon.innerHTML = '3';
-                    if (stepId === 'step-complete') icon.innerHTML = '4';
-                }
-            }
-        }
 
         // Event listeners for editor updates
         document.addEventListener('DOMContentLoaded', function() {
