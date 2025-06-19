@@ -2366,11 +2366,10 @@
         let processedData = null;
         let currentTaskId = null;
 
-        // Backend URL - Points to the rubrics-to-prompts backend
-        // For production, you'll need to deploy the backend separately and update this URL
-        const BACKEND_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:8000'
-            : 'https://your-backend-api.vercel.app'; // Replace with your deployed backend URL
+        // Configuration
+        const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:8000' 
+            : 'https://rubricon-backend.vercel.app';  // Change this to your deployed backend URL
 
         // Perfect adaptive footer state management
         function updateFooterState(state) {

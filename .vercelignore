@@ -3,29 +3,35 @@ rubrics-to-prompts/
 venv/
 osce-video-grader/
 node_modules/
-
-# Backend files (not needed for frontend deployment)
 api/
 
-# Large files
+# Development and testing files
+test-*
+start-*.sh
+verify-*.sh
+*.md
+*.txt
+*.sql
 *.log
 logs/
-.DS_Store
 
-# Development files
-test-rubricon.html
-start-rubricon.sh
-
-# Git
-.git/
-
-# Cache directories
-.vercel/
-.cache/
-
-# Python files
+# Python files  
 *.pyc
 __pycache__/
+requirements.txt
+package.json
+package-lock.json
 
-# Keep only essential frontend files for deployment
-# The frontend will connect to a separate backend API 
+# Git and cache
+.git/
+.vercel/
+.cache/
+.DS_Store
+
+# Only keep essential frontend files:
+# - HTML files (index.html, login.html, etc.)
+# - CSS directory
+# - JS directory  
+# - Images directory
+# - Favicons directory
+# - Fonts directory 
