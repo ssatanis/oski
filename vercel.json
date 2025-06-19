@@ -1,5 +1,11 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    }
+  ],
   "routes": [
     {
       "src": "/",
@@ -10,8 +16,17 @@
       "dest": "/rubricon.html"
     },
     {
+      "src": "/rubricon-clean",
+      "dest": "/rubricon-clean.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ]
+  ],
+  "functions": {
+    "*.html": {
+      "maxDuration": 10
+    }
+  }
 } 

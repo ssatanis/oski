@@ -1,199 +1,254 @@
-# Rubricon
+# Oski Complete Application Suite
 
-**Standalone Webapp for Transforming Medical Rubrics into AI Assessment Prompts**
+🚀 **Complete medical education platform with AI-powered tools**
 
-Rubricon is a powerful, standalone web application that converts medical assessment rubrics into structured YAML prompts optimized for AI evaluation systems. Upload any rubric file (Excel, CSV, PDF, or image) and get a comprehensive, ready-to-use assessment prompt.
+## 🌟 Features
 
-## 🔧 Setup and Installation
+### 📄 PromptGen
+- **Transform OSCE rubrics into AI-ready prompts**
+- Intelligent OCR processing (Tesseract + EasyOCR)
+- Azure OpenAI integration for YAML generation
+- Support for multiple file formats (PDF, DOC, XLS, images, etc.)
+- Real-time processing workflow visualization
+- Monaco editor for YAML preview and editing
+- Automated schema validation with correction loops
 
-### Local Development
-1. Clone or download this directory
-2. Open `index.html` in any modern web browser
-3. Start uploading rubric files immediately - no server required!
+### 🎥 OSCE Video Grader
+- **Multi-Agent AI assessment system**
+- Planner-Executor-Scorer-Reflector-Consensus Framework
+- Video and audio analysis using CLIP and CLAP models
+- Real-time grading with detailed feedback
+- Configurable AI models and processing parameters
 
-### Web Server Deployment
-1. Upload the entire `rubricon` folder to your web server
-2. Navigate to the directory in your browser
-3. Application is ready to use
+### 🌐 Oski Website
+- **Modern, responsive website** 
+- Seamless navigation between tools
+- Professional animations and UI
+- Integrated applications with iframe embedding
 
-### Local Server (Optional)
+## 🚀 Quick Start
+
+### One-Command Setup
 ```bash
-# Using Python 3
-python -m http.server 8000
-
-# Using Node.js (if you have http-server installed)
-npx http-server
-
-# Using PHP
-php -S localhost:8000
+# Install and start everything
+npm run dev
 ```
 
-Then visit `http://localhost:8000` in your browser.
+This will:
+- Install all dependencies
+- Start PromptGen Frontend (http://localhost:3000)
+- Start PromptGen Backend (http://localhost:8000)
+- Start OSCE Video Grader Frontend (http://localhost:3001)
+- Start OSCE Video Grader Backend (http://localhost:8001)
 
-## 💻 Usage
+### Alternative Commands
+```bash
+# Start all services
+npm start
 
-### Basic Usage
-1. **Upload File**: Drag and drop or click to select your rubric file
-2. **Processing**: Watch as Rubricon analyzes your file and identifies assessment criteria
-3. **Review Results**: Examine the generated YAML prompt with criteria, scoring, and examples
-4. **Export**: Download the YAML file or copy to clipboard for use in AI systems
+# Start only PromptGen
+npm run start:promptgen
 
-### Supported File Types
-- **Excel Files**: `.xlsx`, `.xls` - Ideal for structured rubrics
-- **CSV Files**: `.csv` - Simple tabular data
-- **PDF Files**: `.pdf` - Scanned or digital rubric documents
-- **Images**: `.png`, `.jpg`, `.jpeg` - Photos or screenshots of rubrics
+# Start only OSCE Video Grader  
+npm run start:osce
 
-### Advanced Features
-- **Filename Intelligence**: Name your files descriptively (e.g., "cardiology_exam.xlsx") for better domain detection
-- **Content Adaptation**: The system automatically adjusts criteria count and content based on file complexity
-- **Scoring Scales**: Each criterion includes 5-point scoring scales (Excellent to Unsatisfactory)
-- **Verbalization Examples**: Realistic medical communication examples for each assessment area
+# Install dependencies only
+npm run install:all
 
-## 📊 Output Format
+# Check service health
+npm run health
 
-The generated YAML prompt includes:
-
-### Assessment Configuration
-- Assessment type and version
-- Criteria count and total points
-- Metadata and timestamps
-
-### Assessment Criteria
-- Unique criterion IDs and names
-- Detailed descriptions and assessment items
-- Point values and scoring scales
-- Time limits and formats
-
-### Verbalization Examples
-- Realistic medical communication examples
-- Professional interaction phrases
-- Patient-centered language samples
-
-### Assessment Instructions
-- Detailed scoring guidelines
-- Output format specifications
-- Quality assurance criteria
-
-## 🎯 Example Output
-
-```yaml
-assessment_config:
-  type: "medical_osce_assessment"
-  version: "2.0"
-  criteria_count: 4
-  total_points: 28
-
-assessment_criteria:
-  - id: "criterion_1"
-    name: "Physical Examination"
-    code: "PE"
-    description: "Comprehensive assessment of physical examination skills"
-    max_points: 7
-    assessment_items:
-      - "Performed systematic examination"
-      - "Used appropriate techniques"
-      - "Maintained patient dignity"
-    scoring:
-      excellent: 7
-      good: 5
-      satisfactory: 4
-      needs_improvement: 2
-      unsatisfactory: 0
-
-verbalization_examples:
-  - "I'm going to examine this area now."
-  - "Please let me know if you feel any discomfort."
-  - "Hello, I'm Dr. Smith, and I'll be examining you today."
-
-assessment_instructions: |
-  This prompt is designed for AI assessment of medical interactions.
-  
-  ASSESSMENT CRITERIA:
-  - Evaluate each criterion based on specific assessment items
-  - Assign points according to the scoring scale provided
-  - Provide specific examples and feedback for each criterion
+# Clean all installations
+npm run clean
 ```
 
-## 🔄 Browser Compatibility
+## 📱 Application URLs
 
-- **Chrome**: ✅ Full support
-- **Firefox**: ✅ Full support
-- **Safari**: ✅ Full support
-- **Edge**: ✅ Full support
-- **Mobile Browsers**: ✅ Responsive design
+### Live Applications
+- **PromptGen**: http://localhost:3000
+- **PromptGen API**: http://localhost:8000/docs
+- **OSCE Video Grader**: http://localhost:3001
+- **OSCE API**: http://localhost:8001/docs
 
-## 🛠️ Technical Details
+### Website Pages
+- **Home Page**: Open `index.html` in browser
+- **PromptGen Page**: Open `promptgen.html` in browser  
+- **Simulation Page**: Open `simulation.html` in browser
 
-### Core Technologies
-- **Frontend**: Pure HTML5, CSS3, and JavaScript (ES6+)
-- **Processing**: Client-side file analysis and content generation
-- **Dependencies**: None - completely standalone
-- **Storage**: Local browser storage only (no data leaves your device)
+## 🛠️ Manual Setup
 
-### File Processing
-- **OCR Simulation**: Intelligent filename and content analysis
-- **Domain Detection**: Keyword matching for medical specialties
-- **Adaptive Scaling**: Dynamic point distribution and criteria generation
-- **Error Handling**: Comprehensive validation and user feedback
+### Prerequisites
+- Node.js 18+ and npm 8+
+- Python 3.8+
+- Git
 
-### Security & Privacy
-- **Local Processing**: All file analysis happens in your browser
-- **No Data Transmission**: Files never leave your device
-- **No Storage**: No persistent data storage or tracking
-- **Secure**: No external API calls or dependencies
+### PromptGen Setup
+```bash
+# Frontend
+cd rubrics-to-prompts/frontend
+npm install
+npm run dev
 
-## 🐛 Troubleshooting
+# Backend (new terminal)
+cd rubrics-to-prompts/backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 -m uvicorn main:app --reload --port 8000
+```
+
+### OSCE Video Grader Setup
+```bash
+# Frontend
+cd osce-video-grader/web
+npm install
+npm run dev -- --port 3001
+
+# Backend (new terminal)
+cd osce-video-grader/backend
+python3 -m uvicorn app:app --reload --port 8001
+```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+#### PromptGen Backend (.env)
+```env
+AZURE_OPENAI_API_KEY=your_key_here
+AZURE_OPENAI_ENDPOINT=your_endpoint_here
+AZURE_OPENAI_MODEL=gpt-4
+AZURE_OPENAI_API_VERSION=2024-05-01-preview
+```
+
+#### PromptGen Frontend (.env)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+## 📊 Architecture
+
+### PromptGen Architecture
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Next.js       │    │   FastAPI       │
+│   Frontend      │◄──►│   Backend       │
+│   (Port 3000)   │    │   (Port 8000)   │
+└─────────────────┘    └─────────────────┘
+         │                        │
+         │                        ▼
+         ▼               ┌─────────────────┐
+┌─────────────────┐     │   Azure OpenAI  │
+│   Monaco Editor │     │   OCR Services  │
+│   YAML Preview  │     │   Pydantic      │
+└─────────────────┘     └─────────────────┘
+```
+
+### OSCE Video Grader Architecture
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Next.js       │    │   FastAPI       │
+│   Frontend      │◄──►│   Backend       │
+│   (Port 3001)   │    │   (Port 8001)   │
+└─────────────────┘    └─────────────────┘
+         │                        │
+         │                        ▼
+         ▼               ┌─────────────────┐
+┌─────────────────┐     │   CLIP Models   │
+│   Video Player  │     │   CLAP Models   │
+│   Grade Display │     │   LLM Models    │
+└─────────────────┘     └─────────────────┘
+```
+
+## 🎯 Usage
+
+### PromptGen Workflow
+1. **Upload**: Drag & drop rubric files (PDF, DOC, XLS, images)
+2. **Process**: Watch real-time OCR and AI generation
+3. **Edit**: Use Monaco editor to refine YAML output
+4. **Download**: Get structured YAML prompt files
+
+### OSCE Video Grader Workflow
+1. **Upload**: Select video files for assessment
+2. **Configure**: Set rubric questions and AI parameters
+3. **Process**: Multi-agent assessment pipeline
+4. **Review**: Detailed grades with evidence and feedback
+
+## 🔧 Development
+
+### Project Structure
+```
+oski/
+├── index.html                 # Home page
+├── promptgen.html            # PromptGen page
+├── simulation.html           # OSCE simulation page
+├── package.json              # Root package configuration
+├── start-all-services.sh     # Main startup script
+├── rubrics-to-prompts/       # PromptGen application
+│   ├── frontend/             # Next.js frontend
+│   ├── backend/              # FastAPI backend
+│   └── README.md             # PromptGen documentation
+├── osce-video-grader/        # OSCE Video Grader
+│   ├── web/                  # Next.js frontend
+│   ├── backend/              # FastAPI backend
+│   └── core/                 # AI processing core
+├── js/                       # Shared JavaScript
+├── css/                      # Shared stylesheets
+└── images/                   # Static assets
+```
+
+### Adding New Features
+1. **Frontend**: Edit React components in respective `frontend/` or `web/` directories
+2. **Backend**: Add API endpoints in FastAPI applications
+3. **Styling**: Update Tailwind CSS classes and custom styles
+4. **Navigation**: Modify `js/header.js` and `js/footer.js`
+
+## 📋 Troubleshooting
 
 ### Common Issues
+- **Port conflicts**: The startup script automatically kills conflicting processes
+- **Dependencies**: Run `npm run install:all` to reinstall everything
+- **Blank screens**: Check logs in the `logs/` directory
+- **API errors**: Verify environment variables are set correctly
 
-**File Not Processing**
-- Ensure file is a supported format (.xlsx, .xls, .csv, .pdf, .png, .jpg, .jpeg)
-- Check file size (recommend < 10MB for optimal performance)
-- Try refreshing the page and uploading again
+### Log Files
+```bash
+logs/
+├── promptgen-frontend.log
+├── promptgen-backend.log
+├── osce-frontend.log
+└── osce-backend.log
+```
 
-**YAML Not Generating**
-- Wait for processing to complete (may take 3-5 seconds)
-- Check browser console for any errors
-- Ensure JavaScript is enabled in your browser
+### Health Checks
+```bash
+# Check if all services are running
+npm run health
 
-**Download Not Working**
-- Check if browser allows file downloads
-- Disable popup blockers temporarily
-- Try right-clicking and "Save As" if automatic download fails
-
-### Performance Tips
-- Use descriptive filenames for better domain detection
-- Prefer Excel/CSV formats for best results
-- Keep image files under 5MB for faster processing
-- Use modern browsers for optimal performance
-
-## 📝 Changelog
-
-### Version 1.0.0
-- Initial release with full rubric processing capabilities
-- Support for Excel, CSV, PDF, and image files
-- Adaptive medical domain detection
-- Complete YAML generation pipeline
-- Professional UI with drag-and-drop functionality
+# Manual health checks
+curl http://localhost:3000
+curl http://localhost:8000/docs
+curl http://localhost:3001  
+curl http://localhost:8001/docs
+```
 
 ## 🤝 Contributing
 
-This is a standalone application designed for easy deployment and modification. To customize:
-
-1. **Modify Medical Domains**: Edit the `medicalDomains` array in `js/app.js`
-2. **Update Styling**: Modify the CSS in `index.html` or add external stylesheets
-3. **Enhance Processing**: Extend the `generateAdaptiveCriteria` function for new assessment types
-4. **Add Features**: Build on the modular JavaScript architecture
+Created by **Sahaj Satani & Aarash Zakeri**
 
 ## 📄 License
 
-This project is available for educational and non-commercial use. For commercial licensing, please contact the development team.
-
-## 📞 Support
-
-For technical support or feature requests, please refer to the main Oski platform documentation or contact the development team.
+MIT License - see LICENSE file for details
 
 ---
 
-**Rubricon** - Transforming medical assessment, one rubric at a time. 🏥✨ 
+## 🎉 Success! 
+
+If you see this message after running `npm run dev`, all services are running:
+
+- ✅ PromptGen Frontend: http://localhost:3000
+- ✅ PromptGen Backend: http://localhost:8000/docs  
+- ✅ OSCE Video Grader: http://localhost:3001
+- ✅ OSCE Backend: http://localhost:8001/docs
+
+**Press Ctrl+C to stop all services**

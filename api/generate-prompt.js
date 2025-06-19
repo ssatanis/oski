@@ -1,399 +1,379 @@
-import { LearningRubricAnalyzer } from './lib/learning-rubric-analyzer.js';
-import fetch from 'node-fetch';
-
-export const config = {
-  api: {
-    maxDuration: 60,
-  },
-};
-
-// Initialize the learning analyzer
-const rubricAnalyzer = new LearningRubricAnalyzer();
-
-// Azure OpenAI configuration
-const AZURE_OPENAI_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT;
-const AZURE_OPENAI_KEY = process.env.AZURE_OPENAI_KEY;
-const AZURE_OPENAI_DEPLOYMENT_NAME = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
-
-async function callAzureOpenAI(prompt, maxTokens = 4000) {
-  if (!AZURE_OPENAI_KEY || !AZURE_OPENAI_ENDPOINT) {
-    console.log('Azure OpenAI not configured, using pattern-based analysis only');
-    return null;
-  }
-  
-  const url = `${AZURE_OPENAI_ENDPOINT}/openai/deployments/${AZURE_OPENAI_DEPLOYMENT_NAME}/chat/completions?api-version=2024-02-01`;
-  
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': AZURE_OPENAI_KEY
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert at understanding and analyzing assessment rubrics from various fields. You excel at extracting structured information from unstructured documents.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: maxTokens,
-        temperature: 0.1,
-        response_format: { type: "json_object" }
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Azure OpenAI error:', error);
-      return null;
-    }
-    
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('Azure OpenAI call failed:', error);
-    return null;
-  }
-}
-
-async function enhanceWithAzureAI(rubricAnalysis, originalText, structuredContent) {
-  const prompt = `Analyze this rubric and extract ALL sections, criteria, and scoring information.
-
-${structuredContent ? 'Structured Content:\n' + JSON.stringify(structuredContent, null, 2).substring(0, 3000) : ''}
-
-Original Text (first 3000 chars):
-${originalText.substring(0, 3000)}
-
-Current Analysis:
-${JSON.stringify(rubricAnalysis, null, 2)}
-
-IMPORTANT: 
-1. Extract EVERY section and subsection exactly as they appear in the rubric
-2. Preserve ALL point values accurately
-3. Maintain the exact hierarchy and structure
-4. Do NOT assume standard sections - extract what's actually there
-5. Include all evaluation criteria and sub-items
-
-Return a JSON object with this EXACT structure:
-{
-  "sections": [
-    {
-      "name": "Exact section name from rubric",
-      "maxPoints": 0,
-      "items": [
-        {
-          "description": "Exact item description",
-          "points": 0,
-          "examples": ["Relevant example 1", "Example 2"],
-          "criteria": ["Specific evaluation criterion"]
-        }
-      ]
-    }
-  ],
-  "totalPoints": 0,
-  "metadata": {
-    "rubricType": "Type of assessment",
-    "additionalInfo": "Any other relevant information"
-  }
-}`;
-
-  const aiResponse = await callAzureOpenAI(prompt);
-  
-  if (aiResponse) {
-    try {
-      const enhanced = JSON.parse(aiResponse);
-      // Merge AI insights with pattern-based analysis
-      return mergeAnalyses(rubricAnalysis, enhanced);
-    } catch (error) {
-      console.error('Failed to parse AI response:', error);
-    }
-  }
-  
-  return rubricAnalysis;
-}
-
-function mergeAnalyses(patternAnalysis, aiAnalysis) {
-  // Combine the best of both analyses
-  const merged = {
-    sections: [],
-    totalPoints: 0,
-    metadata: {
-      ...patternAnalysis.metadata,
-      ...aiAnalysis.metadata,
-      enhanced: true
-    }
-  };
-  
-  // Create a map of sections from both analyses
-  const sectionMap = new Map();
-  
-  // Add pattern-based sections
-  patternAnalysis.sections.forEach(section => {
-    sectionMap.set(section.name.toLowerCase(), section);
-  });
-  
-  // Merge or add AI sections
-  if (aiAnalysis.sections) {
-    aiAnalysis.sections.forEach(aiSection => {
-      const key = aiSection.name.toLowerCase();
-      if (sectionMap.has(key)) {
-        // Merge items
-        const existing = sectionMap.get(key);
-        existing.items = mergeItems(existing.items, aiSection.items);
-        existing.maxPoints = Math.max(existing.maxPoints, aiSection.maxPoints || 0);
-      } else {
-        // Add new section
-        sectionMap.set(key, aiSection);
-      }
-    });
-  }
-  
-  merged.sections = Array.from(sectionMap.values());
-  merged.totalPoints = Math.max(patternAnalysis.totalPoints, aiAnalysis.totalPoints || 0);
-  
-  return merged;
-}
-
-function mergeItems(patternItems, aiItems) {
-  const itemMap = new Map();
-  
-  // Add pattern items
-  patternItems.forEach(item => {
-    itemMap.set(item.description.toLowerCase(), item);
-  });
-  
-  // Merge AI items
-  aiItems.forEach(aiItem => {
-    const key = aiItem.description.toLowerCase();
-    if (itemMap.has(key)) {
-      // Update with AI enhancements
-      const existing = itemMap.get(key);
-      if (aiItem.examples && aiItem.examples.length > existing.examples.length) {
-        existing.examples = aiItem.examples;
-      }
-      if (aiItem.points && !existing.points) {
-        existing.points = aiItem.points;
-      }
-    } else {
-      // Add new item
-      itemMap.set(key, aiItem);
-    }
-  });
-  
-  return Array.from(itemMap.values());
-}
-
-function convertToYAMLStructure(analysis, filename = '') {
-  const criteria = [];
-  
-  // Convert sections to criteria
-  analysis.sections.forEach(section => {
-    const sectionId = section.name.replace(/[^\w]/g, '_').replace(/_+/g, '_');
-    
-    if (!section.items || section.items.length === 0) {
-      // Section without items
-      criteria.push({
-        id: sectionId,
-        name: section.name,
-        description: `Assessment of ${section.name}`,
-        max_points: section.maxPoints || 1,
-        examples: rubricAnalyzer.generateExamplesFromTraining(section.name)
-      });
-    } else {
-      // Create criteria for each item
-      section.items.forEach((item, index) => {
-        const itemId = `${sectionId}_${index + 1}`;
-        criteria.push({
-          id: itemId,
-          name: `${section.name}: ${item.description}`,
-          description: item.description,
-          max_points: item.points || 1,
-          examples: item.examples.length > 0 ? 
-            item.examples : 
-            rubricAnalyzer.generateExamplesFromTraining(section.name),
-          section: section.name
-        });
-      });
-    }
-  });
-  
-  // Build comprehensive user message preamble
-  const sectionSummary = analysis.sections.map(s => 
-    `- ${s.name}: ${s.maxPoints || 'Variable'} points`
-  ).join('\n');
-  
-  return {
-    system_message: `You are a helpful assistant tasked with analyzing and scoring a recorded examination or assessment. This evaluation covers multiple criteria across different sections. Provide your response in JSON format with specific timestamps and rationales for each score.`,
-    
-    user_message_preamble: `Your task is to evaluate performance based on the following rubric with ${analysis.totalPoints} total possible points.
-
-Assessment Sections:
-${sectionSummary}
-
-For each criterion below, identify specific moments in the transcript where it is demonstrated, provide timestamps, and score according to the rubric's point values.`,
-    
-    criteria: criteria,
-    
-    formatting_instructions: `- Ensure strict adherence to JSON formatting
-- Identify specific timestamps where each criterion is demonstrated
-- Provide clear rationale for each score based on the rubric
-- Score according to the exact point values specified
-- If a criterion is not demonstrated, score 0 with explanation
-- Return ONLY the JSON response without any additional text`,
-    
-    response_schema: generateResponseSchema(criteria)
-  };
-}
-
-function generateResponseSchema(criteria) {
-  const properties = {};
-  const required = [];
-  
-  criteria.forEach(criterion => {
-    properties[criterion.id] = {
-      type: "object",
-      properties: {
-        statement: { 
-          type: "string", 
-          description: "Direct quote or specific action from the transcript/recording" 
-        },
-        start_time: { 
-          type: "string", 
-          pattern: "^\\d{2}:\\d{2}$", 
-          description: "Start timestamp (MM:SS)" 
-        },
-        end_time: { 
-          type: "string", 
-          pattern: "^\\d{2}:\\d{2}$", 
-          description: "End timestamp (MM:SS)" 
-        },
-        rationale: { 
-          type: "string", 
-          description: "Detailed explanation for the score given" 
-        },
-        score: { 
-          type: "integer", 
-          minimum: 0, 
-          maximum: criterion.max_points,
-          description: `Score out of ${criterion.max_points} points` 
-        }
-      },
-      required: ["statement", "start_time", "end_time", "rationale", "score"]
-    };
-    required.push(criterion.id);
-  });
-  
-  return {
-    type: "object",
-    properties: properties,
-    required: required,
-    additionalProperties: false
-  };
-}
-
-function formatYAMLContent(yamlStructure) {
-  const { system_message, user_message_preamble, criteria, formatting_instructions, response_schema } = yamlStructure;
-  
-  // Group criteria by section for better organization
-  const sections = {};
-  criteria.forEach(c => {
-    const section = c.section || 'General';
-    if (!sections[section]) sections[section] = [];
-    sections[section].push(c);
-  });
-  
-  // Build criteria YAML with section organization
-  let criteriaYAML = 'criteria:\n';
-  Object.entries(sections).forEach(([sectionName, sectionCriteria]) => {
-    criteriaYAML += `  # ${sectionName}\n`;
-    sectionCriteria.forEach(c => {
-      const examplesYAML = c.examples.map(ex => `      - "${ex}"`).join('\n');
-      criteriaYAML += `  - id: "${c.id}"
-    name: "${c.name}"
-    description: "${c.description}"
-    max_points: ${c.max_points}
-    examples:
-${examplesYAML}
-`;
-    });
-  });
-  
-  return `system_message: |
-  ${system_message.split('\n').map(line => '  ' + line).join('\n')}
-
-user_message_preamble: |
-  ${user_message_preamble.split('\n').map(line => '  ' + line).join('\n')}
-
-${criteriaYAML}
-formatting_instructions: |
-  ${formatting_instructions.split('\n').map(line => '  ' + line).join('\n')}
-
-response_schema: ${JSON.stringify(response_schema, null, 2)}`;
-}
-
 export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { extracted_text, structured_content, dashboard_criteria } = req.body;
+    const { extracted_text, filename, dashboard_criteria } = req.body;
     
-    if (dashboard_criteria) {
-      // Generate YAML from dashboard edits
-      const yamlContent = formatYAMLContent(dashboard_criteria);
-      return res.status(200).json({
-        yaml_content: yamlContent,
-        parsed_yaml: dashboard_criteria,
-        success: true
-      });
+    if (!extracted_text && !dashboard_criteria) {
+      return res.status(400).json({ error: 'Missing extracted_text or dashboard_criteria in request body' });
     }
+
+    console.log('Processing request for YAML generation...');
     
-    if (!structured_content && !extracted_text) {
-      return res.status(400).json({ error: 'No content provided for analysis' });
+    let criteria = [];
+    let examsList = [];
+
+    // If dashboard criteria is provided, use it (for YAML downloads)
+    if (dashboard_criteria && dashboard_criteria.length > 0) {
+      console.log('Using dashboard criteria for YAML generation');
+      criteria = dashboard_criteria.map(criterion => ({
+        examId: criterion.examId || criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'),
+        name: criterion.name,
+        max_points: parseInt(criterion.max_points) || 1,
+        examples: Array.isArray(criterion.examples) ? criterion.examples : []
+      }));
+      examsList = criteria.map(c => c.examId);
+    } else {
+      // Use AI analyzer for initial processing
+      console.log('Using AI analyzer for criteria extraction');
+      
+      try {
+        // Call the adaptive OCR analyzer first
+        const adaptiveResponse = await fetch('http://localhost:3000/api/adaptive-ocr-analyzer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileContent: extracted_text,
+            fileName: filename
+          })
+        });
+
+        if (adaptiveResponse.ok) {
+          const adaptiveData = await adaptiveResponse.json();
+          criteria = adaptiveData.criteria || [];
+          examsList = criteria.map(c => c.examId);
+          console.log(`Adaptive OCR extracted ${criteria.length} criteria`);
+        } else {
+          // Fallback to regular AI analyzer
+          const aiResponse = await fetch('http://localhost:3000/api/ai-rubric-analyzer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              extracted_text: extracted_text,
+              filename: filename
+            })
+          });
+
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            criteria = aiData.criteria || [];
+            examsList = criteria.map(c => c.examId);
+            console.log(`Fallback AI extracted ${criteria.length} criteria`);
+          } else {
+            throw new Error('Both adaptive OCR and AI analyzer failed');
+          }
+        }
+      } catch (aiError) {
+        console.warn('Advanced analyzers unavailable, using basic parsing:', aiError.message);
+        
+        // Fallback to basic parsing
+        const fallbackCriteria = await basicCriteriaExtraction(extracted_text, filename);
+        criteria = fallbackCriteria;
+        examsList = criteria.map(c => c.examId);
+      }
     }
-    
-    console.log('Starting dynamic rubric analysis with learning...');
-    
-    // Use structured content if available
-    const contentToAnalyze = structured_content || { rawText: extracted_text };
-    
-    // Perform pattern-based analysis with learning
-    let rubricAnalysis = await rubricAnalyzer.analyzeWithPatterns(contentToAnalyze);
-    
-    // Enhance with Azure OpenAI if available
-    const enhancedAnalysis = await enhanceWithAzureAI(
-      rubricAnalysis, 
-      extracted_text || contentToAnalyze.rawText,
-      structured_content
-    );
-    
-    // Convert to YAML structure
-    const yamlStructure = convertToYAMLStructure(
-      enhancedAnalysis, 
-      contentToAnalyze.metadata?.fileName
-    );
-    
-    // Generate formatted YAML
-    const yamlContent = formatYAMLContent(yamlStructure);
-    
+
+    if (criteria.length === 0) {
+      return res.status(400).json({ error: 'No criteria could be extracted from the document' });
+    }
+
+    console.log(`Generating YAML for ${criteria.length} criteria:`, criteria.map(c => c.name));
+
+    // Generate the YAML content in the exact format of your training examples
+    const yamlContent = generateYAMLContent(criteria, examsList);
+
+    // Create parsed structure for the dashboard
+    const parsedYaml = {
+      system_message: "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+      user_message: `Your task is to identify the start and end times of specific medical assessments...`,
+      criteria: criteria,
+      exams_list: examsList,
+      response_config: {
+        structured_output: true
+      }
+    };
+
+    console.log('YAML generation complete');
+
     res.status(200).json({
+      message: 'Prompt generated successfully',
       yaml_content: yamlContent,
-      parsed_yaml: yamlStructure,
-      rubric_analysis: enhancedAnalysis,
-      success: true
+      parsed_yaml: parsedYaml,
+      validation_success: true,
+      criteria_count: criteria.length,
+      generated_from: dashboard_criteria ? 'dashboard' : 'ai_extraction'
     });
-    
+
   } catch (error) {
-    console.error('Generate prompt error:', error);
+    console.error('Prompt generation failed:', error);
     res.status(500).json({ 
-      error: 'Failed to generate prompt',
-      details: error.message 
+      error: `Failed to generate prompt: ${error.message}` 
     });
   }
 }
+
+async function basicCriteriaExtraction(extracted_text, filename) {
+  console.log('Using enhanced Excel criteria extraction');
+  
+  const criteria = [];
+  const lines = extracted_text.split('\n').filter(line => line.trim());
+  
+  // Parse the new Excel extraction format
+  const extractedCriteria = parseExcelTableData(extracted_text);
+  
+  if (extractedCriteria.length > 0) {
+    console.log(`Extracted ${extractedCriteria.length} criteria from Excel table structure`);
+    return extractedCriteria;
+  }
+  
+  // Fallback to pattern matching if extraction fails
+  console.log('Falling back to pattern matching');
+  return fallbackPatternExtraction(extracted_text, filename);
+}
+
+function parseExcelTableData(extracted_text) {
+  const criteria = [];
+  const lines = extracted_text.split('\n');
+  
+  // Look for the "ASSESSMENT CRITERIA EXTRACTED" section
+  let criteriaSection = false;
+  let verbalizationSection = false;
+  let extractedVerbalizations = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Check for verbalization examples section
+    if (line.includes('EXTRACTED VERBALIZATION EXAMPLES')) {
+      verbalizationSection = true;
+      continue;
+    }
+    
+    if (verbalizationSection && line.startsWith('•')) {
+      extractedVerbalizations.push(line.substring(1).trim());
+      continue;
+    }
+    
+    if (line.includes('SCORING INFORMATION') || line.includes('EXCEL STRUCTURE')) {
+      verbalizationSection = false;
+    }
+    
+    // Check for criteria section
+    if (line.includes('ASSESSMENT CRITERIA EXTRACTED')) {
+      criteriaSection = true;
+      continue;
+    }
+    
+    if (line.includes('Domain,Code,Max Points,Description,Specific Assessment Items')) {
+      continue; // Skip header
+    }
+    
+    // Parse CSV-style criteria data
+    if (criteriaSection && line.includes('"') && line.includes(',')) {
+      try {
+        // Parse CSV line: "Physical Exam Elements","PE",2,"Description","item1; item2"
+        const csvMatch = line.match(/"([^"]+)","([^"]+)",(\d+),"([^"]+)","([^"]+)"/);
+        
+        if (csvMatch) {
+          const [, name, code, points, description, itemsString] = csvMatch;
+          const items = itemsString.split(';').map(item => item.trim());
+          
+          // Generate relevant verbalization examples based on the specific items
+          const examples = generateVerbalizationsFromItems(items, extractedVerbalizations);
+          
+          const examId = name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+          
+          criteria.push({
+            examId: examId,
+            name: name,
+            max_points: parseInt(points),
+            examples: examples
+          });
+        }
+      } catch (error) {
+        console.warn('Error parsing criteria line:', line, error.message);
+      }
+    }
+    
+    // Stop parsing if we hit the verbalization section
+    if (line.includes('=== EXTRACTED VERBALIZATION EXAMPLES ===')) {
+      criteriaSection = false;
+    }
+  }
+  
+  return criteria;
+}
+
+function generateVerbalizationsFromItems(items, extractedVerbalizations) {
+  const examples = [];
+  
+  // Use extracted verbalizations if available
+  if (extractedVerbalizations.length > 0) {
+    examples.push(...extractedVerbalizations.slice(0, 3)); // Take first 3
+  }
+  
+  // Add specific examples based on the assessment items
+  items.forEach(item => {
+    if (item.toLowerCase().includes('wash') && item.toLowerCase().includes('hands')) {
+      examples.push("I'm going to wash my hands before the examination");
+    }
+    if (item.toLowerCase().includes('inspect') && item.toLowerCase().includes('skin')) {
+      examples.push("I'm going to inspect your skin carefully");
+      examples.push("Let me examine the affected area");
+    }
+    if (item.toLowerCase().includes('introduce')) {
+      examples.push("Hello, I'm Dr. Smith and I'll be examining you today");
+    }
+    if (item.toLowerCase().includes('consent') || item.toLowerCase().includes('explain')) {
+      examples.push("Is it okay if I proceed with the examination?");
+    }
+    if (item.toLowerCase().includes('palpat') || item.toLowerCase().includes('feel')) {
+      examples.push("I'm going to feel this area with my hands");
+    }
+    if (item.toLowerCase().includes('listen') || item.toLowerCase().includes('auscult')) {
+      examples.push("I'm going to listen to your heart and lungs");
+    }
+  });
+  
+  // Remove duplicates and ensure we have at least 2 examples
+  const uniqueExamples = [...new Set(examples)];
+  
+  if (uniqueExamples.length === 0) {
+    uniqueExamples.push("I'm going to perform this examination now");
+    uniqueExamples.push("Please let me know if you feel any discomfort");
+  } else if (uniqueExamples.length === 1) {
+    uniqueExamples.push("Please let me know if you feel any discomfort");
+  }
+  
+  return uniqueExamples.slice(0, 4); // Limit to 4 examples max
+}
+
+function fallbackPatternExtraction(extracted_text, filename) {
+  const criteria = [];
+  
+  // Look for common medical examination patterns
+  const medicalPatterns = [
+    { pattern: /physical.{0,20}exam/i, name: 'Physical Examination', points: 2 },
+    { pattern: /history.{0,20}taking/i, name: 'History Taking', points: 3 },
+    { pattern: /diagnostic.{0,20}accuracy/i, name: 'Diagnostic Accuracy', points: 2 },
+    { pattern: /communication|rapport/i, name: 'Patient Communication', points: 1 },
+    { pattern: /hands|hygiene|wash/i, name: 'Hand Hygiene', points: 1 },
+    { pattern: /skin|inspect/i, name: 'Skin Inspection', points: 1 }
+  ];
+  
+  const textContent = extracted_text.toLowerCase();
+  
+  for (const pattern of medicalPatterns) {
+    if (pattern.pattern.test(textContent)) {
+      const examId = pattern.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      
+      let examples = [];
+      if (pattern.name.toLowerCase().includes('physical')) {
+        examples = [
+          "I'm going to examine you now",
+          "Let me check this area"
+        ];
+      } else if (pattern.name.toLowerCase().includes('history')) {
+        examples = [
+          "Can you tell me about your symptoms?",
+          "When did this start?"
+        ];
+      } else if (pattern.name.toLowerCase().includes('hygiene')) {
+        examples = [
+          "I'm going to wash my hands before the examination"
+        ];
+      } else if (pattern.name.toLowerCase().includes('skin')) {
+        examples = [
+          "I'm going to inspect your skin carefully"
+        ];
+      } else {
+        examples = [`I'm going to assess your ${pattern.name.toLowerCase()}`];
+      }
+      
+      criteria.push({
+        examId: examId,
+        name: pattern.name,
+        max_points: pattern.points,
+        examples: examples
+      });
+      
+      break; // Only take the first match to avoid duplicates
+    }
+  }
+  
+  // If no patterns found, create a default physical exam criterion
+  if (criteria.length === 0) {
+    criteria.push({
+      examId: 'Physical_Exam_Elements',
+      name: 'Physical Exam Elements',
+      max_points: 2,
+      examples: [
+        "I'm going to wash my hands before the examination",
+        "I'm going to inspect your skin carefully"
+      ]
+    });
+  }
+  
+  return criteria;
+}
+
+function generateYAMLContent(criteria, examsList) {
+  // Generate YAML in the exact format of your training examples
+  const yamlContent = `system_message: |
+   You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+   
+user_message: |
+   
+   Your task is to identify the start and end times of specific medical assessments within the conversation and provide the reasoning behind your choices. Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a medical assessment is being conducted at that moment. You will be provided with a description and example for each assessment. This station consists of the following medical assessments: ${examsList.join(', ')}
+   
+   Important Instructions:
+   - When determining the start and end times of each assessment, focus on the moments where the doctor instructs the patient to perform an action or asks specific questions. Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions.
+   - Whenever the medical student asks about pain, takes history, performs examination, makes diagnostic statements, or discusses management, assume that the relevant assessment is being conducted at that moment.
+   - Always pay close attention to surrounding context and related medical assessments mentioned.
+      
+   You need to identify the following medical assessments from this transcript: 
+${criteria.map((criterion, index) => `   	 ${index + 1}. ${criterion.examId}: Did the doctor perform ${criterion.name.toLowerCase()}? 
+   	 - Verbalization examples: ${criterion.examples.join(', ')}`).join('\n\n')}
+   
+   
+   If no assessment is detected, you can say "no assessment was performed", start_time: "nan", end_time: "nan", score: 0.
+   
+   ### Formatting Instructions
+   
+   - Ensure strict adherence to JSON formatting.
+   - Do not use double quotes for multiple statements within a single field.
+   - Use commas, single quotes, or other appropriate delimiters for multiple statements.
+   - Do not include any text before or after the JSON output. Provide ONLY the json response.
+   
+   Please provide a response in the following format with keys: ${examsList.join(', ')}
+   
+   and the schema: 
+   {
+        "statement": "statement extracted from the transcript that supports this specific assessment",
+        "start_time": "timepoint for start of the assessment (MM:SS only)",
+        "end_time": "timepoint for end of the assessment (MM:SS only)",
+        "rationale": "reasoning behind scoring the medical assessment",
+        "score": "score of the assessment (0 or 1)"
+   }
+response_config:
+  structured_output: True`;
+
+  return yamlContent;
+} 
