@@ -3135,6 +3135,12 @@
                 formData.append('file', file);
                 
                 console.log('🔄 Making request to', backendURL + '/upload');
+                console.log('🔄 File details:', {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                });
+                
                 const uploadResponse = await fetch(backendURL + '/upload', {
                     method: 'POST',
                     body: formData
@@ -3142,6 +3148,7 @@
                 
                 console.log('📥 Response status:', uploadResponse.status);
                 console.log('📥 Response ok:', uploadResponse.ok);
+                console.log('📥 Response headers:', [...uploadResponse.headers.entries()]);
                 
                 if (!uploadResponse.ok) {
                     const errorText = await uploadResponse.text();
@@ -3164,14 +3171,18 @@
                     console.log('❌ No YAML content in response!');
                 }
                 
-                // Store the YAML content for download
-                window.yamlContent = uploadResult.yaml_content;
-                window.originalFileName = uploadResult.filename;
-                
-                // Debug logging
-                console.log('✅ window.yamlContent set:', !!window.yamlContent);
-                console.log('✅ window.yamlContent length:', window.yamlContent?.length || 0);
-                console.log('✅ window.originalFileName set:', window.originalFileName);
+                // Store the YAML content for download with validation
+                if (uploadResult.yaml_content && uploadResult.yaml_content.length > 0) {
+                    window.yamlContent = uploadResult.yaml_content;
+                    window.originalFileName = uploadResult.filename;
+                    console.log('✅ YAML content stored successfully!');
+                    console.log('✅ window.yamlContent length:', window.yamlContent.length);
+                    console.log('✅ window.originalFileName:', window.originalFileName);
+                } else {
+                    console.error('❌ CRITICAL: No YAML content received from backend!');
+                    console.error('   uploadResult:', uploadResult);
+                    throw new Error('No YAML content received from backend');
+                }
                 
                 // Transform the YAML response into the expected format for display
                 const rubricData = {
@@ -4261,6 +4272,14 @@
                             </svg>
                             Test Backend
                         </button>
+                        <button class="test-direct-button" onclick="testDirectUpload()" style="margin-left: 10px; background: #10b981;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Direct Test
+                        </button>
                     </div>
                 </div>
             `;
@@ -4922,6 +4941,59 @@ assessment_criteria:
         // Legacy function for compatibility
         function downloadYAML() {
             downloadYAMLFile();
+        }
+
+        // Direct test using exact same method as your successful command
+        async function testDirectUpload() {
+            console.log('🧪 Testing direct upload (matching your successful command)...');
+            
+            try {
+                // Create FormData exactly like your curl command
+                const formData = new FormData();
+                
+                // We need to use the same file - let's create a file input to get it
+                const fileInput = document.querySelector('input[type="file"]');
+                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                    alert('Please select the Excel file first!');
+                    return;
+                }
+                
+                const selectedFile = fileInput.files[0];
+                formData.append('file', selectedFile);
+                
+                console.log('📤 Uploading file:', selectedFile.name);
+                console.log('📤 File size:', selectedFile.size, 'bytes');
+                
+                const response = await fetch('http://localhost:5002/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response headers:', [...response.headers.entries()]);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ SUCCESS! Response data:', data);
+                    console.log('✅ YAML content length:', data.yaml_content?.length || 0);
+                    
+                    // Store the data globally
+                    window.yamlContent = data.yaml_content;
+                    window.originalFileName = data.filename;
+                    
+                    alert(`✅ Direct upload successful!\nYAML Length: ${data.yaml_content?.length || 0}\nFilename: ${data.filename}`);
+                    
+                    // Show the download interface with this data
+                    showDownloadInterface(data);
+                } else {
+                    const errorText = await response.text();
+                    console.error('❌ Response not ok:', errorText);
+                    alert('❌ Upload failed: ' + errorText);
+                }
+            } catch (error) {
+                console.error('❌ Direct upload error:', error);
+                alert('❌ Direct upload error: ' + error.message);
+            }
         }
 
         // Test backend connection function

@@ -603,7 +603,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--server":
         print("🚀 Starting Flask server for rubricon integration...")
         print("🔧 Azure OpenAI configured and ready")
-        print("📍 Server running on http://localhost:5001")
+        print("📍 Server running on http://localhost:5002")
         print("📋 Endpoints available:")
         print("   POST /upload - Upload and process files")
         print("   POST /download - Download YAML files")
