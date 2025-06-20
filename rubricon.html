@@ -3157,6 +3157,13 @@
                 console.log('✅ Scoring extracted:', uploadResult.scoring_extracted);
                 console.log('✅ Total points:', uploadResult.total_points);
                 
+                // Debug: Log first 200 characters of YAML content
+                if (uploadResult.yaml_content) {
+                    console.log('📄 YAML Preview (first 200 chars):', uploadResult.yaml_content.substring(0, 200));
+                } else {
+                    console.log('❌ No YAML content in response!');
+                }
+                
                 // Store the YAML content for download
                 window.yamlContent = uploadResult.yaml_content;
                 window.originalFileName = uploadResult.filename;
@@ -4188,6 +4195,16 @@
             
             console.log('🔍 Final YAML content length:', finalYamlContent.length);
             console.log('🔍 Final filename:', finalFileName);
+            
+            // Extra debugging
+            if (finalYamlContent.length === 0) {
+                console.log('❌ CRITICAL: Final YAML content is empty!');
+                console.log('   - window.yamlContent:', window.yamlContent?.length || 0);
+                console.log('   - data.yaml_content:', data?.yaml_content?.length || 0);
+                console.log('   - Raw data object:', data);
+            } else {
+                console.log('✅ Final YAML content first 100 chars:', finalYamlContent.substring(0, 100));
+            }
             
             // Get or create download section
             let downloadSection = document.getElementById('downloadSection');
