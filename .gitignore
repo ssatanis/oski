@@ -224,4 +224,5 @@ uploaded_files/
 celerybeat-schedule
 
 # SageMath parsed files
-*.sage.py
+*.sage.py.env
+.env.backup
