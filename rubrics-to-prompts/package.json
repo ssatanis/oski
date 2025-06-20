@@ -33,7 +33,7 @@
     "url": "https://github.com/oski/rubricon-standalone/issues"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.x"
   },
   "browserslist": [
     "> 1%",
@@ -43,7 +43,9 @@
   "config": {
     "port": "8000"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  },
   "dependencies": {
     "@google-cloud/vision": "^4.0.2",
     "formidable": "^3.5.1",

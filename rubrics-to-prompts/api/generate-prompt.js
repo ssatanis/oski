@@ -336,63 +336,213 @@ formatting_instructions: |
 response_schema: ${JSON.stringify(response_schema, null, 2)}`;
 }
 
+// Vercel Serverless Function for YAML Generation
 export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { extracted_text, structured_content, dashboard_criteria } = req.body;
+    const { extracted_text, filename, dashboard_criteria } = req.body;
     
-    if (dashboard_criteria) {
-      // Generate YAML from dashboard edits
-      const yamlContent = formatYAMLContent(dashboard_criteria);
-      return res.status(200).json({
-        yaml_content: yamlContent,
-        parsed_yaml: dashboard_criteria,
-        success: true
-      });
+    if (!extracted_text && !dashboard_criteria) {
+      return res.status(400).json({ error: 'Missing extracted_text or dashboard_criteria in request body' });
     }
+
+    console.log('Processing request for YAML generation...');
     
-    if (!structured_content && !extracted_text) {
-      return res.status(400).json({ error: 'No content provided for analysis' });
+    let criteria = [];
+    let examsList = [];
+
+    // If dashboard criteria is provided, use it (for YAML downloads)
+    if (dashboard_criteria && dashboard_criteria.length > 0) {
+      console.log('Using dashboard criteria for YAML generation');
+      criteria = dashboard_criteria.map(criterion => ({
+        examId: criterion.examId || criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'),
+        name: criterion.name,
+        max_points: parseInt(criterion.max_points) || 1,
+        examples: Array.isArray(criterion.examples) ? criterion.examples : [criterion.examples || ''].filter(Boolean)
+      }));
+      examsList = criteria.map(c => c.examId);
+    } else {
+      // Generate criteria from extracted text (initial processing)
+      console.log('Generating criteria from extracted text');
+      
+      // Simple keyword-based extraction
+      const keywords = {
+        'history': { name: 'History Taking', points: 5 },
+        'examination': { name: 'Physical Examination', points: 7 },
+        'communication': { name: 'Communication Skills', points: 3 },
+        'diagnosis': { name: 'Clinical Reasoning', points: 4 },
+        'safety': { name: 'Patient Safety', points: 2 }
+      };
+      
+      const lowerText = extracted_text.toLowerCase();
+      const foundCriteria = new Set();
+      
+      for (const [keyword, criterion] of Object.entries(keywords)) {
+        if (lowerText.includes(keyword) && !foundCriteria.has(criterion.name)) {
+          const examId = criterion.name.replace(/\s+/g, '_');
+          criteria.push({
+            examId: examId,
+            name: criterion.name,
+            max_points: criterion.points,
+            examples: [`I will now perform ${criterion.name.toLowerCase()}`]
+          });
+          examsList.push(examId);
+          foundCriteria.add(criterion.name);
+        }
+      }
+      
+      // Default criteria if none found
+      if (criteria.length === 0) {
+        criteria = [
+          { examId: 'History_Taking', name: 'History Taking', max_points: 5, examples: ['Tell me about your symptoms'] },
+          { examId: 'Physical_Examination', name: 'Physical Examination', max_points: 7, examples: ['I will examine you now'] },
+          { examId: 'Communication', name: 'Communication', max_points: 3, examples: ['Do you have questions?'] }
+        ];
+        examsList = criteria.map(c => c.examId);
+      }
     }
-    
-    console.log('Starting dynamic rubric analysis with learning...');
-    
-    // Use structured content if available
-    const contentToAnalyze = structured_content || { rawText: extracted_text };
-    
-    // Perform pattern-based analysis with learning
-    let rubricAnalysis = await rubricAnalyzer.analyzeWithPatterns(contentToAnalyze);
-    
-    // Enhance with Azure OpenAI if available
-    const enhancedAnalysis = await enhanceWithAzureAI(
-      rubricAnalysis, 
-      extracted_text || contentToAnalyze.rawText,
-      structured_content
-    );
-    
-    // Convert to YAML structure
-    const yamlStructure = convertToYAMLStructure(
-      enhancedAnalysis, 
-      contentToAnalyze.metadata?.fileName
-    );
-    
-    // Generate formatted YAML
-    const yamlContent = formatYAMLContent(yamlStructure);
-    
+
+    // Generate YAML content
+    let yamlContent = `# OSCE Assessment Rubric
+# Generated from: ${filename || 'manual_input'}
+# Date: ${new Date().toISOString()}
+
+system_message: |
+  You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+
+user_message: |
+  Your task is to identify the start and end times of specific physical exams within the conversation and provide the reasoning behind your choices.
+  This station consists of the following physical exams: ${examsList.join(', ')}
+  
+  You need to identify the following physical exams from this transcript:
+${criteria.map((c, i) => `    ${i + 1}. ${c.examId}: Did the doctor perform ${c.name.toLowerCase()}?
+       - Verbalization examples: ${c.examples.join(', ')}`).join('\n')}
+
+response_config:
+  structured_output: true
+  format: json
+  schema:
+    type: object
+    properties:
+${criteria.map(c => `      ${c.examId}:
+        type: object
+        properties:
+          performed: 
+            type: boolean
+          start_time: 
+            type: string
+          end_time: 
+            type: string
+          score: 
+            type: integer
+            minimum: 0
+            maximum: ${c.max_points}
+          reasoning: 
+            type: string`).join('\n')}
+
+assessment_config:
+  type: "medical_osce_assessment"
+  version: "2.0"
+  generated_at: "${new Date().toISOString()}"
+  source_file: "${filename || 'manual_input'}"
+  criteria_count: ${criteria.length}
+  total_points: ${criteria.reduce((sum, c) => sum + c.max_points, 0)}
+
+assessment_criteria:
+${criteria.map((c, i) => `  - id: "criterion_${i + 1}"
+    name: "${c.name}"
+    code: "${c.examId.toUpperCase()}"
+    description: "Comprehensive assessment of ${c.name.toLowerCase()} skills and techniques"
+    max_points: ${c.max_points}
+    assessment_items:
+      - "Performed ${c.name.toLowerCase()} systematically and thoroughly"
+      - "Used appropriate techniques and tools"
+      - "Maintained patient comfort and dignity"
+      - "Communicated findings clearly"
+    scoring:
+      excellent: ${c.max_points}
+      good: ${Math.floor(c.max_points * 0.8)}
+      satisfactory: ${Math.floor(c.max_points * 0.6)}
+      needs_improvement: ${Math.floor(c.max_points * 0.3)}
+      unsatisfactory: 0
+    time_limit: "${c.max_points * 2} minutes"
+    format: "performance_based"
+    verbalization_examples:
+${c.examples.map(ex => `      - "${ex}"`).join('\n')}`).join('\n')}
+
+verbalization_examples:
+  introduction:
+    - "Hello, I'm Dr. [Name], a medical student"
+    - "I'll be conducting your examination today"
+    - "Please let me know if you feel any discomfort"
+  
+  general_examination:
+${criteria.flatMap(c => c.examples.map(ex => `    - "${ex}"`)).join('\n')}
+  
+  closing:
+    - "Thank you for your cooperation"
+    - "Do you have any questions for me?"
+    - "I'll discuss my findings with my supervisor"
+
+assessment_instructions: |
+  1. Review the transcript carefully for evidence of each assessment criterion
+  2. Identify specific timestamps where each exam component begins and ends
+  3. Score based on completeness, technique, and communication
+  4. Provide clear reasoning for each score assigned
+  5. Consider patient safety and comfort in your evaluation
+
+output_format: |
+  Return a JSON object with the following structure:
+  {
+    "assessment_results": {
+      "[exam_id]": {
+        "performed": boolean,
+        "start_time": "MM:SS",
+        "end_time": "MM:SS", 
+        "score": integer (0-max_points),
+        "reasoning": "Detailed explanation of score"
+      }
+    },
+    "total_score": integer,
+    "general_feedback": "Overall performance summary"
+  }
+
+quality_criteria:
+  - accuracy: "Timestamps must be precise to the second"
+  - completeness: "All criteria must be evaluated"
+  - objectivity: "Scores based on observable behaviors only"
+  - clarity: "Reasoning must be specific and evidence-based"`;
+
+    // Return the YAML content
     res.status(200).json({
       yaml_content: yamlContent,
-      parsed_yaml: yamlStructure,
-      rubric_analysis: enhancedAnalysis,
-      success: true
+      parsed_yaml: {
+        assessment_config: {
+          criteria_count: criteria.length,
+          total_points: criteria.reduce((sum, c) => sum + c.max_points, 0)
+        }
+      },
+      validation_success: true
     });
-    
+
   } catch (error) {
-    console.error('Generate prompt error:', error);
+    console.error('YAML generation error:', error);
     res.status(500).json({ 
-      error: 'Failed to generate prompt',
+      error: 'Failed to generate YAML',
       details: error.message 
     });
   }
