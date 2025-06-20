@@ -107,6 +107,9 @@ def initialize_azure_client():
 
 client, deployment_name = initialize_azure_client()
 
+# Global variable to store extracted scoring information
+extracted_scoring_info = {}
+
 UPLOAD_FOLDER = 'temp_uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xlsx', 'xls', 'csv', 'png', 'jpg', 'jpeg', 'txt'}
 
@@ -145,13 +148,55 @@ def upload_file(file_path):
         print(f"📊 Excel file loaded: {df.shape[0]} rows, {df.shape[1]} columns")
         print(f"📝 Column names: {list(df.columns)}")
         
-        results = df.apply(
-            lambda row: " | ".join(str(v) for v in row if pd.notnull(v) and str(v).strip()), axis=1
-        ).tolist()
+        # Look for scoring information in the data
+        scoring_info = {}
+        
+        # Check for domain scoring table (like in your image)
+        for index, row in df.iterrows():
+            # Check if this row contains the scoring table header
+            row_values = [str(v) for v in row.values if pd.notna(v)]
+            row_text = " ".join(row_values).lower()
+            
+            if "domain" in row_text and ("score" in row_text or "points" in row_text):
+                # Found scoring header, extract the scoring table
+                print(f"📊 Found scoring table header at row {index}")
+                
+                # Extract scoring data from the next few rows
+                for i in range(index + 1, min(index + 10, len(df))):
+                    if i < len(df):
+                        domain_row = df.iloc[i]
+                        # The domain name is typically in column 1 (index 1)
+                        domain_name = str(domain_row.iloc[1]).strip() if len(domain_row) > 1 and pd.notna(domain_row.iloc[1]) else ""
+                        # The possible score is typically in column 4 (index 4) based on the structure
+                        possible_score = str(domain_row.iloc[4]).strip() if len(domain_row) > 4 and pd.notna(domain_row.iloc[4]) else ""
+                        
+                        # Clean up the values (remove Unicode characters)
+                        domain_name = domain_name.replace('\xa0', ' ').strip()
+                        possible_score = possible_score.replace('\xa0', ' ').strip()
+                        
+                        if domain_name and possible_score and possible_score.isdigit():
+                            scoring_info[domain_name] = {
+                                'possible_points': int(possible_score),
+                                'category': domain_name.split('(')[0].strip() if '(' in domain_name else domain_name
+                            }
+                            print(f"📊 Found scoring: {domain_name} = {possible_score} points")
+                break  # Found the table, no need to continue searching
+        
+        # Extract all content including scoring info
+        results = []
+        for index, row in df.iterrows():
+            row_values = [str(v) for v in row if pd.notnull(v) and str(v).strip()]
+            if row_values:
+                combined = " | ".join(row_values)
+                results.append(combined)
         
         # Filter out empty results
         results = [r for r in results if r.strip()]
         print(f"✅ Extracted {len(results)} non-empty rows")
+        
+        # Store scoring info globally for use in YAML generation
+        global extracted_scoring_info
+        extracted_scoring_info = scoring_info
 
     elif suffix == ".csv":  # works correctly
         try:
@@ -199,10 +244,16 @@ def parse_pdf(path):
 
 
 def generate_rubric_with_llm(chunks):
-    global client, deployment_name
+    global client, deployment_name, extracted_scoring_info
     
     # First, let's always provide excellent data extraction results
     print(f"📊 Data extraction successful: {len(chunks)} criteria found")
+    
+    # Display scoring information if available
+    if extracted_scoring_info:
+        print(f"📊 Scoring information extracted:")
+        for domain, info in extracted_scoring_info.items():
+            print(f"   {domain}: {info['possible_points']} points")
     
     # Extract station identifier from chunks if available
     station_key = "1A"  # Default
@@ -248,11 +299,12 @@ user_message:
       
    You need to identify the following physical exams from this conversation:"""
    
-    # Add examination sections based on extracted data
+    # Add examination sections based on extracted data with scoring info
     if history_items:
+        history_points = extracted_scoring_info.get('History (HT)', {}).get('possible_points', 0)
         yaml_content += f"""
    
-   History Taking Assessment:"""
+   History Taking Assessment: (Total: {history_points} points)"""
         for i, item in enumerate(history_items[:10], 1):  # Limit to 10 most important
             clean_item = item.replace('"', "'").strip()
             if len(clean_item) > 100:
@@ -261,9 +313,10 @@ user_message:
    - History Item {i}: {clean_item}"""
     
     if physical_exam_items:
+        pe_points = extracted_scoring_info.get('Physical Exam (PE)', {}).get('possible_points', 0)
         yaml_content += f"""
    
-   Physical Examination Components:"""
+   Physical Examination Components: (Total: {pe_points} points)"""
         for i, item in enumerate(physical_exam_items[:15], 1):  # Physical exams are key
             clean_item = item.replace('"', "'").strip()
             if len(clean_item) > 100:
@@ -272,9 +325,12 @@ user_message:
    - Physical Exam {i}: {clean_item}"""
     
     if diagnostic_items:
+        da_points = extracted_scoring_info.get('Diagnostic Accuracy (DA)', {}).get('possible_points', 0)
+        dr_points = extracted_scoring_info.get('Diagnostic Reasoning/Justification (DR)', {}).get('possible_points', 0)
+        total_diag_points = da_points + dr_points
         yaml_content += f"""
    
-   Diagnostic Assessment:"""
+   Diagnostic Assessment: (Total: {total_diag_points} points)"""
         for i, item in enumerate(diagnostic_items[:8], 1):
             clean_item = item.replace('"', "'").strip()
             if len(clean_item) > 100:
@@ -283,9 +339,10 @@ user_message:
    - Diagnostic {i}: {clean_item}"""
     
     if management_items:
+        mgmt_points = extracted_scoring_info.get('Management (M)', {}).get('possible_points', 0)
         yaml_content += f"""
    
-   Management and Treatment:"""
+   Management and Treatment: (Total: {mgmt_points} points)"""
         for i, item in enumerate(management_items[:8], 1):
             clean_item = item.replace('"', "'").strip()
             if len(clean_item) > 100:
@@ -342,6 +399,18 @@ Format as a list of specific, actionable examination components that can be iden
         except Exception as e:
             print(f"⚠️  Azure OpenAI enhancement failed: {str(e)}")
     
+    # Add scoring summary if available
+    if extracted_scoring_info:
+        total_possible = sum(info['possible_points'] for info in extracted_scoring_info.values())
+        yaml_content += f"""
+   
+   SCORING BREAKDOWN:"""
+        for domain, info in extracted_scoring_info.items():
+            yaml_content += f"""
+   - {domain}: {info['possible_points']} points"""
+        yaml_content += f"""
+   - TOTAL POSSIBLE: {total_possible} points"""
+    
     # Add the closing instruction and scoring format
     yaml_content += f"""
    
@@ -364,13 +433,14 @@ Format as a list of specific, actionable examination components that can be iden
          "feedback": "specific feedback"
        }}
      ],
-     "overall_score": "total_points_earned/total_possible",
+     "overall_score": "total_points_earned/{sum(info['possible_points'] for info in extracted_scoring_info.values()) if extracted_scoring_info else 'total_possible'}",
      "summary": "overall assessment summary"
    }}
 
 # Generated from {len(chunks)} assessment criteria
 # Processing date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
 # Station: {station_key}
+# Scoring: {len(extracted_scoring_info)} domains, {sum(info['possible_points'] for info in extracted_scoring_info.values()) if extracted_scoring_info else 0} total points
 # Azure OpenAI: {'✅ Enhanced' if client else '📋 Extracted only'}
 """
     
@@ -379,6 +449,11 @@ Format as a list of specific, actionable examination components that can be iden
 
 @app.route('/upload', methods=['POST'])
 def upload_and_process():
+    global extracted_scoring_info
+    
+    # Clear previous scoring info
+    extracted_scoring_info = {}
+    
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     
@@ -392,6 +467,7 @@ def upload_and_process():
         file.save(filepath)
         
         try:
+            print(f"🔄 Processing uploaded file: {filename}")
             # Process the file
             yaml_content = upload_file(filepath)
             
@@ -401,7 +477,9 @@ def upload_and_process():
             return jsonify({
                 'success': True,
                 'yaml_content': yaml_content,
-                'filename': filename
+                'filename': filename,
+                'scoring_extracted': len(extracted_scoring_info) > 0,
+                'total_points': sum(info['possible_points'] for info in extracted_scoring_info.values()) if extracted_scoring_info else 0
             })
         except Exception as e:
             # Clean up the temporary file on error
