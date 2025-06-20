@@ -12,7 +12,12 @@ import json
 from typing import List, Dict, Any
 
 # Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if openai_api_key:
+    client = OpenAI(api_key=openai_api_key)
+else:
+    client = None
+    print("Warning: OpenAI API key not found. Using fallback processing without LLM.")
 
 
 def upload_file(file_path: str) -> dict:
@@ -89,7 +94,11 @@ def generate_rubric_with_llm(chunks: List[str]) -> dict:
     """Generate structured rubric using LLM"""
     if not chunks:
         # Return default rubric if no text extracted
-        return generate_default_rubric()
+        return format_rubric_response(generate_default_rubric())
+    
+    # If no OpenAI client, use enhanced fallback processing
+    if client is None:
+        return process_rubric_without_llm(chunks)
     
     rubric_text = "\n".join(f"- {chunk}" for chunk in chunks[:50])  # Limit to first 50 chunks
     
@@ -134,8 +143,101 @@ def generate_rubric_with_llm(chunks: List[str]) -> dict:
     
     except Exception as e:
         print(f"LLM generation failed: {e}")
-        return generate_default_rubric()
+        return format_rubric_response(generate_default_rubric())
 
+
+def process_rubric_without_llm(chunks: List[str]) -> dict:
+    """Process rubric text without LLM using pattern matching"""
+    # Combine all chunks
+    full_text = " ".join(chunks).lower()
+    
+    # Common medical assessment patterns
+    criteria_patterns = {
+        'introduction': {'name': 'Patient Introduction', 'keywords': ['introduc', 'greet', 'rapport'], 'points': 2},
+        'history': {'name': 'History Taking', 'keywords': ['history', 'symptom', 'chief complaint'], 'points': 6},
+        'examination': {'name': 'Physical Examination', 'keywords': ['exam', 'physical', 'inspect', 'auscult', 'palpat'], 'points': 8},
+        'communication': {'name': 'Communication Skills', 'keywords': ['communication', 'explain', 'patient education'], 'points': 4},
+        'diagnosis': {'name': 'Clinical Reasoning', 'keywords': ['diagnos', 'reasoning', 'assessment', 'clinical'], 'points': 4},
+        'management': {'name': 'Management Plan', 'keywords': ['treatment', 'management', 'plan', 'intervention'], 'points': 4},
+        'professionalism': {'name': 'Professionalism', 'keywords': ['professional', 'ethical', 'respectful'], 'points': 2}
+    }
+    
+    detected_criteria = []
+    total_points = 0
+    
+    # Detect criteria based on keywords in text
+    for criterion_id, pattern in criteria_patterns.items():
+        if any(keyword in full_text for keyword in pattern['keywords']):
+            detected_criteria.append({
+                'name': pattern['name'],
+                'points': pattern['points'],
+                'description': f"Assessment of {pattern['name'].lower()}",
+                'examples': generate_examples_for_criterion(pattern['name'])
+            })
+            total_points += pattern['points']
+    
+    # If no specific criteria found, use defaults
+    if not detected_criteria:
+        return format_rubric_response(generate_default_rubric())
+    
+    rubric = {
+        'title': 'Medical Assessment Rubric',
+        'total_points': total_points,
+        'criteria': detected_criteria
+    }
+    
+    return format_rubric_response(rubric)
+
+def generate_examples_for_criterion(criterion_name: str) -> List[str]:
+    """Generate relevant examples for each criterion"""
+    examples_map = {
+        'Patient Introduction': [
+            "Hello, I'm Dr. Smith and I'll be examining you today",
+            "May I introduce myself?",
+            "I'd like to start by getting to know you"
+        ],
+        'History Taking': [
+            "Tell me about your symptoms",
+            "When did this start?",
+            "Can you describe the pain?",
+            "Any family history of this condition?"
+        ],
+        'Physical Examination': [
+            "I'm going to examine you now",
+            "Let me listen to your heart",
+            "I'll check your reflexes",
+            "Does this hurt when I press here?"
+        ],
+        'Communication Skills': [
+            "Do you have any questions?",
+            "Let me explain what I found",
+            "I want to make sure you understand",
+            "How are you feeling about this?"
+        ],
+        'Clinical Reasoning': [
+            "Based on your symptoms and my examination",
+            "The most likely diagnosis is",
+            "I need to consider several possibilities",
+            "Let me explain my thinking"
+        ],
+        'Management Plan': [
+            "I recommend we start with",
+            "Here's what we should do next",
+            "Your treatment plan includes",
+            "We'll monitor your progress"
+        ],
+        'Professionalism': [
+            "I respect your concerns",
+            "Your privacy is important",
+            "I want to ensure your comfort",
+            "Thank you for your cooperation"
+        ]
+    }
+    
+    return examples_map.get(criterion_name, [
+        f"Demonstrates {criterion_name.lower()}",
+        f"Shows competency in {criterion_name.lower()}"
+    ])
 
 def generate_default_rubric() -> dict:
     """Generate a default rubric when processing fails"""

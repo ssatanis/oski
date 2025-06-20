@@ -1,3 +1,86 @@
+// Function to process text using Python backend
+async function processWithPythonBackend(extractedText, filename) {
+  const { exec } = require('child_process');
+  const { promisify } = require('util');
+  const fs = require('fs');
+  const path = require('path');
+  
+  const execAsync = promisify(exec);
+  
+  try {
+    // Create a temporary file with the extracted text
+    const tempFile = path.join('/tmp', `rubric_${Date.now()}.txt`);
+    fs.writeFileSync(tempFile, extractedText);
+    
+    // Python script to process the text using backend
+    const pythonScript = `
+import sys
+import os
+sys.path.append('${path.join(process.cwd(), 'rubrics-to-prompts', 'backend')}')
+
+from backend import upload_file
+import json
+
+try:
+    result = upload_file('${tempFile}')
+    if result.get('success') and result.get('rubric'):
+        rubric = result['rubric']
+        criteria = []
+        for criterion in rubric.get('criteria', []):
+            criteria.append({
+                'examId': criterion['name'].replace(' ', '_').replace('[^a-zA-Z0-9_]', ''),
+                'name': criterion['name'],
+                'max_points': criterion.get('points', 1),
+                'examples': criterion.get('examples', [])
+            })
+        print(json.dumps({
+            'success': True,
+            'criteria': criteria,
+            'rubric': rubric,
+            'yaml_content': result.get('yaml_content', '')
+        }))
+    else:
+        raise Exception("Backend processing returned no valid rubric")
+except Exception as e:
+    print(json.dumps({
+        'success': False,
+        'error': str(e),
+        'criteria': []
+    }))
+`;
+
+    const tempScript = path.join('/tmp', `process_${Date.now()}.py`);
+    fs.writeFileSync(tempScript, pythonScript);
+    
+    // Execute Python script
+    const { stdout, stderr } = await execAsync(`cd ${process.cwd()} && python3 ${tempScript}`);
+    
+    // Clean up temp files
+    try {
+      fs.unlinkSync(tempFile);
+      fs.unlinkSync(tempScript);
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+    
+    if (stderr) {
+      console.warn('Python processing stderr:', stderr);
+    }
+    
+    const result = JSON.parse(stdout.trim());
+    
+    if (result.success) {
+      return result;
+    } else {
+      throw new Error(result.error || 'Python processing failed');
+    }
+    
+  } catch (error) {
+    console.error('Python backend processing error:', error);
+    throw error;
+  }
+}
+
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -41,44 +124,16 @@ export default async function handler(req, res) {
       console.log('Using AI analyzer for criteria extraction');
       
       try {
-        // Call the adaptive OCR analyzer first
-        const adaptiveResponse = await fetch('http://localhost:3000/api/adaptive-ocr-analyzer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fileContent: extracted_text,
-            fileName: filename
-          })
-        });
-
-        if (adaptiveResponse.ok) {
-          const adaptiveData = await adaptiveResponse.json();
-          criteria = adaptiveData.criteria || [];
+        // Use the Python backend for advanced processing
+        try {
+          console.log('Using Python backend for rubric generation...');
+          const pythonResult = await processWithPythonBackend(extracted_text, filename);
+          criteria = pythonResult.criteria || [];
           examsList = criteria.map(c => c.examId);
-          console.log(`Adaptive OCR extracted ${criteria.length} criteria`);
-        } else {
-          // Fallback to regular AI analyzer
-          const aiResponse = await fetch('http://localhost:3000/api/ai-rubric-analyzer', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              extracted_text: extracted_text,
-              filename: filename
-            })
-          });
-
-          if (aiResponse.ok) {
-            const aiData = await aiResponse.json();
-            criteria = aiData.criteria || [];
-            examsList = criteria.map(c => c.examId);
-            console.log(`Fallback AI extracted ${criteria.length} criteria`);
-          } else {
-            throw new Error('Both adaptive OCR and AI analyzer failed');
-          }
+          console.log(`Python backend extracted ${criteria.length} criteria`);
+        } catch (pythonError) {
+          console.warn('Python backend failed, using fallback:', pythonError.message);
+          throw new Error('Python backend processing failed');
         }
       } catch (aiError) {
         console.warn('Advanced analyzers unavailable, using basic parsing:', aiError.message);
