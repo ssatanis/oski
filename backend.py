@@ -18,7 +18,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+# Enhanced CORS configuration for browser compatibility
+CORS(app, resources={
+    r"/*": {
+        "origins": ["*"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": False
+    }
+})
 
 # Initialize Azure OpenAI client
 def list_available_deployments(client):
@@ -447,8 +455,20 @@ Format as a list of specific, actionable examination components that can be iden
     return yaml_content
 
 
-@app.route('/upload', methods=['POST'])
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Backend server is running',
+        'azure_openai': 'configured' if client else 'not configured'
+    })
+
+@app.route('/upload', methods=['POST', 'OPTIONS'])
 def upload_and_process():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'})
+        
     global extracted_scoring_info
     
     # Clear previous scoring info
@@ -490,8 +510,11 @@ def upload_and_process():
     return jsonify({'error': 'Invalid file type'}), 400
 
 
-@app.route('/download', methods=['POST'])
+@app.route('/download', methods=['POST', 'OPTIONS'])
 def download_yaml():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'})
     data = request.get_json()
     yaml_content = data.get('yaml_content', '')
     filename = data.get('filename', 'rubric.yaml')

@@ -3110,9 +3110,22 @@
             }
         }
 
+        // Get the correct backend URL
+        function getBackendURL() {
+            // Try different URLs based on the environment
+            const possibleURLs = [
+                'http://localhost:5001',
+                'http://127.0.0.1:5001',
+                'http://0.0.0.0:5001'
+            ];
+            return possibleURLs[0]; // Start with localhost
+        }
+
         // Process using backend.py
         async function processWithWorkingAPIs(file) {
             console.log('🔄 Using backend.py for processing...');
+            
+            const backendURL = getBackendURL();
             
             try {
                 // Upload and process file using your exact backend.py
@@ -3121,8 +3134,8 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 
-                console.log('🔄 Making request to http://localhost:5001/upload');
-                const uploadResponse = await fetch('http://localhost:5001/upload', {
+                console.log('🔄 Making request to', backendURL + '/upload');
+                const uploadResponse = await fetch(backendURL + '/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -4837,7 +4850,8 @@ assessment_criteria:
             
             try {
                 // Try using backend download endpoint first
-                const response = await fetch('http://localhost:5001/download', {
+                const backendURL = getBackendURL();
+                const response = await fetch(backendURL + '/download', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -4898,12 +4912,27 @@ assessment_criteria:
             console.log('🧪 Testing backend connection...');
             
             try {
-                // Create a simple test file
+                // First try the health check endpoint
+                const backendURL = getBackendURL();
+                console.log('🔍 Testing health endpoint at', backendURL);
+                const healthResponse = await fetch(backendURL + '/health', {
+                    method: 'GET'
+                });
+                
+                if (healthResponse.ok) {
+                    const healthResult = await healthResponse.json();
+                    console.log('✅ Health check passed:', healthResult);
+                    alert('✅ Backend connection successful!\n' + JSON.stringify(healthResult, null, 2));
+                    return;
+                }
+                
+                // If health check fails, try the upload endpoint
+                console.log('⚠️ Health check failed, trying upload endpoint...');
                 const testFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
                 const formData = new FormData();
                 formData.append('file', testFile);
                 
-                const response = await fetch('http://localhost:5001/upload', {
+                const response = await fetch(backendURL + '/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -4914,7 +4943,7 @@ assessment_criteria:
                 if (response.ok) {
                     const result = await response.json();
                     console.log('✅ Backend is working!', result);
-                    alert('✅ Backend connection successful!');
+                    alert('✅ Backend connection successful via upload endpoint!');
                 } else {
                     const errorText = await response.text();
                     console.log('❌ Backend error:', errorText);
@@ -4922,7 +4951,13 @@ assessment_criteria:
                 }
             } catch (error) {
                 console.error('❌ Backend connection failed:', error);
-                alert('❌ Backend connection failed: ' + error.message);
+                
+                // Provide specific error guidance
+                if (error.message.includes('Load failed') || error.message.includes('Failed to fetch')) {
+                    alert('❌ Backend connection failed!\n\nPossible solutions:\n1. Make sure backend.py is running: python3 backend.py --server\n2. Check if port 5001 is available\n3. Try refreshing the page\n\nError: ' + error.message);
+                } else {
+                    alert('❌ Backend connection failed: ' + error.message);
+                }
             }
         }
 
