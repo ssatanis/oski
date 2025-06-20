@@ -604,12 +604,12 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--server":
         print("🚀 Starting Flask server for rubricon integration...")
         print("🔧 Azure OpenAI configured and ready")
-        print("📍 Server running on http://localhost:5002")
+        print("📍 Server running on http://localhost:5003")
         print("📋 Endpoints available:")
         print("   POST /upload - Upload and process files")
         print("   POST /download - Download YAML files")
         print("=" * 50)
-        app.run(host='0.0.0.0', port=5002, debug=True)
+        app.run(host='0.0.0.0', port=5003, debug=False)
     else:
         # Test with the specific file
         test_file = "Note Checklist - Station 1A - Rash - Psoriasis.xlsx"

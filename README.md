@@ -297,7 +297,7 @@ pip install -r backend-requirements.txt
 python3 backend.py --server
 ```
 
-The server will start on `http://localhost:5002`
+The server will start on `http://localhost:5003`
 
 ### 4. Open the Frontend
 
@@ -341,7 +341,7 @@ Use the provided scripts for backend management:
 - Verify API keys in `.env` file
 
 ### Frontend Issues
-- Test backend connectivity with: `curl -X GET http://localhost:5002/health`
+- Test backend connectivity with: `curl -X GET http://localhost:5003/health`
 - Check browser console for error messages
 - Ensure CORS is properly configured
 

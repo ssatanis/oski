@@ -3114,9 +3114,9 @@
         function getBackendURL() {
             // Try different URLs based on the environment
             const possibleURLs = [
-                'http://localhost:5002',
-                'http://127.0.0.1:5002',
-                'http://0.0.0.0:5002'
+                'http://localhost:5003',
+                'http://127.0.0.1:5003',
+                'http://0.0.0.0:5003'
             ];
             return possibleURLs[0]; // Start with localhost
         }
@@ -4964,7 +4964,7 @@ assessment_criteria:
                 console.log('📤 Uploading file:', selectedFile.name);
                 console.log('📤 File size:', selectedFile.size, 'bytes');
                 
-                const response = await fetch('http://localhost:5002/upload', {
+                const response = await fetch('http://localhost:5003/upload', {
                     method: 'POST',
                     body: formData
                 });
