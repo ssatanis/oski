@@ -12,7 +12,7 @@ import json
 from typing import List, Dict, Any
 
 # Initialize OpenAI client
-openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = os.getenv("AZURE_OPENAI_KEY")
 if openai_api_key:
     client = OpenAI(api_key=openai_api_key)
 else:
