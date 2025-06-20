@@ -5043,7 +5043,7 @@ assessment_criteria:
                 
                 // Provide specific error guidance
                 if (error.message.includes('Load failed') || error.message.includes('Failed to fetch')) {
-                    alert('❌ Backend connection failed!\n\nPossible solutions:\n1. Make sure backend.py is running: python3 backend.py --server\n2. Check if port 5002 is available\n3. Try refreshing the page\n\nError: ' + error.message);
+                    alert('❌ Backend connection failed!\n\nPossible solutions:\n1. Make sure backend.py is running: python3 backend.py --server\n2. Check if port 5003 is available\n3. Try refreshing the page\n\nError: ' + error.message);
                 } else {
                     alert('❌ Backend connection failed: ' + error.message);
                 }
