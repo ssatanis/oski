@@ -2533,25 +2533,12 @@
                 let rubricData = null;
                 
                 try {
-                    // Try comprehensive backend processing with multiple OCR services first
-                    console.log('Attempting comprehensive OCR processing with backend...');
-                    rubricData = await processWithComprehensiveOCR(currentFile, base64Content);
-                    console.log('Comprehensive OCR processing successful!');
-                } catch (backendError) {
-                    console.warn('Backend OCR processing failed, trying direct AWS:', backendError.message);
-                    
-                    try {
-                        // Try AWS Textract + Comprehend Medical directly
-                        console.log('Attempting direct AWS Textract + Comprehend Medical processing...');
-                        rubricData = await processWithAWSTextractComprehend(currentFile, base64Content);
-                        console.log('AWS processing successful!');
-                    } catch (awsError) {
-                        console.warn('AWS processing failed, trying local OCR fallback:', awsError.message);
-                    }
-                }
-                
-                // If all OCR methods failed, use dynamic local processing
-                if (!rubricData) {
+                    // Use working Vercel API functions directly
+                    console.log('Processing with working Vercel APIs...');
+                    rubricData = await processWithWorkingAPIs(currentFile);
+                    console.log('Processing successful!');
+                } catch (error) {
+                    console.warn('API processing failed, using local content analysis:', error.message);
                     showStatus('processing', 'Using dynamic local content analysis...', true);
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     rubricData = await generateEnhancedFallbackRubric(currentFile, base64Content);
@@ -2607,6 +2594,96 @@
                     Process Rubric
                 `;
             }
+        }
+
+        // Process using working Vercel API functions
+        async function processWithWorkingAPIs(file) {
+            console.log('Using working Vercel API functions...');
+            
+            try {
+                // Step 1: Upload and extract text using the working upload API
+                showStatus('processing', 'Extracting text from uploaded file...', true);
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!uploadResponse.ok) {
+                    throw new Error(`Upload failed: ${uploadResponse.status}`);
+                }
+                
+                const uploadResult = await uploadResponse.json();
+                console.log('Upload completed:', uploadResult);
+                
+                // Step 2: Generate rubric structure using the extracted text
+                showStatus('processing', 'Generating assessment criteria from content...', true);
+                
+                const generateResponse = await fetch('/api/generate-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        extracted_text: uploadResult.extracted_text || '',
+                        filename: file.name
+                    })
+                });
+                
+                if (!generateResponse.ok) {
+                    throw new Error(`Generation failed: ${generateResponse.status}`);
+                }
+                
+                const generateResult = await generateResponse.json();
+                console.log('Generation completed:', generateResult);
+                
+                // Transform the API response into the expected format
+                const rubricData = {
+                    system_message: generateResult.parsed_yaml?.system_message || 
+                        "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
+                    user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
+                    sections: generateResult.parsed_yaml?.criteria ? 
+                        transformCriteriaToSections(generateResult.parsed_yaml.criteria) : [],
+                    criteria: generateResult.parsed_yaml?.criteria || uploadResult.criteria || [],
+                    rubric_analysis: {
+                        sections: generateResult.parsed_yaml?.criteria ? 
+                            transformCriteriaToSections(generateResult.parsed_yaml.criteria) : []
+                    },
+                    assessment_type: 'Processed from Upload',
+                    source_file: file.name,
+                    total_points: generateResult.parsed_yaml?.criteria ? 
+                        generateResult.parsed_yaml.criteria.reduce((sum, c) => sum + (c.max_points || 1), 0) : 0,
+                    processing_method: 'Working Vercel APIs'
+                };
+                
+                return rubricData;
+                
+            } catch (error) {
+                console.error('Working API processing error:', error);
+                throw new Error(`API processing failed: ${error.message}`);
+            }
+        }
+        
+        // Transform criteria array into sections format
+        function transformCriteriaToSections(criteria) {
+            if (!criteria || criteria.length === 0) return [];
+            
+            // Group criteria into a single section or multiple sections based on content
+            const section = {
+                name: "Assessment Criteria",
+                code: "AC",
+                maxPoints: criteria.reduce((sum, c) => sum + (c.max_points || 1), 0),
+                items: criteria.map(criterion => ({
+                    description: criterion.name || criterion.examId || 'Assessment Item',
+                    points: criterion.max_points || 1,
+                    examples: criterion.examples || [`Assessment of ${criterion.name?.toLowerCase() || 'criterion'}`]
+                }))
+            };
+            
+            return [section];
         }
 
         // Comprehensive OCR processing with backend (Google Vision + AWS Textract + OCR)
@@ -3319,24 +3396,97 @@
                        .trim();
          }
 
-         // Create minimal structure for user to customize
+         // Generate smarter criteria based on filename and medical patterns
+         function generateFileBasedCriteria(fileName) {
+             const fileNameLower = fileName.toLowerCase();
+             
+             // Detect medical specialty or assessment type from filename
+             if (fileNameLower.includes('cardio') || fileNameLower.includes('heart')) {
+                 return [
+                     {
+                         description: "Cardiovascular History Taking",
+                         points: 3,
+                         examples: ["Tell me about your chest pain", "Any history of heart problems?", "Are you taking any heart medications?"]
+                     },
+                     {
+                         description: "Cardiac Physical Examination",
+                         points: 4,
+                         examples: ["I'm going to listen to your heart", "Let me check your pulse", "I'll examine your chest now"]
+                     },
+                     {
+                         description: "Clinical Reasoning - Cardiac",
+                         points: 3,
+                         examples: ["Based on your symptoms and exam", "The most likely cardiac condition", "I need to rule out heart disease"]
+                     }
+                 ];
+             } else if (fileNameLower.includes('neuro') || fileNameLower.includes('nervous')) {
+                 return [
+                     {
+                         description: "Neurological History",
+                         points: 3,
+                         examples: ["Tell me about your headaches", "Any weakness or numbness?", "Have you had any seizures?"]
+                     },
+                     {
+                         description: "Neurological Examination",
+                         points: 4,
+                         examples: ["I'm going to test your reflexes", "Follow my finger with your eyes", "Can you feel this touch?"]
+                     },
+                     {
+                         description: "Neurological Assessment",
+                         points: 3,
+                         examples: ["Your nervous system appears", "I need to assess your brain function", "Let's check your coordination"]
+                     }
+                 ];
+             } else if (fileNameLower.includes('resp') || fileNameLower.includes('lung') || fileNameLower.includes('pulm')) {
+                 return [
+                     {
+                         description: "Respiratory History",
+                         points: 3,
+                         examples: ["Tell me about your breathing", "Any cough or shortness of breath?", "Do you smoke?"]
+                     },
+                     {
+                         description: "Respiratory Examination",
+                         points: 4,
+                         examples: ["I'm going to listen to your lungs", "Take a deep breath for me", "I'll examine your breathing"]
+                     },
+                     {
+                         description: "Respiratory Assessment",
+                         points: 3,
+                         examples: ["Your lung sounds indicate", "Based on your breathing pattern", "I need to assess your oxygen levels"]
+                     }
+                 ];
+             } else {
+                 // Default medical assessment criteria
+                 return [
+                     {
+                         description: "Patient History Taking",
+                         points: 3,
+                         examples: ["What brings you in today?", "Tell me about your symptoms", "When did this start?"]
+                     },
+                     {
+                         description: "Physical Examination",
+                         points: 4,
+                         examples: ["I'm going to examine you now", "Let me check this area", "I'll use my stethoscope"]
+                     },
+                     {
+                         description: "Clinical Assessment & Communication",
+                         points: 3,
+                         examples: ["Based on my findings", "Here's what I think", "Do you have any questions?"]
+                     }
+                 ];
+             }
+         }
+
+         // Create minimal structure for user to customize - with smarter defaults
          function createMinimalRubricStructure(fileName) {
+             // Generate smarter criteria based on filename and common medical assessment patterns
+             const fileBasedCriteria = generateFileBasedCriteria(fileName);
+             
              const basicSection = {
                  name: "Assessment Criteria",
                  code: "AC",
-                 maxPoints: 10,
-                 items: [
-                     {
-                         description: "Assessment criterion 1",
-                         points: 5,
-                         examples: ["Example assessment", "Evaluation criteria"]
-                     },
-                     {
-                         description: "Assessment criterion 2", 
-                         points: 5,
-                         examples: ["Example assessment", "Evaluation criteria"]
-                     }
-                 ]
+                 maxPoints: fileBasedCriteria.reduce((sum, item) => sum + item.points, 0),
+                 items: fileBasedCriteria
              };
              
              return {
