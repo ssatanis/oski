@@ -2990,10 +2990,9 @@
                 window.currentRubricData = rubricData;
                 processedData = rubricData;
                 
-                // Show download interface with YAML content
-                setTimeout(() => {
-                    showDownloadInterface(rubricData);
-                }, 1000);
+                // IMMEDIATE: Show download interface with YAML content (no timeout delays)
+                console.log('🎯 About to call showDownloadInterface with:', rubricData);
+                showDownloadInterface(rubricData);
                 
             } catch (error) {
                 console.error('Processing failed:', error);
@@ -3080,10 +3079,9 @@
                     window.yamlContent = emergencyYaml;
                     window.originalFileName = currentFile?.name || 'emergency-rubric.yaml';
                     
-                    // Show download interface with emergency data
-                    setTimeout(() => {
-                        showDownloadInterface(emergencyRubric);
-                    }, 1000);
+                    // IMMEDIATE: Show download interface with emergency data (no timeout delays)
+                    console.log('🎯 About to call showDownloadInterface with emergency data:', emergencyRubric);
+                    showDownloadInterface(emergencyRubric);
                     
                 } catch (emergencyError) {
                     console.error('Emergency fallback also failed:', emergencyError);
@@ -3163,25 +3161,26 @@
 
                 showStatus('processing', 'Processing complete!', false);
                 
-                // Store for download functionality with validation
+                // IMMEDIATE: Store for download functionality with validation
                 window.yamlContent = result.yaml_content;
-                window.originalFileName = result.filename;
+                window.originalFileName = result.filename || 'rubric.yaml';
                 
                 console.log('✅ Stored window.yamlContent length:', window.yamlContent.length);
                 console.log('✅ Stored window.originalFileName:', window.originalFileName);
                 
-                // Transform for display format
+                // Transform for display format - ENSURE yaml_content is included
                 const rubricData = {
-                    yaml_content: result.yaml_content,
-                    filename: result.filename,
+                    yaml_content: result.yaml_content,  // CRITICAL: Include yaml_content
+                    filename: result.filename || 'rubric.yaml',
                     success: true,
                     processing_method: 'backend.py',
-                    scoring_extracted: result.scoring_extracted,
-                    total_points: result.total_points,
-                    processing_info: result.processing_info
+                    scoring_extracted: result.scoring_extracted || false,
+                    total_points: result.total_points || 0,
+                    processing_info: result.processing_info || {}
                 };
 
                 console.log('✅ Returning rubricData with YAML length:', rubricData.yaml_content.length);
+                console.log('✅ Final rubricData:', rubricData);
                 return rubricData;
 
             } catch (error) {
@@ -4180,39 +4179,64 @@
             console.log('🔍 data.yaml_content available:', !!(data?.yaml_content));
             console.log('🔍 data.yaml_content length:', data?.yaml_content?.length || 0);
             
-            // CRITICAL: Ensure we have YAML content - prioritize data over window
+            // CRITICAL: Ensure we have YAML content - ALWAYS prioritize incoming data
+            let finalYamlContent = '';
+            let finalFileName = 'rubric.yaml';
+            
             if (data?.yaml_content && data.yaml_content.length > 0) {
-                window.yamlContent = data.yaml_content;
-                console.log('✅ Set window.yamlContent from data:', window.yamlContent.length, 'characters');
-            }
-            if (data?.filename) {
-                window.originalFileName = data.filename;
-                console.log('✅ Set window.originalFileName from data:', window.originalFileName);
+                finalYamlContent = data.yaml_content;
+                window.yamlContent = data.yaml_content;  // Store for download
+                console.log('✅ Using YAML from data parameter:', finalYamlContent.length, 'characters');
+            } else if (window.yamlContent && window.yamlContent.length > 0) {
+                finalYamlContent = window.yamlContent;
+                console.log('✅ Using YAML from window.yamlContent:', finalYamlContent.length, 'characters');
+            } else {
+                // Try backup sources
+                const backupYaml = data?.yamlContent || data?.yaml || data?.content || '';
+                if (backupYaml && backupYaml.length > 0) {
+                    finalYamlContent = backupYaml;
+                    window.yamlContent = backupYaml;
+                    console.log('✅ Using backup YAML content:', finalYamlContent.length, 'characters');
+                }
             }
             
-            // CRITICAL: Final validation with strict checks
-            const finalYamlContent = window.yamlContent || data?.yaml_content || '';
-            const finalFileName = window.originalFileName || data?.filename || 'rubric.yaml';
+            if (data?.filename) {
+                finalFileName = data.filename;
+                window.originalFileName = data.filename;
+                console.log('✅ Set filename from data:', finalFileName);
+            } else if (window.originalFileName) {
+                finalFileName = window.originalFileName;
+                console.log('✅ Using filename from window:', finalFileName);
+            }
             
             console.log('🔍 Final YAML content length:', finalYamlContent.length);
             console.log('🔍 Final filename:', finalFileName);
             
-            // Enhanced debugging with fail-safe
+            // Enhanced debugging and error handling
             if (!finalYamlContent || finalYamlContent.length === 0) {
-                console.error('❌ CRITICAL: Final YAML content is empty!');
-                console.error('   - window.yamlContent length:', window.yamlContent?.length || 0);
-                console.error('   - data.yaml_content length:', data?.yaml_content?.length || 0);
-                console.error('   - Raw data object keys:', Object.keys(data || {}));
-                console.error('   - Raw data object:', data);
+                console.error('❌ CRITICAL ERROR: No YAML content available!');
+                console.error('   - data parameter:', data);
+                console.error('   - window.yamlContent:', window.yamlContent);
+                console.error('   - All data keys:', Object.keys(data || {}));
                 
-                // Try to get YAML from any possible source
-                const backupYaml = data?.yamlContent || data?.yaml || data?.content || '';
-                if (backupYaml) {
-                    console.log('🔄 Found backup YAML content:', backupYaml.length, 'characters');
-                    window.yamlContent = backupYaml;
-                }
+                // Create emergency YAML content
+                finalYamlContent = `# Emergency Rubric YAML
+# Generated due to missing content
+
+key: "emergency"
+system_message: |
+  You are a helpful assistant tasked with analyzing and scoring a recorded medical examination.
+  
+user_message: |
+  Please assess the following medical examination based on standard criteria.
+  
+# Emergency rubric created at ${new Date().toISOString()}
+# Please upload your rubric file again for proper processing.
+`;
+                window.yamlContent = finalYamlContent;
+                console.log('🆘 Created emergency YAML content:', finalYamlContent.length, 'characters');
             } else {
-                console.log('✅ Final YAML content preview (first 200 chars):', finalYamlContent.substring(0, 200));
+                console.log('✅ YAML content preview (first 200 chars):', finalYamlContent.substring(0, 200));
             }
             
             // Get or create download section
@@ -4227,11 +4251,8 @@
                 processingSection.parentNode.insertBefore(downloadSection, processingSection.nextSibling);
             }
             
-            // RE-VALIDATE: Use the most current YAML content
-            const currentYamlContent = window.yamlContent || data?.yaml_content || '';
-            const currentFileName = window.originalFileName || data?.filename || 'rubric.yaml';
-            
-            console.log('🎯 Creating download interface with YAML length:', currentYamlContent.length);
+            // Use the final validated YAML content
+            console.log('🎯 Creating download interface with YAML length:', finalYamlContent.length);
             
             downloadSection.innerHTML = `
                 <div class="download-content">
@@ -4242,11 +4263,11 @@
                     </div>
                     <h2 class="download-title">Rubric Processed Successfully!</h2>
                     <p class="download-description">Your rubric has been converted to YAML format and is ready for download.</p>
-                    <p class="download-stats">✅ YAML Size: ${currentYamlContent.length} characters | 📊 File: ${currentFileName}</p>
+                    <p class="download-stats">✅ YAML Size: ${finalYamlContent.length} characters | 📊 File: ${finalFileName}</p>
                     
                     <div class="yaml-preview">
                         <h3>YAML Preview:</h3>
-                        <pre class="yaml-content">${currentYamlContent.length > 0 ? currentYamlContent.substring(0, 500) + (currentYamlContent.length > 500 ? '\n\n... (truncated for preview)' : '') : 'No YAML content available'}</pre>
+                        <pre class="yaml-content">${finalYamlContent.length > 0 ? finalYamlContent.substring(0, 500) + (finalYamlContent.length > 500 ? '\n\n... (truncated for preview)' : '') : 'No YAML content available'}</pre>
                     </div>
                     
                     <div class="download-actions">
