@@ -1309,6 +1309,162 @@
             opacity: 1;
         }
 
+        /* Download Section */
+        .download-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.15), 0 4px 20px rgba(0, 0, 0, 0.06);
+            border: 2px solid #10b981;
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            margin-top: 30px;
+        }
+
+        .download-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10b981, #059669);
+            opacity: 1;
+        }
+
+        .download-card.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .download-content {
+            text-align: center;
+        }
+
+        .download-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: successPulse 0.8s ease-out;
+        }
+
+        .download-icon svg {
+            color: white;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .download-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #047857;
+            margin-bottom: 12px;
+            font-family: "Geist", sans-serif;
+        }
+
+        .download-description {
+            font-size: 1rem;
+            color: #059669;
+            margin-bottom: 32px;
+            font-family: "Geist", sans-serif;
+        }
+
+        .yaml-preview {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            text-align: left;
+        }
+
+        .yaml-preview h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #047857;
+            margin-bottom: 12px;
+            font-family: "Geist", sans-serif;
+        }
+
+        .yaml-content {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: "Menlo", "Monaco", "Consolas", monospace;
+            font-size: 0.875rem;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .download-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .download-yaml-button {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: "Geist", sans-serif;
+        }
+
+        .download-yaml-button:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .process-another-button {
+            background: transparent;
+            color: #059669;
+            border: 2px solid #10b981;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: "Geist", sans-serif;
+        }
+
+        .process-another-button:hover {
+            background: #10b981;
+            color: white;
+            transform: translateY(-1px);
+        }
+
         /* Process button success state */
         .process-button.success {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -2952,18 +3108,18 @@
             }
         }
 
-        // Process using working Vercel API functions
+        // Process using backend.py
         async function processWithWorkingAPIs(file) {
-            console.log('Using working Vercel API functions...');
+            console.log('Using backend.py for processing...');
             
             try {
-                // Step 1: Upload and extract text using the working upload API
-                console.log('Step 1: Uploading file...');
+                // Upload and process file using your exact backend.py
+                console.log('Processing file with backend.py...');
                 
                 const formData = new FormData();
                 formData.append('file', file);
                 
-                const uploadResponse = await fetch('/api/upload', {
+                const uploadResponse = await fetch('http://localhost:5000/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -2975,55 +3131,25 @@
                 }
                 
                 const uploadResult = await uploadResponse.json();
-                console.log('Upload completed:', uploadResult);
+                console.log('Processing completed:', uploadResult);
                 
-                // Step 2: Generate rubric structure using the extracted text
-                console.log('Step 2: Generating rubric structure...');
+                // Store the YAML content for download
+                window.yamlContent = uploadResult.yaml_content;
+                window.originalFileName = uploadResult.filename;
                 
-                const generateResponse = await fetch('/api/generate-prompt', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        extracted_text: uploadResult.extracted_text || '',
-                        filename: file.name
-                    })
-                });
-                
-                if (!generateResponse.ok) {
-                    const errorText = await generateResponse.text();
-                    console.error('Generation failed with response:', errorText);
-                    throw new Error(`Generation failed: ${generateResponse.status} - ${errorText}`);
-                }
-                
-                const generateResult = await generateResponse.json();
-                console.log('Generation completed:', generateResult);
-                
-                // Transform the API response into the expected format
+                // Transform the YAML response into the expected format for display
                 const rubricData = {
-                    system_message: generateResult.parsed_yaml?.system_message || 
-                        "You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.",
-                    user_message_preamble: "Analyze the following medical examination and provide scores for each criterion:",
-                    sections: generateResult.parsed_yaml?.criteria ? 
-                        transformCriteriaToSections(generateResult.parsed_yaml.criteria) : [],
-                    criteria: generateResult.parsed_yaml?.criteria || uploadResult.criteria || [],
-                    rubric_analysis: {
-                        sections: generateResult.parsed_yaml?.criteria ? 
-                            transformCriteriaToSections(generateResult.parsed_yaml.criteria) : []
-                    },
-                    assessment_type: 'Processed from Upload',
-                    source_file: file.name,
-                    total_points: generateResult.parsed_yaml?.criteria ? 
-                        generateResult.parsed_yaml.criteria.reduce((sum, c) => sum + (c.max_points || 1), 0) : 0,
-                    processing_method: 'Working Vercel APIs'
+                    yaml_content: uploadResult.yaml_content,
+                    filename: uploadResult.filename,
+                    success: true,
+                    processing_method: 'backend.py'
                 };
                 
                 return rubricData;
                 
             } catch (error) {
-                console.error('Working API processing error:', error);
-                throw new Error(`API processing failed: ${error.message}`);
+                console.error('Backend processing error:', error);
+                throw new Error(`Backend processing failed: ${error.message}`);
             }
         }
         
@@ -3997,62 +4123,78 @@
         let currentRubricData = null;
 
         function showDashboard(parsedData) {
-            console.log('Showing dashboard with data:', parsedData);
+            console.log('Processing complete, ready for download:', parsedData);
             
-            // Hide processing, show dashboard
+            // Hide processing section
             const processingSection = document.getElementById('processingSection');
-            const dashboardSection = document.getElementById('dashboardSection');
-            
-            console.log('Processing section found:', !!processingSection);
-            console.log('Dashboard section found:', !!dashboardSection);
-            
             if (processingSection) {
                 processingSection.style.display = 'none';
             }
             
-            // Store current data globally for updates
-            window.currentRubricData = parsedData;
+            // Show simple download interface instead of complex editor
+            showDownloadInterface(parsedData);
+        }
+        
+        function showDownloadInterface(data) {
+            // Get or create download section
+            let downloadSection = document.getElementById('downloadSection');
+            if (!downloadSection) {
+                downloadSection = document.createElement('div');
+                downloadSection.id = 'downloadSection';
+                downloadSection.className = 'download-card';
+                
+                // Insert after processing section
+                const processingSection = document.getElementById('processingSection');
+                processingSection.parentNode.insertBefore(downloadSection, processingSection.nextSibling);
+            }
             
-            // Populate basic information
-            const systemMessage = parsedData.system_message || 
-                'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
-            document.getElementById('systemMessage').value = systemMessage;
+            downloadSection.innerHTML = `
+                <div class="download-content">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h2 class="download-title">Rubric Processed Successfully!</h2>
+                    <p class="download-description">Your rubric has been converted to YAML format and is ready for download.</p>
+                    
+                    <div class="yaml-preview">
+                        <h3>YAML Preview:</h3>
+                        <pre class="yaml-content">${window.yamlContent || 'YAML content generated successfully'}</pre>
+                    </div>
+                    
+                    <div class="download-actions">
+                        <button class="download-yaml-button" onclick="downloadYAMLFile()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download YAML
+                        </button>
+                        <button class="process-another-button" onclick="startOver()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                <path d="M21 3v5h-5"></path>
+                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                <path d="M3 21v-5h5"></path>
+                            </svg>
+                            Process Another
+                        </button>
+                    </div>
+                </div>
+            `;
             
-            // Clear and populate assessment criteria with clean structure
-            const criteriaContainer = document.getElementById('criteriaContainer');
-            criteriaContainer.innerHTML = '';
+            downloadSection.style.display = 'block';
+            downloadSection.classList.add('visible');
             
-            // Extract criteria from various data structures and normalize them
-            let criteriasToDisplay = extractAndNormalizeCriteria(parsedData);
-            
-            console.log('Displaying normalized criteria:', criteriasToDisplay);
-            displayCriteriaClean(criteriasToDisplay, criteriaContainer);
-            
-            // Update footer state for dashboard
-            updateFooterState('dashboard');
-            
-            // Add maximum spacing for dashboard
-            const contentGrid = document.querySelector('.content-grid');
-            contentGrid.classList.add('dashboard-active');
-            
-            // Smooth scroll to dashboard
+            // Smooth scroll to download section
             setTimeout(() => {
-                dashboardSection.scrollIntoView({ 
+                downloadSection.scrollIntoView({ 
                     behavior: 'smooth', 
                     block: 'start' 
                 });
             }, 300);
-            
-            if (dashboardSection) {
-                dashboardSection.style.display = 'block';
-                dashboardSection.classList.add('visible');
-                console.log('Dashboard should now be visible');
-            } else {
-                console.error('Dashboard section not found in DOM!');
-            }
-            
-            // Update preview
-            updatePreview();
         }
 
         // Extract and normalize criteria from different data structures
@@ -4630,29 +4772,50 @@ assessment_criteria:
             return yaml;
         }
 
-        // Fix YAML download functionality
-        function downloadYAML() {
-            if (!window.currentRubricData) {
-                alert('No rubric data available to download.');
-                    return;
-                }
-                
-            const yamlContent = generateYAMLFromCurrentData();
-            const fileName = `rubric_${new Date().toISOString().slice(0, 10)}.yaml`;
+        // Download YAML using backend API
+        async function downloadYAMLFile() {
+            if (!window.yamlContent || !window.originalFileName) {
+                alert('No YAML content available to download.');
+                return;
+            }
             
-            // Create and trigger download
-            const blob = new Blob([yamlContent], { type: 'application/x-yaml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            try {
+                const response = await fetch('http://localhost:5000/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        yaml_content: window.yamlContent,
+                        filename: window.originalFileName
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `${window.originalFileName.split('.')[0]}.yaml`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
                     
-                    // Show success message
-            showStatus('success', `YAML file "${fileName}" downloaded successfully!`);
+                    showStatus('success', `YAML file downloaded successfully!`);
+                } else {
+                    throw new Error('Download failed');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                showStatus('error', 'Failed to download YAML file');
+            }
+        }
+
+        // Legacy function for compatibility
+        function downloadYAML() {
+            downloadYAMLFile();
         }
 
         // Fix start over functionality
