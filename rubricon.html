@@ -3132,10 +3132,17 @@
                 
                 const uploadResult = await uploadResponse.json();
                 console.log('Processing completed:', uploadResult);
+                console.log('✅ YAML Content Length:', uploadResult.yaml_content?.length || 0);
+                console.log('✅ Filename:', uploadResult.filename);
                 
                 // Store the YAML content for download
                 window.yamlContent = uploadResult.yaml_content;
                 window.originalFileName = uploadResult.filename;
+                
+                // Debug logging
+                console.log('✅ window.yamlContent set:', !!window.yamlContent);
+                console.log('✅ window.yamlContent length:', window.yamlContent?.length || 0);
+                console.log('✅ window.originalFileName set:', window.originalFileName);
                 
                 // Transform the YAML response into the expected format for display
                 const rubricData = {
@@ -3145,6 +3152,7 @@
                     processing_method: 'backend.py'
                 };
                 
+                console.log('✅ Returning rubricData with yaml_content:', !!rubricData.yaml_content);
                 return rubricData;
                 
             } catch (error) {
@@ -4138,17 +4146,26 @@
         function showDownloadInterface(data) {
             console.log('showDownloadInterface called with:', data);
             console.log('window.yamlContent available:', !!window.yamlContent);
+            console.log('window.yamlContent length:', window.yamlContent?.length || 0);
             console.log('data.yaml_content available:', !!(data?.yaml_content));
+            console.log('data.yaml_content length:', data?.yaml_content?.length || 0);
             
-            // Ensure we have YAML content - update window variables if missing
-            if (!window.yamlContent && data?.yaml_content) {
+            // Ensure we have YAML content - prioritize data over window
+            if (data?.yaml_content) {
                 window.yamlContent = data.yaml_content;
                 console.log('✅ Set window.yamlContent from data:', window.yamlContent.length, 'characters');
             }
-            if (!window.originalFileName && data?.filename) {
+            if (data?.filename) {
                 window.originalFileName = data.filename;
                 console.log('✅ Set window.originalFileName from data:', window.originalFileName);
             }
+            
+            // Final check
+            const finalYamlContent = window.yamlContent || data?.yaml_content || '';
+            const finalFileName = window.originalFileName || data?.filename || 'rubric.yaml';
+            
+            console.log('🔍 Final YAML content length:', finalYamlContent.length);
+            console.log('🔍 Final filename:', finalFileName);
             
             // Get or create download section
             let downloadSection = document.getElementById('downloadSection');
@@ -4171,11 +4188,11 @@
                     </div>
                     <h2 class="download-title">Rubric Processed Successfully!</h2>
                     <p class="download-description">Your rubric has been converted to YAML format and is ready for download.</p>
-                    <p class="download-stats">✅ YAML Size: ${(window.yamlContent || data?.yaml_content || '').length} characters | 📊 File: ${window.originalFileName || data?.filename || 'rubric.yaml'}</p>
+                    <p class="download-stats">✅ YAML Size: ${finalYamlContent.length} characters | 📊 File: ${finalFileName}</p>
                     
                     <div class="yaml-preview">
                         <h3>YAML Preview:</h3>
-                        <pre class="yaml-content">${window.yamlContent || data?.yaml_content || 'No YAML content available'}</pre>
+                        <pre class="yaml-content">${finalYamlContent.length > 0 ? finalYamlContent.substring(0, 500) + (finalYamlContent.length > 500 ? '\n\n... (truncated for preview)' : '') : 'No YAML content available'}</pre>
                     </div>
                     
                     <div class="download-actions">
@@ -4789,20 +4806,27 @@ assessment_criteria:
 
         // Download YAML using backend API
         async function downloadYAMLFile() {
-            if (!window.yamlContent || !window.originalFileName) {
+            const yamlContent = window.yamlContent;
+            const fileName = window.originalFileName || 'rubric.yaml';
+            
+            console.log('🔽 Download attempt - YAML length:', yamlContent?.length || 0);
+            console.log('🔽 Download attempt - Filename:', fileName);
+            
+            if (!yamlContent || yamlContent.length === 0) {
                 alert('No YAML content available to download.');
                 return;
             }
             
             try {
+                // Try using backend download endpoint first
                 const response = await fetch('http://localhost:5001/download', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        yaml_content: window.yamlContent,
-                        filename: window.originalFileName
+                        yaml_content: yamlContent,
+                        filename: fileName
                     })
                 });
 
@@ -4812,7 +4836,7 @@ assessment_criteria:
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = `${window.originalFileName.split('.')[0]}.yaml`;
+                    a.download = `${fileName.split('.')[0]}.yaml`;
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
@@ -4820,11 +4844,29 @@ assessment_criteria:
                     
                     showStatus('success', `YAML file downloaded successfully!`);
                 } else {
-                    throw new Error('Download failed');
+                    throw new Error('Backend download failed, using direct download');
                 }
             } catch (error) {
-                console.error('Download error:', error);
-                showStatus('error', 'Failed to download YAML file');
+                console.error('Backend download error, falling back to direct download:', error);
+                
+                // Fallback: Direct download without backend
+                try {
+                    const blob = new Blob([yamlContent], { type: 'text/yaml' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `${fileName.split('.')[0]}.yaml`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showStatus('success', `YAML file downloaded successfully! (direct download)`);
+                } catch (directError) {
+                    console.error('Direct download also failed:', directError);
+                    showStatus('error', 'Failed to download YAML file');
+                }
             }
         }
 
