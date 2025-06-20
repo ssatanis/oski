@@ -13,13 +13,14 @@
 !favicons/**
 !fonts/
 !fonts/**
+!api/
+!api/**
 
 # Large directories (over 300MB total)
 rubrics-to-prompts/
 venv/
 osce-video-grader/
 node_modules/
-api/
 
 # Development and testing files
 test-*
