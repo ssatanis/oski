@@ -2429,27 +2429,7 @@
             border-color: #9ca3af;
         }
 
-        /* Backend Status Indicator */
-        .backend-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 1000;
-        }
 
-        .backend-status.connected {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .backend-status.disconnected {
-            background-color: #f44336;
-            color: white;
-        }
     </style>
 
     <!-- Authentication Loading Screen -->
@@ -2631,9 +2611,6 @@
 </head>
 
 <body>
-    <!-- Backend Status Indicator -->
-    <div id="backend-status" class="backend-status">Checking connection...</div>
-
     <div class="page-wrapper">
         <!-- Header will be injected here -->
         <div id="header-container"></div>
@@ -2830,74 +2807,25 @@
             useBackendAuth: true
         };
         
-        // CRITICAL FIX: Update Backend URL Configuration
-        const BACKEND_URL = 'http://localhost:5003';  // Changed from 8000 to 5003
+        // Backend Configuration - Single backend.py only
+        const BACKEND_URL = 'http://localhost:5003';
 
-        // Enhanced Backend Configuration with Fallback Detection
-        const BACKEND_CONFIG = {
-            // Primary backend (your Flask server)
-            primary: 'http://localhost:5003',
-            
-            // Fallback options (if you have multiple backends)
-            fallbacks: [
-                'http://127.0.0.1:5003',
-                'http://localhost:8000'  // Your FastAPI backend if available
-            ],
-            
-            // Endpoints
-            endpoints: {
-                health: '/health',
-                upload: '/upload', 
-                download: '/download',
-                info: '/api/info'
-            }
-        };
-
-        // Smart Backend Detection Function
-        async function detectWorkingBackend() {
-            const candidates = [BACKEND_CONFIG.primary, ...BACKEND_CONFIG.fallbacks];
-            
-            for (const url of candidates) {
-                try {
-                    console.log(`Testing backend: ${url}`);
-                    const response = await fetch(`${url}/health`, {
-                        method: 'GET',
-                        mode: 'cors',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const health = await response.json();
-                        console.log(`✅ Backend found: ${url}`, health);
-                        return url;
-                    }
-                } catch (error) {
-                    console.log(`❌ Backend not available: ${url}`);
-                }
-            }
-            
-            throw new Error('No working backend found');
+        // Simple backend connection function
+        async function getBackendUrl() {
+            return BACKEND_URL;
         }
 
 
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Rubricon frontend loaded, checking backend connection...');
+            console.log('Rubricon frontend loaded');
             
             // Initialize footer state
             updateFooterState('initial');
             
             setupFileUpload();
             setupDragAndDrop();
-            
-            // Check backend health on page load
-            checkBackendHealth();
-            
-            // Optional: Add periodic health checks
-            setInterval(checkBackendHealth, 30000); // Check every 30 seconds
         });
 
         function setupFileUpload() {
@@ -3176,41 +3104,9 @@
             }
         }
 
-        // Backend Health Check Function (call this on page load)
-        async function checkBackendHealth() {
-            try {
-                const backend = await detectWorkingBackend();
-                const response = await fetch(`${backend}/health`);
-                const health = await response.json();
-                
-                console.log('Backend health check:', health);
-                
-                // Update BACKEND_URL global variable
-                window.BACKEND_URL = backend;
-                
-                // Show connection status (optional - add to your UI)
-                const statusElement = document.getElementById('backend-status');
-                if (statusElement) {
-                    statusElement.innerHTML = `✅ Connected to backend (${health.client_type || 'basic'} mode)`;
-                    statusElement.className = 'backend-status connected';
-                }
-                
-                return true;
-            } catch (error) {
-                console.error('Backend health check failed:', error);
-                
-                // Show connection error (optional - add to your UI) 
-                const statusElement = document.getElementById('backend-status');
-                if (statusElement) {
-                    statusElement.innerHTML = `❌ Backend not connected - please start server`;
-                    statusElement.className = 'backend-status disconnected';
-                }
-                
-                return false;
-            }
-        }
 
-        // Updated File Upload Function with Better Error Handling
+
+        // Simplified File Upload Function for backend.py
         async function processWithWorkingAPIs(file) {
             if (!file) {
                 showStatus('error', 'Please select a file first');
@@ -3218,28 +3114,15 @@
             }
 
             try {
-                // Step 1: Detect working backend
-                showStatus('processing', 'Connecting to backend...', true);
-                
-                let workingBackend;
-                try {
-                    workingBackend = await detectWorkingBackend();
-                } catch (error) {
-                    throw new Error('Cannot connect to any backend server. Please ensure the backend is running on port 5003.');
-                }
-                
-                // Step 2: Upload file
-                showStatus('processing', 'Uploading file...', true);
+                showStatus('processing', 'Uploading and processing file...', true);
                 
                 const formData = new FormData();
                 formData.append('file', file);
                 
                 console.log('Uploading file:', file.name, 'Size:', file.size);
-                console.log('Backend URL:', workingBackend);
 
-                const uploadResponse = await fetch(`${workingBackend}/upload`, {
+                const uploadResponse = await fetch(`${BACKEND_URL}/upload`, {
                     method: 'POST',
-                    mode: 'cors',
                     body: formData
                 });
 
@@ -3258,18 +3141,8 @@
                     throw new Error(result.error || 'Upload processing failed');
                 }
 
-                // Step 3: Process results
                 showStatus('processing', 'Processing complete!', false);
                 
-                // Store the processed data
-                const processedData = {
-                    yamlContent: result.yaml_content,
-                    filename: result.filename,
-                    scoringExtracted: result.scoring_extracted,
-                    totalPoints: result.total_points,
-                    processingInfo: result.processing_info
-                };
-
                 // Store for download functionality
                 window.yamlContent = result.yaml_content;
                 window.originalFileName = result.filename;
@@ -3279,24 +3152,14 @@
                     yaml_content: result.yaml_content,
                     filename: result.filename,
                     success: true,
-                    processing_method: 'Enhanced Backend'
+                    processing_method: 'backend.py'
                 };
 
                 return rubricData;
 
             } catch (error) {
                 console.error('Error in processWithWorkingAPIs:', error);
-                showStatus('error', error.message);
-                
-                // Additional troubleshooting info
-                if (error.message.includes('backend server')) {
-                    showStatus('error', 
-                        'Backend connection failed. Please ensure:\n' +
-                        '1. Backend server is running (python3 backend.py --server)\n' +
-                        '2. Server is accessible on port 5003\n' +
-                        '3. CORS is properly configured'
-                    );
-                }
+                showStatus('error', `Upload failed: ${error.message}`);
                 throw error;
             }
         }
@@ -4971,20 +4834,19 @@ assessment_criteria:
             return yaml;
         }
 
-        // Updated Download Function
+        // Simplified Download Function for backend.py
         async function downloadYAMLFile() {
-            if (!processedData && !window.yamlContent) {
+            if (!window.yamlContent) {
                 alert('No processed data available to download');
                 return;
             }
 
             try {
-                const yamlContent = processedData?.yamlContent || window.yamlContent;
-                const filename = processedData?.filename || window.originalFileName || 'rubric.yaml';
+                const yamlContent = window.yamlContent;
+                const filename = window.originalFileName || 'rubric.yaml';
                 
-                const response = await fetch(`${window.BACKEND_URL || BACKEND_URL}/download`, {
+                const response = await fetch(`${BACKEND_URL}/download`, {
                     method: 'POST',
-                    mode: 'cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -5015,27 +4877,19 @@ assessment_criteria:
             } catch (error) {
                 console.error('Download failed:', error);
                 
-                // Fallback: Direct download without backend
-                try {
-                    const yamlContent = processedData?.yamlContent || window.yamlContent;
-                    const filename = processedData?.filename || window.originalFileName || 'rubric.yaml';
-                    
-                    const blob = new Blob([yamlContent], { type: 'text/yaml' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `${filename.replace(/\.[^/.]+$/, "")}.yaml`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    
-                    showStatus('success', 'YAML file downloaded successfully! (direct download)');
-                } catch (directError) {
-                    console.error('Direct download also failed:', directError);
-                    showStatus('error', `Download failed: ${error.message}`);
-                }
+                // Fallback: Direct download
+                const blob = new Blob([window.yamlContent], { type: 'text/yaml' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${(window.originalFileName || 'rubric').replace(/\.[^/.]+$/, "")}.yaml`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showStatus('success', 'YAML file downloaded successfully!');
             }
         }
 
@@ -5097,44 +4951,7 @@ assessment_criteria:
             }
         }
 
-        // Enhanced Test Backend Connection Function
-        async function testBackendConnection() {
-            console.log('🧪 Testing backend connection using enhanced detection...');
-            
-            try {
-                const backend = await detectWorkingBackend();
-                const response = await fetch(`${backend}/health`);
-                const health = await response.json();
-                
-                console.log('✅ Backend connection test successful:', health);
-                alert(`✅ Backend connection successful!\nURL: ${backend}\nStatus: ${JSON.stringify(health, null, 2)}`);
-                
-                // Also test upload endpoint
-                const testFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
-                const formData = new FormData();
-                formData.append('file', testFile);
-                
-                const uploadResponse = await fetch(`${backend}/upload`, {
-                    method: 'POST',
-                    mode: 'cors',
-                    body: formData
-                });
-                
-                if (uploadResponse.ok) {
-                    const result = await uploadResponse.json();
-                    console.log('✅ Upload endpoint also working!', result);
-                    alert('✅ Both health check and upload endpoints are working perfectly!');
-                } else {
-                    console.warn('⚠️ Health check passed but upload endpoint had issues');
-                    alert('✅ Health check passed, but upload endpoint needs attention');
-                }
-                
-            } catch (error) {
-                console.error('❌ Backend connection test failed:', error);
-                
-                alert(`❌ Backend connection failed!\n\nPossible solutions:\n1. Make sure backend.py is running: python3 backend.py --server\n2. Check if port 5003 is available\n3. Verify CORS is properly configured\n4. Try refreshing the page\n\nError: ${error.message}`);
-            }
-        }
+
 
         // Fix start over functionality
         function startOver() {
