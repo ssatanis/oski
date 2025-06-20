@@ -4136,6 +4136,20 @@
         }
         
         function showDownloadInterface(data) {
+            console.log('showDownloadInterface called with:', data);
+            console.log('window.yamlContent available:', !!window.yamlContent);
+            console.log('data.yaml_content available:', !!(data?.yaml_content));
+            
+            // Ensure we have YAML content - update window variables if missing
+            if (!window.yamlContent && data?.yaml_content) {
+                window.yamlContent = data.yaml_content;
+                console.log('✅ Set window.yamlContent from data:', window.yamlContent.length, 'characters');
+            }
+            if (!window.originalFileName && data?.filename) {
+                window.originalFileName = data.filename;
+                console.log('✅ Set window.originalFileName from data:', window.originalFileName);
+            }
+            
             // Get or create download section
             let downloadSection = document.getElementById('downloadSection');
             if (!downloadSection) {
@@ -4157,10 +4171,11 @@
                     </div>
                     <h2 class="download-title">Rubric Processed Successfully!</h2>
                     <p class="download-description">Your rubric has been converted to YAML format and is ready for download.</p>
+                    <p class="download-stats">✅ YAML Size: ${(window.yamlContent || data?.yaml_content || '').length} characters | 📊 File: ${window.originalFileName || data?.filename || 'rubric.yaml'}</p>
                     
                     <div class="yaml-preview">
                         <h3>YAML Preview:</h3>
-                        <pre class="yaml-content">${window.yamlContent || 'YAML content generated successfully'}</pre>
+                        <pre class="yaml-content">${window.yamlContent || data?.yaml_content || 'No YAML content available'}</pre>
                     </div>
                     
                     <div class="download-actions">
@@ -4780,7 +4795,7 @@ assessment_criteria:
             }
             
             try {
-                const response = await fetch('http://localhost:5000/download', {
+                const response = await fetch('http://localhost:5001/download', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
