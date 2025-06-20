@@ -843,6 +843,165 @@
             padding-bottom: 20px;
         }
 
+        /* Clean Dashboard Styles */
+        .criterion-item-clean {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .criterion-item-clean:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #d1d5db;
+        }
+
+        .criterion-header-clean {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .criterion-number-clean {
+            background: #f3f4f6;
+            color: #374151;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .criterion-name-clean {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 16px;
+            font-weight: 500;
+            min-width: 200px;
+        }
+
+        .criterion-name-clean:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .criterion-points-clean {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .points-input-clean {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 10px;
+            width: 70px;
+            text-align: center;
+        }
+
+        .points-input-clean:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .remove-criterion-btn-clean {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .remove-criterion-btn-clean:hover {
+            background: #dc2626;
+        }
+
+        .examples-section-clean {
+            margin-top: 15px;
+        }
+
+        .examples-section-clean label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .examples-list-clean {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .example-item-clean {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .example-input-clean {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+
+        .example-input-clean:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        .remove-example-btn-clean {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .remove-example-btn-clean:hover {
+            background: #dc2626;
+        }
+
+        .add-example-btn-clean {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .add-example-btn-clean:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+
         .footer {
             margin-top: auto;
             background: #ffffff;
@@ -2333,7 +2492,7 @@
                             </div>
                             <h2 class="upload-title">Upload Your Rubric</h2>
                             <p class="upload-description">Drag and drop your rubric file here, or click to browse.<br>
-                            Supports: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, and image formats.</p>
+                            Supports: PDF, DOC, DOCX, XLS, and XLSX.</p>
                             
                             <input type="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.png,.jpg,.jpeg">
                             <button class="upload-button" onclick="document.getElementById('fileInput').click()">
@@ -3859,51 +4018,15 @@
                 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
             document.getElementById('systemMessage').value = systemMessage;
             
-            // Clear and populate assessment criteria
+            // Clear and populate assessment criteria with clean structure
             const criteriaContainer = document.getElementById('criteriaContainer');
             criteriaContainer.innerHTML = '';
             
-            // Check if we have rubric_analysis for better section organization
-            if (parsedData.rubric_analysis && parsedData.rubric_analysis.sections) {
-                console.log('Displaying rubric sections:', parsedData.rubric_analysis.sections);
-                displayRubricSections(parsedData.rubric_analysis.sections, criteriaContainer);
-            } else if (parsedData.criteria && parsedData.criteria.length > 0) {
-                console.log('Displaying criteria:', parsedData.criteria);
-                displayCriteria(parsedData.criteria, criteriaContainer);
-            } else {
-                console.log('No criteria found, creating default criteria');
-                // Create default criteria structure if none exist
-                const defaultCriteria = [
-                    {
-                        name: "History Taking",
-                        max_points: 6,
-                        points: 6,
-                        examples: ["Tell me about your symptoms", "When did this start?"]
-                    },
-                    {
-                        name: "Physical Examination",
-                        max_points: 8,
-                        points: 8,
-                        examples: ["I'm going to examine you now", "Let me check this area"]
-                    },
-                    {
-                        name: "Communication Skills",
-                        max_points: 4,
-                        points: 4,
-                        examples: ["Do you have any questions?", "Let me explain what I found"]
-                    },
-                    {
-                        name: "Professional Behavior",
-                        max_points: 2,
-                        points: 2,
-                        examples: ["I'll wash my hands before examining", "Thank you for your cooperation"]
-                    }
-                ];
-                
-                // Update the current rubric data
-                window.currentRubricData.criteria = defaultCriteria;
-                displayCriteria(defaultCriteria, criteriaContainer);
-            }
+            // Extract criteria from various data structures and normalize them
+            let criteriasToDisplay = extractAndNormalizeCriteria(parsedData);
+            
+            console.log('Displaying normalized criteria:', criteriasToDisplay);
+            displayCriteriaClean(criteriasToDisplay, criteriaContainer);
             
             // Update footer state for dashboard
             updateFooterState('dashboard');
@@ -3930,6 +4053,110 @@
             
             // Update preview
             updatePreview();
+        }
+
+        // Extract and normalize criteria from different data structures
+        function extractAndNormalizeCriteria(parsedData) {
+            let criteria = [];
+            
+            // Try to extract from rubric_analysis.sections first (most detailed)
+            if (parsedData.rubric_analysis && parsedData.rubric_analysis.sections) {
+                parsedData.rubric_analysis.sections.forEach(section => {
+                    if (section.items && section.items.length > 0) {
+                        section.items.forEach(item => {
+                            criteria.push({
+                                name: item.description || item.name || 'Assessment Criterion',
+                                points: item.points || 1,
+                                examples: item.examples || ['Assessment criteria']
+                            });
+                        });
+                    }
+                });
+            }
+            // Try to extract from flat criteria array
+            else if (parsedData.criteria && parsedData.criteria.length > 0) {
+                criteria = parsedData.criteria.map(criterion => ({
+                    name: criterion.name || criterion.description || 'Assessment Criterion',
+                    points: criterion.max_points || criterion.points || 1,
+                    examples: criterion.examples || ['Assessment criteria']
+                }));
+            }
+            // Try to extract from rubric structure (backend format)
+            else if (parsedData.rubric && parsedData.rubric.criteria) {
+                criteria = parsedData.rubric.criteria.map(criterion => ({
+                    name: criterion.name || criterion.description || 'Assessment Criterion',
+                    points: criterion.points || 1,
+                    examples: criterion.examples || ['Assessment criteria']
+                }));
+            }
+            
+            // If no criteria found, create default medical assessment criteria
+            if (criteria.length === 0) {
+                criteria = [
+                    {
+                        name: "History Taking",
+                        points: 6,
+                        examples: ["Tell me about your symptoms", "When did this start?", "Any family history?"]
+                    },
+                    {
+                        name: "Physical Examination",
+                        points: 8,
+                        examples: ["I'm going to examine you now", "Let me check this area", "Does this hurt?"]
+                    },
+                    {
+                        name: "Communication Skills",
+                        points: 4,
+                        examples: ["Do you have any questions?", "Let me explain what I found", "I want to make sure you understand"]
+                    },
+                    {
+                        name: "Professional Behavior",
+                        points: 2,
+                        examples: ["I'll wash my hands before examining", "Thank you for your cooperation", "Your privacy is important"]
+                    }
+                ];
+            }
+            
+            // Update the stored data with normalized criteria
+            if (!window.currentRubricData.criteria) {
+                window.currentRubricData.criteria = criteria;
+            }
+            
+            return criteria;
+        }
+
+        // Display criteria with clean, simple structure
+        function displayCriteriaClean(criteria, container) {
+            criteria.forEach((criterion, index) => {
+                const criterionDiv = document.createElement('div');
+                criterionDiv.className = 'criterion-item-clean';
+                criterionDiv.innerHTML = `
+                    <div class="criterion-header-clean">
+                        <div class="criterion-number-clean">${index + 1}.</div>
+                        <input type="text" class="criterion-name-clean" value="${criterion.name}" 
+                               onchange="updateCriterionClean(${index}, 'name', this.value)">
+                        <div class="criterion-points-clean">
+                            <label>Points:</label>
+                            <input type="number" class="points-input-clean" value="${criterion.points}" min="1" max="20" 
+                                   onchange="updateCriterionClean(${index}, 'points', this.value)">
+                            <button class="remove-criterion-btn-clean" onclick="removeCriterionClean(${index})">Remove</button>
+                        </div>
+                    </div>
+                    <div class="examples-section-clean">
+                        <label>Verbalization Examples:</label>
+                        <div class="examples-list-clean">
+                            ${criterion.examples.map((example, exIndex) => `
+                                <div class="example-item-clean">
+                                    <input type="text" class="example-input-clean" value="${example}" 
+                                           onchange="updateExampleClean(${index}, ${exIndex}, this.value)">
+                                    <button class="remove-example-btn-clean" onclick="removeExampleClean(${index}, ${exIndex})">×</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="add-example-btn-clean" onclick="addExampleClean(${index})">+ Add Example</button>
+                    </div>
+                `;
+                container.appendChild(criterionDiv);
+            });
         }
 
         function displayRubricSections(sections, container) {
@@ -4197,51 +4424,97 @@
             }
         }
 
-        // Add new criterion function
-        function addNewCriterion(sectionIndex = null) {
+        // Clean dashboard management functions
+        function updateCriterionClean(index, field, value) {
+            if (window.currentRubricData && window.currentRubricData.criteria) {
+                const criterion = window.currentRubricData.criteria[index];
+                if (criterion) {
+                    if (field === 'name') {
+                        criterion.name = value;
+                    } else if (field === 'points') {
+                        criterion.points = parseInt(value);
+                    }
+                    updatePreview();
+                }
+            }
+        }
+
+        function updateExampleClean(criterionIndex, exampleIndex, value) {
+            if (window.currentRubricData && window.currentRubricData.criteria) {
+                const criterion = window.currentRubricData.criteria[criterionIndex];
+                if (criterion && criterion.examples) {
+                    criterion.examples[exampleIndex] = value;
+                    updatePreview();
+                }
+            }
+        }
+
+        function addExampleClean(criterionIndex) {
+            if (window.currentRubricData && window.currentRubricData.criteria) {
+                const criterion = window.currentRubricData.criteria[criterionIndex];
+                if (criterion) {
+                    if (!criterion.examples) {
+                        criterion.examples = [];
+                    }
+                    criterion.examples.push('New example');
+                    
+                    // Refresh the display
+                    const criteriaContainer = document.getElementById('criteriaContainer');
+                    criteriaContainer.innerHTML = '';
+                    displayCriteriaClean(window.currentRubricData.criteria, criteriaContainer);
+                    updatePreview();
+                }
+            }
+        }
+
+        function removeExampleClean(criterionIndex, exampleIndex) {
+            if (window.currentRubricData && window.currentRubricData.criteria) {
+                const criterion = window.currentRubricData.criteria[criterionIndex];
+                if (criterion && criterion.examples && criterion.examples.length > 1) {
+                    criterion.examples.splice(exampleIndex, 1);
+                    
+                    // Refresh the display
+                    const criteriaContainer = document.getElementById('criteriaContainer');
+                    criteriaContainer.innerHTML = '';
+                    displayCriteriaClean(window.currentRubricData.criteria, criteriaContainer);
+                    updatePreview();
+                }
+            }
+        }
+
+        function removeCriterionClean(index) {
+            if (window.currentRubricData && window.currentRubricData.criteria && window.currentRubricData.criteria.length > 1) {
+                window.currentRubricData.criteria.splice(index, 1);
+                
+                // Refresh the display
+                const criteriaContainer = document.getElementById('criteriaContainer');
+                criteriaContainer.innerHTML = '';
+                displayCriteriaClean(window.currentRubricData.criteria, criteriaContainer);
+                updatePreview();
+            }
+        }
+
+        // Add new criterion function (updated for clean dashboard)
+        function addNewCriterion() {
             console.log('Adding new criterion...');
             
             const newCriterion = {
                 name: 'New Assessment Criterion',
-                max_points: 2,
                 points: 2,
                 examples: ['Assessment example', 'Evaluation criteria']
             };
             
             if (window.currentRubricData) {
-                // If we have sections structure
-                if (window.currentRubricData.rubric_analysis && window.currentRubricData.rubric_analysis.sections && sectionIndex !== null) {
-                    const section = window.currentRubricData.rubric_analysis.sections[sectionIndex];
-                    if (section) {
-                        section.items.push({
-                            description: newCriterion.name,
-                            points: newCriterion.points,
-                            examples: newCriterion.examples
-                        });
-                        section.maxPoints += newCriterion.points;
-                        
-                        // Refresh the section display
-                        const criteriaContainer = document.getElementById('criteriaContainer');
-                        criteriaContainer.innerHTML = '';
-                        displayRubricSections(window.currentRubricData.rubric_analysis.sections, criteriaContainer);
-                    }
+                if (!window.currentRubricData.criteria) {
+                    window.currentRubricData.criteria = [];
                 }
-                // If we have flat criteria structure
-                else if (window.currentRubricData.criteria) {
-                    window.currentRubricData.criteria.push(newCriterion);
-                    
-                    // Refresh the criteria display
-                    const criteriaContainer = document.getElementById('criteriaContainer');
-                    criteriaContainer.innerHTML = '';
-                    displayCriteria(window.currentRubricData.criteria, criteriaContainer);
-                }
-                // If no structure exists, create one
-                else {
-                    window.currentRubricData.criteria = [newCriterion];
-                    const criteriaContainer = document.getElementById('criteriaContainer');
-                    criteriaContainer.innerHTML = '';
-                    displayCriteria(window.currentRubricData.criteria, criteriaContainer);
-                }
+                
+                window.currentRubricData.criteria.push(newCriterion);
+                
+                // Refresh the criteria display
+                const criteriaContainer = document.getElementById('criteriaContainer');
+                criteriaContainer.innerHTML = '';
+                displayCriteriaClean(window.currentRubricData.criteria, criteriaContainer);
                 
                 updatePreview();
             }
@@ -4259,15 +4532,57 @@
             if (previewContent) {
                 previewContent.textContent = yamlContent;
             }
+            
+            // Update user message preview
+            updateUserMessagePreview();
+            
+            // Update total points
+            updateTotalPoints();
+        }
+
+        // Update the Generated User Message Preview
+        function updateUserMessagePreview() {
+            const previewElement = document.getElementById('userMessagePreview');
+            if (!previewElement || !window.currentRubricData) return;
+            
+            const data = window.currentRubricData;
+            let userMessage = "Your task is to identify and score the following assessment criteria in the medical examination.\n\nAssessment Criteria:\n";
+            
+            // Use the clean criteria structure
+            if (data.criteria && data.criteria.length > 0) {
+                data.criteria.forEach(criterion => {
+                    userMessage += `• ${criterion.name} (${criterion.points || 1} points): Assess the student's performance\n`;
+                });
+            } else {
+                userMessage = 'No criteria defined yet. Add some criteria to see the preview.';
+            }
+            
+            previewElement.textContent = userMessage;
+        }
+
+        // Update total points display
+        function updateTotalPoints() {
+            const totalPointsElement = document.getElementById('totalPoints');
+            if (!totalPointsElement || !window.currentRubricData) return;
+            
+            const data = window.currentRubricData;
+            let totalPoints = 0;
+            
+            // Use the clean criteria structure
+            if (data.criteria && data.criteria.length > 0) {
+                totalPoints = data.criteria.reduce((sum, criterion) => sum + (criterion.points || 0), 0);
+            }
+            
+            totalPointsElement.textContent = totalPoints;
         }
 
         // Generate YAML from current dashboard data
         function generateYAMLFromCurrentData() {
-            if (!window.currentRubricData) return '';
+            if (!window.currentRubricData || !window.currentRubricData.criteria) return '';
             
             const data = window.currentRubricData;
-            const sections = data.rubric_analysis?.sections || [];
-            const totalPoints = sections.reduce((sum, section) => sum + (section.maxPoints || 0), 0);
+            const criteria = data.criteria || [];
+            const totalPoints = criteria.reduce((sum, criterion) => sum + (criterion.points || 0), 0);
             
             let yaml = `# OSCE Assessment Rubric
 # Generated from Dashboard
@@ -4282,10 +4597,8 @@ user_message: |
   Assessment Criteria:
 `;
 
-            sections.forEach(section => {
-                section.items.forEach(item => {
-                    yaml += `  - ${item.description || item.name} (${item.points || 1} points)\n`;
-                });
+            criteria.forEach(criterion => {
+                yaml += `  - ${criterion.name} (${criterion.points || 1} points)\n`;
             });
 
             yaml += `
@@ -4296,25 +4609,21 @@ response_config:
 assessment_config:
   type: "medical_osce_assessment"
   version: "2.0"
-  criteria_count: ${sections.reduce((sum, s) => sum + s.items.length, 0)}
+  criteria_count: ${criteria.length}
   total_points: ${totalPoints}
 
 assessment_criteria:
 `;
 
-            let criterionId = 1;
-            sections.forEach(section => {
-                section.items.forEach(item => {
-                    yaml += `  - id: "criterion_${criterionId}"
-    name: "${item.description || item.name}"
-    max_points: ${item.points || 1}
-    description: "${item.description || item.name}"
+            criteria.forEach((criterion, index) => {
+                yaml += `  - id: "criterion_${index + 1}"
+    name: "${criterion.name}"
+    max_points: ${criterion.points || 1}
+    description: "${criterion.name}"
     verbalization_examples:
 `;
-                    (item.examples || []).forEach(example => {
-                        yaml += `      - "${example}"\n`;
-                    });
-                    criterionId++;
+                (criterion.examples || []).forEach(example => {
+                    yaml += `      - "${example}"\n`;
                 });
             });
 
