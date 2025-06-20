@@ -230,6 +230,109 @@
             margin: 30px 0;
         }
         
+        /* Loading Spinner Styles */
+        .processing-spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .processing-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        .processing-spinner-container p {
+            color: #666;
+            margin: 0.5rem 0;
+        }
+
+        .processing-note {
+            font-size: 0.9rem;
+            color: #888;
+            font-style: italic;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff40;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        .processing-success {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-details {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .processing-error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .error-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-details {
+            color: #dc3545;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Non-editable styles */
+        .non-editable {
+            color: #6c757d !important;
+            background-color: #f8f9fa !important;
+            border: 1px solid #e9ecef !important;
+            cursor: not-allowed !important;
+            user-select: none !important;
+            pointer-events: none !important;
+        }
+
+        .section-title.non-editable {
+            background: none !important;
+            border: none !important;
+            color: #333 !important;
+            font-weight: 600 !important;
+            cursor: default !important;
+            pointer-events: none !important;
+        }
+
         /* Individual Rubric Sections */
         .rubric-section {
             background: #ffffff;
@@ -2291,7 +2394,7 @@
                         <!-- Criteria Editor -->
                         <div class="rubric-editor-section">
                             <div class="editor-header">
-                                <h3>Assessment Criteria</h3>
+                                <h3 class="non-editable">Assessment Criteria</h3>
                                 <button class="btn-add-criterion" onclick="addNewCriterion()">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -2324,7 +2427,7 @@
                                 </div>
                             </div>
                             <div class="export-buttons">
-                                <button class="export-button primary" onclick="downloadYaml()">
+                                <button class="export-button primary" onclick="downloadYAML()">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -2332,7 +2435,7 @@
                                     </svg>
                                     Download YAML
                                 </button>
-                                <button class="export-button tertiary" onclick="resetUpload()">
+                                <button class="export-button tertiary" onclick="startOver()">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
                                         <path d="M21 3v5h-5"></path>
@@ -2510,25 +2613,16 @@
                 Processing...
             `;
             
-            // Clear previous status messages
-            statusMessages.innerHTML = '';
-            
-            // Show progress steps
-            showProcessingSteps();
+            // Clear previous status messages and show spinner only
+            statusMessages.innerHTML = `
+                <div class="processing-spinner-container">
+                    <div class="processing-spinner"></div>
+                    <p>Processing your rubric with advanced AI...</p>
+                    <p class="processing-note">Supports: PDF, DOC, DOCX, XLS, XLSX</p>
+                </div>
+            `;
 
             try {
-                // Step 1: File Analysis
-                updateProgressStep('step-extract', 'active');
-                showStatus('processing', 'Analyzing file structure and extracting text...', true);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                const base64Content = await fileToBase64(currentFile);
-                updateProgressStep('step-extract', 'completed');
-                
-                // Step 2: Section Extraction  
-                updateProgressStep('step-analyze', 'active');
-                showStatus('processing', 'Extracting all OSCE sections with enhanced AI...', true);
-                await new Promise(resolve => setTimeout(resolve, 1500));
                 
                 let rubricData = null;
                 
@@ -2539,23 +2633,20 @@
                     console.log('Processing successful!');
                 } catch (error) {
                     console.warn('API processing failed, using local content analysis:', error.message);
-                    showStatus('processing', 'Using dynamic local content analysis...', true);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
                     rubricData = await generateEnhancedFallbackRubric(currentFile, base64Content);
                 }
-                
-                updateProgressStep('step-analyze', 'completed');
-                
-                // Step 3: Complete
-                updateProgressStep('step-complete', 'active');
-                showStatus('processing', 'Finalizing rubric structure...', true);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                updateProgressStep('step-complete', 'completed');
                 
                 // Show final success message
                 const sectionNames = rubricData.sections ? rubricData.sections.map(s => s.name).join(', ') : 
                                    rubricData.criteria ? rubricData.criteria.map(c => c.name).join(', ') : 'All core sections';
-                showStatus('success', `Processed! Found ${rubricData.sections?.length || rubricData.criteria?.length || 4} sections: ${sectionNames}`, true);
+                
+                statusMessages.innerHTML = `
+                    <div class="processing-success">
+                        <div class="success-icon">✅</div>
+                        <p>Successfully processed! Found ${rubricData.sections?.length || rubricData.criteria?.length || 4} sections</p>
+                        <p class="success-details">${sectionNames}</p>
+                    </div>
+                `;
                 
                 // Update process button to show completion
                 processButton.classList.add('success');
@@ -2582,7 +2673,13 @@
                 
             } catch (error) {
                 console.error('Processing failed:', error);
-                showStatus('error', 'Processing failed. Please try again.');
+                statusMessages.innerHTML = `
+                    <div class="processing-error">
+                        <div class="error-icon">❌</div>
+                        <p>Processing failed. Please try again.</p>
+                        <p class="error-details">Error: ${error.message}</p>
+                    </div>
+                `;
                 
                 // Reset button
                 processButton.disabled = false;
@@ -3673,17 +3770,7 @@
             
             // Add maximum spacing for dashboard
             const contentGrid = document.querySelector('.content-grid');
-            contentGrid.classList.add('dashboard-visible');
-            
-            // Show dashboard section with visibility class
-            dashboardSection.style.display = 'block';
-            dashboardSection.classList.add('visible');
-            
-            // Update preview and total points
-            setTimeout(() => {
-                updateUserMessagePreview();
-                updateTotalPoints();
-            }, 100);
+            contentGrid.classList.add('dashboard-active');
             
             // Smooth scroll to dashboard
             setTimeout(() => {
@@ -3693,802 +3780,261 @@
                 });
             }, 300);
             
-            console.log('Dashboard display completed');
+            dashboardSection.style.display = 'block';
+            
+            // Update preview
+            updatePreview();
         }
 
         function displayRubricSections(sections, container) {
             sections.forEach((section, sectionIndex) => {
                 const sectionDiv = document.createElement('div');
-                sectionDiv.className = 'rubric-section';
-                sectionDiv.dataset.sectionIndex = sectionIndex;
-                
-                // Section header with edit capability
-                const sectionHeader = document.createElement('div');
-                sectionHeader.className = 'section-header-editable';
-                sectionHeader.innerHTML = `
-                    <div class="section-title-row">
-                        <input type="text" 
-                               class="section-name-input" 
-                               value="${section.name}" 
-                               data-section-index="${sectionIndex}"
-                               onchange="updateSectionName(${sectionIndex}, this.value)">
-                        <div class="section-points">
-                            <label>Section Total:</label>
-                            <input type="number" 
-                                   class="section-max-points" 
-                                   value="${section.maxPoints || 0}" 
-                                   min="0" 
-                                   max="100"
-                                   data-section-index="${sectionIndex}"
-                                   onchange="updateSectionPoints(${sectionIndex}, this.value)">
-                            <span>points</span>
+                sectionDiv.className = 'criterion-section';
+                sectionDiv.innerHTML = `
+                    <div class="section-header">
+                        <div class="section-title-container">
+                            <h3 class="section-title non-editable">${section.name}</h3>
+                            <div class="section-points">
+                                <label>Section Total:</label>
+                                <input type="number" class="section-total-input" value="${section.maxPoints}" min="1" max="50" onchange="updateSectionTotal(${sectionIndex})">
+                                <span>points</span>
+                            </div>
                         </div>
                         <button class="remove-section-btn" onclick="removeSection(${sectionIndex})">Remove Section</button>
                     </div>
+                    <div class="criteria-list" id="criteria-${sectionIndex}">
+                        ${section.items.map((item, itemIndex) => createCriterionHTML(item, sectionIndex, itemIndex)).join('')}
+                    </div>
+                    <button class="add-criterion-btn" onclick="addNewCriterion(${sectionIndex})">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Item
+                    </button>
                 `;
-                sectionDiv.appendChild(sectionHeader);
-                
-                // Items container
-                const itemsContainer = document.createElement('div');
-                itemsContainer.className = 'section-items';
-                
-                // Display items
-                if (section.items && section.items.length > 0) {
-                    section.items.forEach((item, itemIndex) => {
-                        const itemDiv = createItemElement(item, sectionIndex, itemIndex);
-                        itemsContainer.appendChild(itemDiv);
-                    });
-                }
-                
-                // Add item button
-                const addItemBtn = document.createElement('button');
-                addItemBtn.className = 'add-item-btn';
-                addItemBtn.textContent = '+ Add Item';
-                addItemBtn.onclick = () => addItemToSection(sectionIndex);
-                itemsContainer.appendChild(addItemBtn);
-                
-                sectionDiv.appendChild(itemsContainer);
                 container.appendChild(sectionDiv);
             });
-            
-            // Add new section button
-            const addSectionBtn = document.createElement('button');
-            addSectionBtn.className = 'add-section-btn';
-            addSectionBtn.textContent = '+ Add New Section';
-            addSectionBtn.onclick = addNewSection;
-            container.appendChild(addSectionBtn);
         }
 
-        function displayCriteria(criteria, container) {
-            // Fallback display for criteria without rubric analysis
-            if (criteria && criteria.length > 0) {
-                criteria.forEach((criterion, index) => {
-                    const criterionElement = createCriterionElement(criterion, index);
-                    container.appendChild(criterionElement);
-                });
-            }
-        }
-
-        function createItemElement(item, sectionIndex, itemIndex) {
-            const div = document.createElement('div');
-            div.className = 'rubric-item';
-            div.innerHTML = `
-                <div class="item-header">
-                    <span class="item-number">${itemIndex + 1}.</span>
-                    <div class="item-content">
-                        <input type="text" 
-                               class="item-description" 
-                               value="${item.description}" 
-                               placeholder="Item description"
-                               data-section="${sectionIndex}" 
-                               data-item="${itemIndex}"
-                               onchange="updateItemDescription(${sectionIndex}, ${itemIndex}, this.value)">
-                        <div class="item-points-container">
+        function createCriterionHTML(criterion, sectionIndex, criterionIndex) {
+            return `
+                <div class="criterion-item" data-section="${sectionIndex}" data-criterion="${criterionIndex}">
+                    <div class="criterion-header">
+                        <div class="criterion-number">${criterionIndex + 1}.</div>
+                        <input type="text" class="criterion-name" value="${criterion.description || criterion.name}" 
+                               onchange="updateCriterion(${sectionIndex}, ${criterionIndex}, 'name', this.value)">
+                        <div class="criterion-points">
                             <label>Points:</label>
-                            <input type="number" 
-                                   class="item-points" 
-                                   value="${item.points || 0}" 
-                                   min="0" 
-                                   max="20"
-                                   data-section="${sectionIndex}" 
-                                   data-item="${itemIndex}"
-                                   onchange="updateItemPoints(${sectionIndex}, ${itemIndex}, this.value)">
+                            <input type="number" class="points-input" value="${criterion.points}" min="1" max="20" 
+                                   onchange="updateCriterion(${sectionIndex}, ${criterionIndex}, 'points', this.value)">
+                            <button class="remove-criterion-btn" onclick="removeCriterion(${sectionIndex}, ${criterionIndex})">×</button>
                         </div>
                     </div>
-                    <button class="remove-item-btn" onclick="removeItem(${sectionIndex}, ${itemIndex})">×</button>
-                </div>
-                <div class="item-examples">
-                    <label>Examples/Criteria:</label>
-                    <div class="examples-list">
-                        ${(item.examples || []).concat(item.criteria || []).map((ex, exIndex) => `
-                            <div class="example-item">
-                                <input type="text" 
-                                       value="${ex}" 
-                                       placeholder="Example or criterion"
-                                       onchange="updateExample(${sectionIndex}, ${itemIndex}, ${exIndex}, this.value)">
-                                <button class="remove-example" onclick="removeExample(${sectionIndex}, ${itemIndex}, ${exIndex})">×</button>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button class="add-example-btn" onclick="addExample(${sectionIndex}, ${itemIndex})">+ Add Example</button>
-                </div>
-            `;
-            return div;
-        }
-
-        // Add these functions to handle updates
-        function updateSectionName(sectionIndex, newName) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].name = newName;
-            }
-            regenerateCriteria();
-        }
-
-        function updateSectionPoints(sectionIndex, newPoints) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].maxPoints = parseInt(newPoints) || 0;
-            }
-            updateTotalPoints();
-            regenerateCriteria();
-        }
-
-        function updateItemDescription(sectionIndex, itemIndex, newDescription) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex].description = newDescription;
-            }
-            regenerateCriteria();
-        }
-
-        function updateItemPoints(sectionIndex, itemIndex, newPoints) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex].points = parseInt(newPoints) || 0;
-            }
-            updateTotalPoints();
-            regenerateCriteria();
-        }
-
-        function updateExample(sectionIndex, itemIndex, exampleIndex, newExample) {
-            if (window.currentRubricData.rubric_analysis) {
-                const item = window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex];
-                const allExamples = (item.examples || []).concat(item.criteria || []);
-                allExamples[exampleIndex] = newExample;
-                
-                // Update the appropriate array
-                if (item.examples && exampleIndex < item.examples.length) {
-                    item.examples[exampleIndex] = newExample;
-                } else {
-                    const criteriaIndex = exampleIndex - (item.examples || []).length;
-                    if (item.criteria) item.criteria[criteriaIndex] = newExample;
-                }
-            }
-            regenerateCriteria();
-        }
-
-        function addExample(sectionIndex, itemIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                const item = window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex];
-                if (!item.examples) item.examples = [];
-                item.examples.push('New example');
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function removeExample(sectionIndex, itemIndex, exampleIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                const item = window.currentRubricData.rubric_analysis.sections[sectionIndex].items[itemIndex];
-                const allExamples = (item.examples || []).concat(item.criteria || []);
-                
-                if (exampleIndex < (item.examples || []).length) {
-                    item.examples.splice(exampleIndex, 1);
-                } else {
-                    const criteriaIndex = exampleIndex - (item.examples || []).length;
-                    if (item.criteria) item.criteria.splice(criteriaIndex, 1);
-                }
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function removeItem(sectionIndex, itemIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].items.splice(itemIndex, 1);
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function removeSection(sectionIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis.sections.splice(sectionIndex, 1);
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function addItemToSection(sectionIndex) {
-            if (window.currentRubricData.rubric_analysis) {
-                const newItem = {
-                    description: 'New criterion',
-                    points: 1,
-                    examples: ['Example 1'],
-                    criteria: []
-                };
-                window.currentRubricData.rubric_analysis.sections[sectionIndex].items.push(newItem);
-                showDashboard(window.currentRubricData);
-            }
-        }
-
-        function addNewSection() {
-            if (!window.currentRubricData.rubric_analysis) {
-                window.currentRubricData.rubric_analysis = { sections: [] };
-            }
-            
-            const newSection = {
-                name: 'New Section',
-                maxPoints: 5,
-                items: [
-                    {
-                        description: 'New criterion',
-                        points: 1,
-                        examples: ['Example 1']
-                    }
-                ]
-            };
-            
-            window.currentRubricData.rubric_analysis.sections.push(newSection);
-            showDashboard(window.currentRubricData);
-        }
-
-        function regenerateCriteria() {
-            // This would call the backend to regenerate the criteria based on updated sections
-            updateUserMessagePreview();
-        }
-
-        function createCriterionElement(criterion, index) {
-            const div = document.createElement('div');
-            div.className = 'criterion-card';
-            div.innerHTML = `
-                <div class="criterion-header">
-                    <span class="criterion-number">${index + 1}</span>
-                    <input type="text" 
-                           class="criterion-name" 
-                           value="${criterion.itemName || criterion.name}" 
-                           data-criterion-id="${criterion.id}"
-                           onchange="updateUserMessagePreview()">
-                    <button class="remove-btn" onclick="removeCriterionNew(this)">×</button>
-                </div>
-                <div class="criterion-body">
-                    <div class="points-container">
-                        <label>Max Points:</label>
-                        <input type="number" 
-                               class="max-points" 
-                               value="${criterion.max_points}" 
-                               min="0" 
-                               max="20"
-                               onchange="updateUserMessagePreview(); updateTotalPoints();">
-                    </div>
-                    <div class="description-container">
-                        <label>Description:</label>
-                        <textarea class="criterion-description" 
-                                  rows="2"
-                                  onchange="updateUserMessagePreview()">${criterion.description || ''}</textarea>
-                    </div>
-                    <div class="examples-container">
-                        <label>Examples:</label>
+                    <div class="examples-section">
+                        <label>Examples/Criteria:</label>
                         <div class="examples-list">
-                            ${criterion.examples.map(ex => `
+                            ${(criterion.examples || []).map((example, exIndex) => `
                                 <div class="example-item">
-                                    <input type="text" value="${ex}" onchange="updateUserMessagePreview()">
-                                    <button class="remove-example" onclick="removeExampleNew(this)">×</button>
+                                    <input type="text" class="example-input" value="${example}" 
+                                           onchange="updateExample(${sectionIndex}, ${criterionIndex}, ${exIndex}, this.value)">
+                                    <button class="remove-example-btn" onclick="removeExample(${sectionIndex}, ${criterionIndex}, ${exIndex})">×</button>
                                 </div>
                             `).join('')}
                         </div>
-                        <button class="add-example-btn" onclick="addExampleNew(this)">+ Add Example</button>
+                        <button class="add-example-btn" onclick="addNewExample(${sectionIndex}, ${criterionIndex})">+ Add Example</button>
                     </div>
                 </div>
             `;
-            
-            return div;
         }
 
-        function removeCriterionNew(button) {
-            const criterionCard = button.closest('.criterion-card');
-            criterionCard.remove();
-            updateUserMessagePreview();
-            updateTotalPoints();
-        }
-
-        function addExampleNew(button) {
-            const examplesList = button.previousElementSibling;
-            const exampleDiv = document.createElement('div');
-            exampleDiv.className = 'example-item';
-            exampleDiv.innerHTML = `
-                <input type="text" value="" onchange="updateUserMessagePreview()">
-                <button class="remove-example" onclick="removeExampleNew(this)">×</button>
-            `;
-            examplesList.appendChild(exampleDiv);
-        }
-
-        function removeExampleNew(button) {
-            const exampleItem = button.closest('.example-item');
-            exampleItem.remove();
-            updateUserMessagePreview();
-        }
-
-        function initializeDashboard(data) {
-            console.log('Initializing dashboard with data:', data);
-            
-            // Set basic information - no key field needed for this format
-            document.getElementById('systemMessage').value = data.parsed_yaml?.system_message || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
-            
-            // Load criteria with better error handling
-            const criteria = data.parsed_yaml?.criteria || [];
-            console.log('Loading criteria:', criteria);
-            
-            if (criteria.length > 0) {
-                loadCriteria(criteria);
-                console.log(`Successfully loaded ${criteria.length} criteria`);
-            } else {
-                console.warn('No criteria found in parsed data');
-                loadCriteria([]);
-            }
-            
-            // Update total points
-            updateTotalPoints();
-            
-            // Update preview
-            updateUserMessagePreview();
-        }
-
-        function loadCriteria(criteria) {
-            const container = document.getElementById('criteriaContainer');
-            container.innerHTML = '';
-            
-            console.log('Loading criteria into DOM:', criteria);
-            
-            if (criteria && criteria.length > 0) {
-                criteria.forEach((criterion, index) => {
-                    console.log(`Adding criterion ${index + 1}:`, criterion);
-                    addCriterionToDOM(criterion, index);
-                });
-            } else {
-                console.log('No criteria provided, adding empty criterion');
-                // Add one empty criterion if none exist
-                addNewCriterion();
-            }
-        }
-
-        function addNewCriterion() {
-            const criterion = {
-                name: '',
-                max_points: 1,
-                examples: ['']
-            };
-            const container = document.getElementById('criteriaContainer');
-            const index = container.children.length;
-            addCriterionToDOM(criterion, index);
-            updateTotalPoints();
-            updateUserMessagePreview();
-        }
-
-        function addCriterionToDOM(criterion, index) {
-            const container = document.getElementById('criteriaContainer');
-            const criterionDiv = document.createElement('div');
-            criterionDiv.className = 'criterion-item';
-            criterionDiv.dataset.index = index;
-            
-            // Ensure criterion has required fields
-            const safeGriterion = {
-                name: criterion?.name || '',
-                max_points: criterion?.max_points || 1,
-                examples: criterion?.examples || ['']
-            };
-            
-            // Escape HTML in values to prevent issues
-            const escapedName = safeGriterion.name.replace(/"/g, '&quot;');
-            const escapedExamples = safeGriterion.examples.map(ex => ex.replace(/"/g, '&quot;'));
-            
-            criterionDiv.innerHTML = `
-                <div class="criterion-header">
-                    <div style="display: flex; align-items: center;">
-                        <span class="criterion-number">${index + 1}</span>
-                        <div style="flex: 1;">
-                            <div class="input-group" style="margin-bottom: 10px;">
-                                <input type="text" class="form-input criterion-name" placeholder="e.g., Patient Greeting and Introduction" value="${escapedName}" oninput="updateCriterion(${index})">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 0;">
-                                <label>Max Points:</label>
-                                <input type="number" class="form-input criterion-points" min="1" max="10" value="${safeGriterion.max_points}" oninput="updateCriterion(${index})" style="width: 80px;">
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn-remove-criterion" onclick="removeCriterion(${index})">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="criterion-examples">
-                    <label>Examples:</label>
-                    <div class="examples-list">
-                        ${escapedExamples.map((example, exampleIndex) => `
-                            <div class="example-item">
-                                <input type="text" class="example-input" placeholder="e.g., I'm going to examine your..." value="${example}" oninput="updateCriterion(${index})">
-                                <button class="btn-remove-example" onclick="removeExample(${index}, ${exampleIndex})">×</button>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button class="btn-add-example" onclick="addExample(${index})">+ Add Example</button>
-                </div>
-            `;
-            
-            container.appendChild(criterionDiv);
-        }
-
-        function updateCriterion(index) {
-            updateTotalPoints();
-            updateUserMessagePreview();
-        }
-
-        function removeCriterion(index) {
-            const container = document.getElementById('criteriaContainer');
-            const item = container.children[index];
-            if (item) {
-                item.remove();
-                reindexCriteria();
-                updateTotalPoints();
-                updateUserMessagePreview();
-            }
-        }
-
-        function addExample(criterionIndex) {
-            const container = document.getElementById('criteriaContainer');
-            const criterionItem = container.children[criterionIndex];
-            const examplesList = criterionItem.querySelector('.examples-list');
-            const exampleIndex = examplesList.children.length;
-            
-            const exampleDiv = document.createElement('div');
-            exampleDiv.className = 'example-item';
-            exampleDiv.innerHTML = `
-                <input type="text" class="example-input" placeholder="e.g., I'm going to examine your..." oninput="updateCriterion(${criterionIndex})">
-                <button class="btn-remove-example" onclick="removeExample(${criterionIndex}, ${exampleIndex})">×</button>
-            `;
-            
-            examplesList.appendChild(exampleDiv);
-        }
-
-        function removeExample(criterionIndex, exampleIndex) {
-            const container = document.getElementById('criteriaContainer');
-            const criterionItem = container.children[criterionIndex];
-            const examplesList = criterionItem.querySelector('.examples-list');
-            const exampleItem = examplesList.children[exampleIndex];
-            if (exampleItem) {
-                exampleItem.remove();
-                updateCriterion(criterionIndex);
-            }
-        }
-
-        function reindexCriteria() {
-            const container = document.getElementById('criteriaContainer');
-            Array.from(container.children).forEach((item, index) => {
-                item.dataset.index = index;
-                const numberSpan = item.querySelector('.criterion-number');
-                if (numberSpan) numberSpan.textContent = index + 1;
-                
-                // Update onclick handlers
-                item.innerHTML = item.innerHTML
-                    .replace(/updateCriterion\(\d+\)/g, `updateCriterion(${index})`)
-                    .replace(/removeCriterion\(\d+\)/g, `removeCriterion(${index})`)
-                    .replace(/addExample\(\d+\)/g, `addExample(${index})`)
-                    .replace(/removeExample\(\d+,\s*\d+\)/g, (match) => {
-                        const exampleIndex = match.split(',')[1].replace(/\D/g, '');
-                        return `removeExample(${index}, ${exampleIndex})`;
-                    });
-            });
-        }
-
-        function updateTotalPoints() {
-            const container = document.getElementById('criteriaContainer');
-            let total = 0;
-            
-            // Handle both old structure (.criterion-points) and new structure (.max-points)
-            Array.from(container.children).forEach(item => {
-                const pointsInputOld = item.querySelector('.criterion-points');
-                const pointsInputsNew = item.querySelectorAll('.max-points');
-                const itemPointsInputs = item.querySelectorAll('.item-points');
-                
-                if (pointsInputOld) {
-                    total += parseInt(pointsInputOld.value) || 0;
-                }
-                
-                pointsInputsNew.forEach(input => {
-                    total += parseInt(input.value) || 0;
-                });
-                
-                itemPointsInputs.forEach(input => {
-                    total += parseInt(input.value) || 0;
-                });
-            });
-            
-            // Update both total points displays
-            const totalPointsElements = document.querySelectorAll('#totalPoints');
-            totalPointsElements.forEach(element => {
-                element.textContent = total;
-            });
-            
-            console.log('Total points updated:', total);
-        }
-
-        function updateUserMessagePreview() {
-            const container = document.getElementById('criteriaContainer');
-            const criteria = [];
-            
-            console.log('Updating user message preview...');
-            
-            // Handle both old structure and new sectioned structure
-            Array.from(container.children).forEach((item, index) => {
-                // Skip the add section button
-                if (item.classList.contains('add-section-btn')) {
-                    return;
-                }
-                
-                // Check if this is a rubric section
-                if (item.classList.contains('rubric-section')) {
-                    const sectionNameInput = item.querySelector('.section-name-input');
-                    const sectionName = sectionNameInput ? sectionNameInput.value.trim() : 'Section';
-                    
-                    // Get all items in this section
-                    const itemElements = item.querySelectorAll('.rubric-item');
-                    itemElements.forEach(itemElement => {
-                        const itemDescription = itemElement.querySelector('.item-description');
-                        const itemPoints = itemElement.querySelector('.item-points');
-                        const exampleInputs = itemElement.querySelectorAll('.example-item input');
-                        
-                        if (itemDescription && itemDescription.value.trim()) {
-                        const examples = Array.from(exampleInputs)
-                            .map(input => input.value.trim())
-                            .filter(value => value);
-                        
-                            criteria.push({
-                                examId: itemDescription.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'),
-                                name: itemDescription.value.trim(),
-                                section: sectionName,
-                                max_points: parseInt(itemPoints ? itemPoints.value : 1) || 1,
-                                examples: examples.length > 0 ? examples : [`Assessment of ${itemDescription.value.trim().toLowerCase()}`]
-                            });
-                        }
-                    });
-                } else if (item.classList.contains('criterion-item')) {
-                    // Handle old structure
-                    const nameInput = item.querySelector('.criterion-name');
-                    const pointsInput = item.querySelector('.criterion-points');
-                    const exampleInputs = item.querySelectorAll('.example-input');
-                    
-                    if (nameInput && nameInput.value.trim()) {
-                        const examples = Array.from(exampleInputs)
-                            .map(input => input.value.trim())
-                            .filter(value => value);
-                        
-                            criteria.push({
-                                examId: nameInput.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'),
-                                name: nameInput.value.trim(),
-                            max_points: parseInt(pointsInput ? pointsInput.value : 1) || 1,
-                            examples: examples.length > 0 ? examples : [`Assessment of ${nameInput.value.trim().toLowerCase()}`]
-                            });
+        // Update criterion data and sync with preview
+        function updateCriterion(sectionIndex, criterionIndex, field, value) {
+            if (window.currentRubricData && window.currentRubricData.rubric_analysis) {
+                const section = window.currentRubricData.rubric_analysis.sections[sectionIndex];
+                if (section && section.items[criterionIndex]) {
+                    if (field === 'name') {
+                        section.items[criterionIndex].description = value;
+                        section.items[criterionIndex].name = value;
+                    } else if (field === 'points') {
+                        section.items[criterionIndex].points = parseInt(value);
+                        updateSectionTotals();
                     }
+                    updatePreview();
                 }
-            });
-            
-            console.log('Extracted criteria for preview:', criteria);
-            
-            if (criteria.length > 0) {
-            const userMessage = generateUserMessage(criteria);
-            document.getElementById('userMessagePreview').textContent = userMessage;
-            } else {
-                document.getElementById('userMessagePreview').textContent = 'No criteria defined yet. Add some assessment criteria to see the preview.';
             }
         }
 
-        function generateUserMessage(criteria) {
-            const examsList = criteria.map(c => c.examId || c.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'));
-            
-            return `
-Your task is to identify the start and end times of specific physical exams within the conversation and provide the reasoning behind your choices. Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam. This station consists of the following physical exams: ${examsList.join(', ')}
-
-Important Instructions:
-- When determining the start and end times of each examination, focus on the moments where the doctor instructs the patient to perform an action (e.g., "look up at the ceiling", "look straight ahead"). Give these phrases priority for setting the \`start_time\` and \`end_time\` over phrases where the doctor states their own actions (e.g., "I'm going to look at your nose and eyes").
-- Whenever the medical student asks about pain or mentions checking a specific part of the body (e.g., "any pain when I do this?" or "let me check your..."), assume that a physical exam is being conducted at that moment. You will be provided with a description and example for each exam.
-- Always pay close attention to surrounding context and related physical examinations mentioned.
-   
-You need to identify the following physical exams from this transcript: 
-${criteria.map((criterion, index) => `	 ${index + 1}. ${criterion.examId || criterion.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}: Did the doctor ${criterion.name.toLowerCase().includes('did') ? criterion.name.toLowerCase() : `perform ${criterion.name.toLowerCase()}`}? 
-	 - Verbalization examples: ${criterion.examples.join(', ')}`).join('\n\n')}
-
-
-If no exam is detected, you can say "no exam was performed", start_time: "nan", end_time: "nan", score: 0.
-
-### Formatting Instructions
-
-- Ensure strict adherence to JSON formatting.
-- Do not use double quotes for multiple statements within a single field.
-- Use commas, single quotes, or other appropriate delimiters for multiple statements.
-- Do not include any text before or after the JSON output. Provide ONLY the json response.
-
-Please provide a response in the following format with keys: ${examsList.join(', ')}
-
-and the schema: 
-{
-     "statement": "statement extracted from the transcript that supports this specific exam",
-     "start_time": "timepoint for start of the exam (MM:SS only)",
-     "end_time": "timepoint for end of the exam (MM:SS only)",
-     "rationale": "reasoning behind scoring the physical exam",
-     "score": "score of the exam (0 or 1)"
-}`;
+        // Update example and sync with preview
+        function updateExample(sectionIndex, criterionIndex, exampleIndex, value) {
+            if (window.currentRubricData && window.currentRubricData.rubric_analysis) {
+                const section = window.currentRubricData.rubric_analysis.sections[sectionIndex];
+                if (section && section.items[criterionIndex] && section.items[criterionIndex].examples) {
+                    section.items[criterionIndex].examples[exampleIndex] = value;
+                    updatePreview();
+                }
+            }
         }
 
-        async function downloadYaml() {
-            console.log('Generating YAML from current dashboard content...');
-            
-            // Get current dashboard criteria
-            const dashboardCriteria = getCurrentDashboardCriteria();
-            
-            if (dashboardCriteria.length === 0) {
-                alert('No criteria available for download. Please add some assessment criteria first.');
-                return;
+        // Update section totals
+        function updateSectionTotals() {
+            if (window.currentRubricData && window.currentRubricData.rubric_analysis) {
+                window.currentRubricData.rubric_analysis.sections.forEach((section, index) => {
+                    const total = section.items.reduce((sum, item) => sum + (item.points || 0), 0);
+                    section.maxPoints = total;
+                    const input = document.querySelector(`input.section-total-input[onchange*="${index}"]`);
+                    if (input) input.value = total;
+                });
             }
-            
-            try {
-                // Try backend first, then fallback to local generation
-                let yamlContent = null;
-                
-                try {
-                    console.log('Attempting to generate YAML via backend...');
-                    const response = await fetch(`${BACKEND_URL}/api/generate-prompt`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            dashboard_criteria: dashboardCriteria
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        yamlContent = data.yaml_content;
-                        console.log('Backend YAML generation successful');
-                    } else {
-                        throw new Error('Backend not available');
+        }
+
+        // Add new example
+        function addNewExample(sectionIndex, criterionIndex) {
+            if (window.currentRubricData && window.currentRubricData.rubric_analysis) {
+                const section = window.currentRubricData.rubric_analysis.sections[sectionIndex];
+                if (section && section.items[criterionIndex]) {
+                    if (!section.items[criterionIndex].examples) {
+                        section.items[criterionIndex].examples = [];
                     }
-                } catch (backendError) {
-                    console.warn('Backend YAML generation failed, using local fallback:', backendError.message);
+                    section.items[criterionIndex].examples.push('New example');
                     
-                    // Generate YAML locally
-                    yamlContent = generateYamlLocally(dashboardCriteria);
-                    console.log('Local YAML generation completed');
+                    // Refresh the section display
+                    const criteriaContainer = document.getElementById('criteriaContainer');
+                    criteriaContainer.innerHTML = '';
+                    displayRubricSections(window.currentRubricData.rubric_analysis.sections, criteriaContainer);
+                    updatePreview();
                 }
-                
-                if (yamlContent) {
-                    downloadFile(yamlContent, 'assessment-rubric.yaml', 'text/yaml');
-                    console.log('YAML downloaded successfully');
-                    
-                    // Show success message
-                    showStatus('success', 'YAML file downloaded successfully!');
-                } else {
-                    throw new Error('Failed to generate YAML content');
-                }
-                
-            } catch (error) {
-                console.error('Error generating YAML:', error);
-                showStatus('error', 'Failed to generate YAML file. Please try again.');
             }
         }
 
-        function generateYamlLocally(criteria) {
-            console.log('Generating YAML locally with criteria:', criteria);
+        // Remove example
+        function removeExample(sectionIndex, criterionIndex, exampleIndex) {
+            if (window.currentRubricData && window.currentRubricData.rubric_analysis) {
+                const section = window.currentRubricData.rubric_analysis.sections[sectionIndex];
+                if (section && section.items[criterionIndex] && section.items[criterionIndex].examples) {
+                    section.items[criterionIndex].examples.splice(exampleIndex, 1);
+                    
+                    // Refresh the section display
+                    const criteriaContainer = document.getElementById('criteriaContainer');
+                    criteriaContainer.innerHTML = '';
+                    displayRubricSections(window.currentRubricData.rubric_analysis.sections, criteriaContainer);
+                    updatePreview();
+                }
+            }
+        }
+
+        // Update preview to sync with dashboard changes
+        function updatePreview() {
+            if (!window.currentRubricData) return;
             
-            const systemMessage = document.getElementById('systemMessage').value || 
-                'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
+            // Update YAML content based on current data
+            const yamlContent = generateYAMLFromCurrentData();
             
-            // Generate the user message
-            const userMessage = generateUserMessage(criteria);
-            const examsList = criteria.map(c => c.examId || c.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'));
+            // Update preview display
+            const previewContent = document.querySelector('#yamlPreview code');
+            if (previewContent) {
+                previewContent.textContent = yamlContent;
+            }
+        }
+
+        // Generate YAML from current dashboard data
+        function generateYAMLFromCurrentData() {
+            if (!window.currentRubricData) return '';
             
-            // Create YAML content
-            const yamlContent = `system_message: |
-  ${systemMessage}
+            const data = window.currentRubricData;
+            const sections = data.rubric_analysis?.sections || [];
+            const totalPoints = sections.reduce((sum, section) => sum + (section.maxPoints || 0), 0);
+            
+            let yaml = `# OSCE Assessment Rubric
+# Generated from Dashboard
+# Total Points: ${totalPoints}
+
+system_message: |
+  You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
 
 user_message: |
-  ${userMessage.split('\n').map(line => '  ' + line).join('\n')}
+  Your task is to identify and score the following assessment criteria in the medical examination.
+  
+  Assessment Criteria:
+`;
 
+            sections.forEach(section => {
+                section.items.forEach(item => {
+                    yaml += `  - ${item.description || item.name} (${item.points || 1} points)\n`;
+                });
+            });
+
+            yaml += `
 response_config:
   structured_output: true
   format: json
-  schema:
-    type: object
-    properties:
-${examsList.map(examId => `      ${examId}:
-        type: object
-        properties:
-          statement:
-            type: string
-            description: statement extracted from the transcript that supports this specific exam
-          start_time:
-            type: string
-            description: timepoint for start of the exam (MM:SS only)
-          end_time:
-            type: string
-            description: timepoint for end of the exam (MM:SS only)
-          rationale:
-            type: string
-            description: reasoning behind scoring the physical exam
-          score:
-            type: integer
-            description: score of the exam (0 or 1)
-        required: [statement, start_time, end_time, rationale, score]`).join('\n')}
-    required: [${examsList.map(id => `"${id}"`).join(', ')}]
 
-# Generated by Oski Rubricon - Medical Assessment Platform
-# Date: ${new Date().toISOString()}
-# Criteria Count: ${criteria.length}
-# Total Points: ${criteria.reduce((sum, c) => sum + (c.max_points || 1), 0)}`;
+assessment_config:
+  type: "medical_osce_assessment"
+  version: "2.0"
+  criteria_count: ${sections.reduce((sum, s) => sum + s.items.length, 0)}
+  total_points: ${totalPoints}
 
-            return yamlContent;
-        }
+assessment_criteria:
+`;
 
-        function getCurrentDashboardCriteria() {
-            const container = document.getElementById('criteriaContainer');
-            const criteria = [];
-            
-            Array.from(container.children).forEach((item, index) => {
-                const nameInput = item.querySelector('.criterion-name');
-                const pointsInput = item.querySelector('.criterion-points');
-                const exampleInputs = item.querySelectorAll('.example-input');
-                
-                const examples = Array.from(exampleInputs)
-                    .map(input => input.value.trim())
-                    .filter(value => value);
-                
-                if (nameInput.value.trim()) {
-                    const examId = nameInput.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-                    criteria.push({
-                        examId: examId,
-                        name: nameInput.value.trim(),
-                        max_points: parseInt(pointsInput.value) || 1,
-                        examples: examples.length > 0 ? examples : [`I'm going to assess your ${nameInput.value.trim().toLowerCase()}`]
+            let criterionId = 1;
+            sections.forEach(section => {
+                section.items.forEach(item => {
+                    yaml += `  - id: "criterion_${criterionId}"
+    name: "${item.description || item.name}"
+    max_points: ${item.points || 1}
+    description: "${item.description || item.name}"
+    verbalization_examples:
+`;
+                    (item.examples || []).forEach(example => {
+                        yaml += `      - "${example}"\n`;
                     });
-                }
+                    criterionId++;
+                });
+            });
+
+            return yaml;
+        }
+
+        // Fix YAML download functionality
+        function downloadYAML() {
+            if (!window.currentRubricData) {
+                alert('No rubric data available to download.');
+                return;
+            }
+            
+            const yamlContent = generateYAMLFromCurrentData();
+            const fileName = `rubric_${new Date().toISOString().slice(0, 10)}.yaml`;
+            
+            // Create and trigger download
+            const blob = new Blob([yamlContent], { type: 'application/x-yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Show success message
+            showStatus('success', `YAML file "${fileName}" downloaded successfully!`);
+        }
+
+        // Fix start over functionality
+        function startOver() {
+            // Smooth scroll to top
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
             });
             
-            return criteria;
+            // Wait for scroll to complete, then reload
+            setTimeout(() => {
+                location.reload();
+            }, 500);
         }
-
-        function generateCurrentYaml() {
-            const systemMessage = document.getElementById('systemMessage').value || 'You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.';
-            const userMessage = document.getElementById('userMessagePreview').textContent;
-            
-            return `system_message: 
-   ${systemMessage}
-   
-user_message: 
-  |${userMessage}
-response_config:
-  structured_output: True`;
-        }
-
-        // Missing utility function for converting file to base64
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    // Remove the data URL prefix to get just the base64 content
-                    const base64 = reader.result.split(',')[1];
-                    resolve(base64);
-                };
-                reader.onerror = (error) => reject(error);
-            });
-        }
-
-
 
         // Enhanced status display function
         function showStatus(type, message, persistent = false) {
