@@ -3114,9 +3114,9 @@
         function getBackendURL() {
             // Try different URLs based on the environment
             const possibleURLs = [
-                'http://localhost:5001',
-                'http://127.0.0.1:5001',
-                'http://0.0.0.0:5001'
+                'http://localhost:5002',
+                'http://127.0.0.1:5002',
+                'http://0.0.0.0:5002'
             ];
             return possibleURLs[0]; // Start with localhost
         }
@@ -4954,7 +4954,7 @@ assessment_criteria:
                 
                 // Provide specific error guidance
                 if (error.message.includes('Load failed') || error.message.includes('Failed to fetch')) {
-                    alert('❌ Backend connection failed!\n\nPossible solutions:\n1. Make sure backend.py is running: python3 backend.py --server\n2. Check if port 5001 is available\n3. Try refreshing the page\n\nError: ' + error.message);
+                    alert('❌ Backend connection failed!\n\nPossible solutions:\n1. Make sure backend.py is running: python3 backend.py --server\n2. Check if port 5002 is available\n3. Try refreshing the page\n\nError: ' + error.message);
                 } else {
                     alert('❌ Backend connection failed: ' + error.message);
                 }

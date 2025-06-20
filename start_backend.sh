@@ -24,10 +24,10 @@ pkill -f "python.*backend" 2>/dev/null || true
 sleep 2
 
 # Start the backend server
-echo "🚀 Starting backend server on port 5001..."
-echo "📍 Health check: http://localhost:5001/health"
-echo "📋 Upload endpoint: http://localhost:5001/upload"
-echo "📥 Download endpoint: http://localhost:5001/download"
+echo "🚀 Starting backend server on port 5002..."
+echo "📍 Health check: http://localhost:5002/health"
+echo "📋 Upload endpoint: http://localhost:5002/upload"
+echo "📥 Download endpoint: http://localhost:5002/download"
 echo "=================================="
 echo "✅ Backend ready for Rubricon!"
 echo "   Open rubricon.html in your browser"

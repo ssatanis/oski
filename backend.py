@@ -584,7 +584,7 @@ if __name__ == "__main__":
         print("   POST /upload - Upload and process files")
         print("   POST /download - Download YAML files")
         print("=" * 50)
-        app.run(host='0.0.0.0', port=5001, debug=True)
+        app.run(host='0.0.0.0', port=5002, debug=True)
     else:
         # Test with the specific file
         test_file = "Note Checklist - Station 1A - Rash - Psoriasis.xlsx"
