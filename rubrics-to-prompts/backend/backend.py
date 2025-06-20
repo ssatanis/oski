@@ -275,7 +275,7 @@ def generate_smart_defaults(filename: str) -> List[Dict]:
     ]
 
 
-def generate_rubric_with_llm(chunks: List[str]) -> dict:
+def generate_rubric_with_llm(chunks: List[str], filename: str = "uploaded_file") -> dict:
     """Generate structured rubric using LLM"""
     if not chunks:
         return format_rubric_response(generate_default_rubric())

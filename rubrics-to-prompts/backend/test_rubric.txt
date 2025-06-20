@@ -1,4 +1,20 @@
-Medical Assessment Rubric
-History Taking
-Physical Examination
-Communication Skills
+OSCE Assessment Rubric
+
+History Taking (6 points)
+- Chief complaint and history of present illness
+- Past medical history and medications
+- Social and family history
+
+Physical Examination (8 points)
+- Vital signs assessment
+- Systematic physical examination
+- Appropriate examination techniques
+
+Communication Skills (4 points)
+- Clear communication with patient
+- Empathy and professionalism
+- Explanation of findings
+
+Clinical Reasoning (2 points)
+- Diagnostic reasoning
+- Management planning
