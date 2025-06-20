@@ -252,3 +252,104 @@ If you see this message after running `npm run dev`, all services are running:
 - ✅ OSCE Backend: http://localhost:8001/docs
 
 **Press Ctrl+C to stop all services**
+
+# Rubricon - Medical Rubric Processing System
+
+A web-based application for processing medical rubrics and generating YAML assessment files.
+
+## Features
+
+- Upload medical rubric files (Excel, PDF, Word, CSV, Images)
+- Extract scoring information automatically
+- Generate structured YAML assessment files
+- AI-enhanced examination criteria (Azure OpenAI + ChatGPT fallback)
+- Modern drag-and-drop interface
+
+## Setup Instructions
+
+### 1. Environment Configuration
+
+Copy the template environment file:
+```bash
+cp .env.template .env
+```
+
+Edit `.env` with your API keys:
+```bash
+# Azure OpenAI Configuration (Primary)
+AZURE_OPENAI_KEY=your_azure_openai_key_here
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
+
+# ChatGPT OpenAI Configuration (Fallback)
+CHATGPT_OPENAI_KEY=your_openai_api_key_here
+```
+
+### 2. Install Dependencies
+
+```bash
+pip install -r backend-requirements.txt
+```
+
+### 3. Start the Backend
+
+```bash
+python3 backend.py --server
+```
+
+The server will start on `http://localhost:5002`
+
+### 4. Open the Frontend
+
+Open `rubricon.html` in your web browser or serve it via a local server.
+
+## Usage
+
+1. **Upload File**: Drag and drop or click to upload a medical rubric file
+2. **Processing**: The system extracts criteria and scoring information
+3. **AI Enhancement**: Uses OpenAI to enhance examination components
+4. **Download**: Get the generated YAML file for assessment
+
+## Supported File Formats
+
+- Excel (.xlsx, .xls)
+- PDF (.pdf)
+- Word Documents (.docx, .doc)
+- CSV (.csv)
+- Images (.png, .jpg, .jpeg, .gif, .bmp, .tiff)
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `POST /upload` - Upload and process file
+- `POST /download` - Download generated YAML
+
+## Monitoring
+
+Use the provided scripts for backend management:
+```bash
+./check_backend.sh        # Check status and restart if needed
+./test_integration.sh     # Test full integration
+./keep_backend_running.sh # Keep backend running continuously
+```
+
+## Troubleshooting
+
+### Backend Issues
+- Ensure port 5002 is available
+- Check that all dependencies are installed
+- Verify API keys in `.env` file
+
+### Frontend Issues
+- Test backend connectivity with: `curl -X GET http://localhost:5002/health`
+- Check browser console for error messages
+- Ensure CORS is properly configured
+
+### API Key Issues
+- Azure OpenAI: Check deployment names and endpoint URLs
+- ChatGPT: Verify API key has proper permissions
+- The system falls back to ChatGPT if Azure OpenAI fails
+
+## Security Note
+
+Never commit `.env` files with actual API keys. The `.env` file is excluded from git tracking.
