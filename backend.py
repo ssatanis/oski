@@ -61,59 +61,56 @@ def list_available_deployments(client):
     return None
 
 def initialize_azure_client():
-    api_key = os.getenv("AZURE_OPENAI_KEY")
-    endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    # Try Azure OpenAI first
+    azure_api_key = os.getenv("AZURE_OPENAI_KEY")
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
     
+    # ChatGPT fallback
+    chatgpt_api_key = os.getenv("CHATGPT_OPENAI_KEY")
+    
     print(f"🔧 Configuration check:")
-    print(f"   API Key: {'✅ Set' if api_key else '❌ Missing'}")
-    print(f"   Endpoint: {endpoint if endpoint else '❌ Missing'}")
+    print(f"   Azure API Key: {'✅ Set' if azure_api_key else '❌ Missing'}")
+    print(f"   Azure Endpoint: {azure_endpoint if azure_endpoint else '❌ Missing'}")
+    print(f"   ChatGPT API Key: {'✅ Set' if chatgpt_api_key else '❌ Missing'}")
     print(f"   Deployment: {deployment_name}")
     
-    if api_key and endpoint:
+    # Try Azure OpenAI first
+    if azure_api_key and azure_endpoint:
         try:
+            from openai import AzureOpenAI
             client = AzureOpenAI(
-                api_key=api_key,
-                azure_endpoint=endpoint,
+                api_key=azure_api_key,
+                azure_endpoint=azure_endpoint,
                 api_version="2024-02-15-preview"
             )
             print(f"✅ Azure OpenAI client initialized successfully")
-            print(f"📍 Endpoint: {endpoint}")
+            print(f"📍 Endpoint: {azure_endpoint}")
             
             # Try to list available deployments
             list_available_deployments(client)
             
-            # Common deployment names to try
-            deployment_names_to_try = [
-                deployment_name,
-                "gpt-4o-mini", 
-                "gpt-4o", 
-                "gpt-35-turbo",
-                "gpt-4",
-                "gpt-4-turbo",
-                # Sometimes deployments use underscores
-                "gpt_4o_mini",
-                "gpt_35_turbo",
-                # Sometimes they have different naming
-                "text-davinci-003",
-                "gpt-3.5-turbo"
-            ]
-            
-            # Skip deployment testing for now and proceed with mock data
-            print(f"⚠️  Skipping deployment testing - proceeding with data extraction")
-            print(f"💡 Note: Your Azure OpenAI resource may need model deployments configured")
-            print(f"   Visit: https://portal.azure.com → Your OpenAI resource → Model deployments")
-            
-            return client, deployment_name
+            return client, deployment_name, "azure"
                 
         except Exception as e:
             print(f"❌ Failed to initialize Azure OpenAI client: {e}")
-            return None, None
+            print(f"🔄 Trying ChatGPT fallback...")
+    
+    # Fallback to ChatGPT
+    if chatgpt_api_key:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=chatgpt_api_key)
+            print(f"✅ ChatGPT OpenAI client initialized successfully")
+            return client, "gpt-4o-mini", "openai"
+        except Exception as e:
+            print(f"❌ Failed to initialize ChatGPT client: {e}")
+            return None, None, None
     else:
-        print("⚠️  Azure OpenAI credentials not found in .env file")
-        return None, None
+        print("⚠️  No OpenAI credentials found in .env file")
+        return None, None, None
 
-client, deployment_name = initialize_azure_client()
+client, deployment_name, client_type = initialize_azure_client()
 
 # Global variable to store extracted scoring information
 extracted_scoring_info = {}
@@ -402,9 +399,13 @@ Format as a list of specific, actionable examination components that can be iden
 """
 
         try:
-            print(f"📤 Enhancing with Azure OpenAI...")
+            print(f"📤 Enhancing with {client_type.upper()} OpenAI...")
+            
+            # Use appropriate model based on client type
+            model_name = deployment_name if client_type == "azure" else "gpt-4o-mini"
+            
             response = client.chat.completions.create(
-                model=deployment_name,
+                model=model_name,
                 messages=[
                     {
                         "role": "system",
@@ -420,7 +421,7 @@ Format as a list of specific, actionable examination components that can be iden
             )
             
             ai_enhanced_exams = response.choices[0].message.content
-            print(f"✅ Azure OpenAI enhancement successful")
+            print(f"✅ {client_type.upper()} OpenAI enhancement successful")
             
             # Add AI-enhanced examination list
             yaml_content += f"""
@@ -429,7 +430,7 @@ Format as a list of specific, actionable examination components that can be iden
    {ai_enhanced_exams.replace(chr(10), chr(10) + '   ')}"""
             
         except Exception as e:
-            print(f"⚠️  Azure OpenAI enhancement failed: {str(e)}")
+            print(f"⚠️  {client_type.upper() if client_type else 'OpenAI'} enhancement failed: {str(e)}")
     
     # Add scoring summary if available
     if extracted_scoring_info:
@@ -473,7 +474,7 @@ Format as a list of specific, actionable examination components that can be iden
 # Processing date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
 # Station: {station_key}
 # Scoring: {len(extracted_scoring_info)} domains, {sum(info['possible_points'] for info in extracted_scoring_info.values()) if extracted_scoring_info else 0} total points
-# Azure OpenAI: {'✅ Enhanced' if client else '📋 Extracted only'}
+# OpenAI: {'✅ Enhanced' if client else '📋 Extracted only'}
 """
     
     return yaml_content
