@@ -2652,17 +2652,14 @@
                     rubricData = await generateEnhancedFallbackRubric(currentFile, base64Content);
                 }
                 
-                // Show final success message
-                const sectionNames = rubricData.sections ? rubricData.sections.map(s => s.name).join(', ') : 
-                                   rubricData.criteria ? rubricData.criteria.map(c => c.name).join(', ') : 'All core sections';
-                
-                statusMessages.innerHTML = `
-                    <div class="processing-success">
-                        <div class="success-icon">✅</div>
-                        <p>Successfully processed! Found ${rubricData.sections?.length || rubricData.criteria?.length || 4} sections</p>
-                        <p class="success-details">${sectionNames}</p>
-                    </div>
-                `;
+                            // Show final success message
+            statusMessages.innerHTML = `
+                <div class="processing-success">
+                    <div class="success-icon">✅</div>
+                    <p>Processing completed! Your rubric is ready for editing.</p>
+                    <p class="success-details">You can now customize the assessment criteria below</p>
+                </div>
+            `;
                 
                 // Update process button to show completion
                 processButton.classList.add('success');
@@ -2747,7 +2744,7 @@
                     statusMessages.innerHTML = `
                         <div class="processing-success">
                             <div class="success-icon">✅</div>
-                            <p>Processing completed with fallback! Found 4 standard assessment criteria</p>
+                            <p>Processing completed! Your standard assessment criteria are ready.</p>
                             <p class="success-details">You can edit these criteria in the dashboard below</p>
                         </div>
                     `;
@@ -3844,8 +3841,15 @@
             console.log('Showing dashboard with data:', parsedData);
             
             // Hide processing, show dashboard
-            document.getElementById('processingSection').style.display = 'none';
+            const processingSection = document.getElementById('processingSection');
             const dashboardSection = document.getElementById('dashboardSection');
+            
+            console.log('Processing section found:', !!processingSection);
+            console.log('Dashboard section found:', !!dashboardSection);
+            
+            if (processingSection) {
+                processingSection.style.display = 'none';
+            }
             
             // Store current data globally for updates
             window.currentRubricData = parsedData;
@@ -3867,9 +3871,38 @@
                 console.log('Displaying criteria:', parsedData.criteria);
                 displayCriteria(parsedData.criteria, criteriaContainer);
             } else {
-                console.log('No criteria found, adding default criterion');
-                // Add a default criterion if none exist
-                addNewCriterion();
+                console.log('No criteria found, creating default criteria');
+                // Create default criteria structure if none exist
+                const defaultCriteria = [
+                    {
+                        name: "History Taking",
+                        max_points: 6,
+                        points: 6,
+                        examples: ["Tell me about your symptoms", "When did this start?"]
+                    },
+                    {
+                        name: "Physical Examination",
+                        max_points: 8,
+                        points: 8,
+                        examples: ["I'm going to examine you now", "Let me check this area"]
+                    },
+                    {
+                        name: "Communication Skills",
+                        max_points: 4,
+                        points: 4,
+                        examples: ["Do you have any questions?", "Let me explain what I found"]
+                    },
+                    {
+                        name: "Professional Behavior",
+                        max_points: 2,
+                        points: 2,
+                        examples: ["I'll wash my hands before examining", "Thank you for your cooperation"]
+                    }
+                ];
+                
+                // Update the current rubric data
+                window.currentRubricData.criteria = defaultCriteria;
+                displayCriteria(defaultCriteria, criteriaContainer);
             }
             
             // Update footer state for dashboard
@@ -3887,7 +3920,13 @@
                 });
             }, 300);
             
-            dashboardSection.style.display = 'block';
+            if (dashboardSection) {
+                dashboardSection.style.display = 'block';
+                dashboardSection.classList.add('visible');
+                console.log('Dashboard should now be visible');
+            } else {
+                console.error('Dashboard section not found in DOM!');
+            }
             
             // Update preview
             updatePreview();
@@ -3922,6 +3961,75 @@
                 `;
                 container.appendChild(sectionDiv);
             });
+        }
+
+        // Display criteria when we have a flat criteria array (no sections)
+        function displayCriteria(criteria, container) {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'criterion-section';
+            
+            // Create a default section for criteria
+            const totalPoints = criteria.reduce((sum, criterion) => sum + (criterion.max_points || criterion.points || 0), 0);
+            
+            sectionDiv.innerHTML = `
+                <div class="section-header">
+                    <div class="section-title-container">
+                        <h3 class="section-title non-editable">Assessment Criteria</h3>
+                        <div class="section-points">
+                            <label>Section Total:</label>
+                            <input type="number" class="section-total-input" value="${totalPoints}" min="1" max="50" readonly>
+                            <span>points</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="criteria-list" id="criteria-0">
+                    ${criteria.map((criterion, index) => createSimpleCriterionHTML(criterion, index)).join('')}
+                </div>
+                <button class="add-criterion-btn" onclick="addNewCriterion(0)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add Criterion
+                </button>
+            `;
+            container.appendChild(sectionDiv);
+        }
+
+        // Create HTML for simple criteria (flat structure)
+        function createSimpleCriterionHTML(criterion, criterionIndex) {
+            const points = criterion.max_points || criterion.points || 1;
+            const name = criterion.name || criterion.description || 'New Criterion';
+            const examples = criterion.examples || ['Example assessment criteria'];
+            
+            return `
+                <div class="criterion-item" data-section="0" data-criterion="${criterionIndex}">
+                    <div class="criterion-header">
+                        <div class="criterion-number">${criterionIndex + 1}.</div>
+                        <input type="text" class="criterion-name" value="${name}" 
+                               onchange="updateSimpleCriterion(${criterionIndex}, 'name', this.value)">
+                        <div class="criterion-points">
+                            <label>Points:</label>
+                            <input type="number" class="points-input" value="${points}" min="1" max="20" 
+                                   onchange="updateSimpleCriterion(${criterionIndex}, 'points', this.value)">
+                            <button class="remove-criterion-btn" onclick="removeSimpleCriterion(${criterionIndex})">×</button>
+                        </div>
+                    </div>
+                    <div class="examples-section">
+                        <label>Examples/Criteria:</label>
+                        <div class="examples-list">
+                            ${examples.map((example, exIndex) => `
+                                <div class="example-item">
+                                    <input type="text" class="example-input" value="${example}" 
+                                           onchange="updateSimpleExample(${criterionIndex}, ${exIndex}, this.value)">
+                                    <button class="remove-example-btn" onclick="removeSimpleExample(${criterionIndex}, ${exIndex})">×</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="add-example-btn" onclick="addNewSimpleExample(${criterionIndex})">+ Add Example</button>
+                    </div>
+                </div>
+            `;
         }
 
         function createCriterionHTML(criterion, sectionIndex, criterionIndex) {
@@ -4014,6 +4122,65 @@
             }
         }
 
+        // Simple criteria management functions
+        function updateSimpleCriterion(criterionIndex, field, value) {
+            if (window.currentRubricData && window.currentRubricData.criteria) {
+                const criterion = window.currentRubricData.criteria[criterionIndex];
+                if (criterion) {
+                    if (field === 'name') {
+                        criterion.name = value;
+                    } else if (field === 'points') {
+                        criterion.max_points = parseInt(value);
+                        criterion.points = parseInt(value);
+                    }
+                    updatePreview();
+                }
+            }
+        }
+
+        function updateSimpleExample(criterionIndex, exampleIndex, value) {
+            if (window.currentRubricData && window.currentRubricData.criteria) {
+                const criterion = window.currentRubricData.criteria[criterionIndex];
+                if (criterion && criterion.examples) {
+                    criterion.examples[exampleIndex] = value;
+                    updatePreview();
+                }
+            }
+        }
+
+        function addNewSimpleExample(criterionIndex) {
+            if (window.currentRubricData && window.currentRubricData.criteria) {
+                const criterion = window.currentRubricData.criteria[criterionIndex];
+                if (criterion) {
+                    if (!criterion.examples) {
+                        criterion.examples = [];
+                    }
+                    criterion.examples.push('New example');
+                    
+                    // Refresh the display
+                    const criteriaContainer = document.getElementById('criteriaContainer');
+                    criteriaContainer.innerHTML = '';
+                    displayCriteria(window.currentRubricData.criteria, criteriaContainer);
+                    updatePreview();
+                }
+            }
+        }
+
+        function removeSimpleExample(criterionIndex, exampleIndex) {
+            if (window.currentRubricData && window.currentRubricData.criteria) {
+                const criterion = window.currentRubricData.criteria[criterionIndex];
+                if (criterion && criterion.examples) {
+                    criterion.examples.splice(exampleIndex, 1);
+                    
+                    // Refresh the display
+                    const criteriaContainer = document.getElementById('criteriaContainer');
+                    criteriaContainer.innerHTML = '';
+                    displayCriteria(window.currentRubricData.criteria, criteriaContainer);
+                    updatePreview();
+                }
+            }
+        }
+
         // Remove example
         function removeExample(sectionIndex, criterionIndex, exampleIndex) {
             if (window.currentRubricData && window.currentRubricData.rubric_analysis) {
@@ -4027,6 +4194,56 @@
                     displayRubricSections(window.currentRubricData.rubric_analysis.sections, criteriaContainer);
                     updatePreview();
                 }
+            }
+        }
+
+        // Add new criterion function
+        function addNewCriterion(sectionIndex = null) {
+            console.log('Adding new criterion...');
+            
+            const newCriterion = {
+                name: 'New Assessment Criterion',
+                max_points: 2,
+                points: 2,
+                examples: ['Assessment example', 'Evaluation criteria']
+            };
+            
+            if (window.currentRubricData) {
+                // If we have sections structure
+                if (window.currentRubricData.rubric_analysis && window.currentRubricData.rubric_analysis.sections && sectionIndex !== null) {
+                    const section = window.currentRubricData.rubric_analysis.sections[sectionIndex];
+                    if (section) {
+                        section.items.push({
+                            description: newCriterion.name,
+                            points: newCriterion.points,
+                            examples: newCriterion.examples
+                        });
+                        section.maxPoints += newCriterion.points;
+                        
+                        // Refresh the section display
+                        const criteriaContainer = document.getElementById('criteriaContainer');
+                        criteriaContainer.innerHTML = '';
+                        displayRubricSections(window.currentRubricData.rubric_analysis.sections, criteriaContainer);
+                    }
+                }
+                // If we have flat criteria structure
+                else if (window.currentRubricData.criteria) {
+                    window.currentRubricData.criteria.push(newCriterion);
+                    
+                    // Refresh the criteria display
+                    const criteriaContainer = document.getElementById('criteriaContainer');
+                    criteriaContainer.innerHTML = '';
+                    displayCriteria(window.currentRubricData.criteria, criteriaContainer);
+                }
+                // If no structure exists, create one
+                else {
+                    window.currentRubricData.criteria = [newCriterion];
+                    const criteriaContainer = document.getElementById('criteriaContainer');
+                    criteriaContainer.innerHTML = '';
+                    displayCriteria(window.currentRubricData.criteria, criteriaContainer);
+                }
+                
+                updatePreview();
             }
         }
 
