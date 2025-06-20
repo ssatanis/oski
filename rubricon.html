@@ -2955,12 +2955,14 @@
                 let rubricData = null;
                 
                 try {
-                    // Use working Vercel API functions directly
-                    console.log('Processing with working Vercel APIs...');
+                    // Use working backend API
+                    console.log('🚀 Processing with backend API...');
                     rubricData = await processWithWorkingAPIs(currentFile);
-                    console.log('Processing successful!');
+                    console.log('✅ Backend processing successful!');
+                    console.log('🔍 RubricData YAML length:', rubricData?.yaml_content?.length || 0);
                 } catch (error) {
-                    console.warn('API processing failed, using local content analysis:', error.message);
+                    console.error('❌ Backend processing failed:', error);
+                    console.warn('⚠️ Falling back to emergency rubric (no YAML content)');
                     
                     // Create base64 content for fallback processing
                     const base64Content = await fileToBase64(currentFile);
@@ -3110,30 +3112,37 @@
 
         // Process using backend.py
         async function processWithWorkingAPIs(file) {
-            console.log('Using backend.py for processing...');
+            console.log('🔄 Using backend.py for processing...');
             
             try {
                 // Upload and process file using your exact backend.py
-                console.log('Processing file with backend.py...');
+                console.log('📤 Uploading file to backend...');
                 
                 const formData = new FormData();
                 formData.append('file', file);
                 
+                console.log('🔄 Making request to http://localhost:5001/upload');
                 const uploadResponse = await fetch('http://localhost:5001/upload', {
                     method: 'POST',
                     body: formData
                 });
                 
+                console.log('📥 Response status:', uploadResponse.status);
+                console.log('📥 Response ok:', uploadResponse.ok);
+                
                 if (!uploadResponse.ok) {
                     const errorText = await uploadResponse.text();
-                    console.error('Upload failed with response:', errorText);
+                    console.error('❌ Upload failed with response:', errorText);
                     throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
                 }
                 
                 const uploadResult = await uploadResponse.json();
-                console.log('Processing completed:', uploadResult);
+                console.log('📦 Processing completed:', uploadResult);
                 console.log('✅ YAML Content Length:', uploadResult.yaml_content?.length || 0);
                 console.log('✅ Filename:', uploadResult.filename);
+                console.log('✅ Success:', uploadResult.success);
+                console.log('✅ Scoring extracted:', uploadResult.scoring_extracted);
+                console.log('✅ Total points:', uploadResult.total_points);
                 
                 // Store the YAML content for download
                 window.yamlContent = uploadResult.yaml_content;
@@ -4213,6 +4222,15 @@
                             </svg>
                             Process Another
                         </button>
+                        <button class="test-backend-button" onclick="testBackendConnection()" style="margin-left: 10px; background: #6366f1;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6"></path>
+                                <path d="m21 12-6-3.46v6.92z"></path>
+                                <path d="m3 12 6-3.46v6.92z"></path>
+                            </svg>
+                            Test Backend
+                        </button>
                     </div>
                 </div>
             `;
@@ -4873,6 +4891,39 @@ assessment_criteria:
         // Legacy function for compatibility
         function downloadYAML() {
             downloadYAMLFile();
+        }
+
+        // Test backend connection function
+        async function testBackendConnection() {
+            console.log('🧪 Testing backend connection...');
+            
+            try {
+                // Create a simple test file
+                const testFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
+                const formData = new FormData();
+                formData.append('file', testFile);
+                
+                const response = await fetch('http://localhost:5001/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('🔍 Test response status:', response.status);
+                console.log('🔍 Test response ok:', response.ok);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Backend is working!', result);
+                    alert('✅ Backend connection successful!');
+                } else {
+                    const errorText = await response.text();
+                    console.log('❌ Backend error:', errorText);
+                    alert('❌ Backend error: ' + errorText);
+                }
+            } catch (error) {
+                console.error('❌ Backend connection failed:', error);
+                alert('❌ Backend connection failed: ' + error.message);
+            }
         }
 
         // Fix start over functionality
