@@ -12,7 +12,7 @@ import yaml
 
 # Initialize OpenAI client with error handling
 try:
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("AZURE_OPENAI_KEY")
     if api_key:
         client = OpenAI(api_key=api_key)
     else:

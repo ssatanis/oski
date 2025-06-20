@@ -96,11 +96,168 @@ async function fallbackExtraction(filepath, filename) {
     content = `Error reading file: ${filename}`;
   }
   
+  // Parse the actual content of the file to extract rubric criteria
+  const parsedRubric = parseRubricContent(content, filename);
+  
   return {
     extractedText: content,
-    rubric: generateDefaultRubric(filename),
-    yamlContent: generateDefaultYAML(filename)
+    rubric: parsedRubric,
+    yamlContent: generateYAMLFromRubric(parsedRubric)
   };
+}
+
+// Parse the rubric content to extract criteria
+function parseRubricContent(content, filename) {
+  const lines = content.split('\n').filter(line => line.trim());
+  const criteria = [];
+  
+  // Extract title from first few lines or filename
+  let title = path.basename(filename, path.extname(filename));
+  for (let i = 0; i < Math.min(3, lines.length); i++) {
+    if (lines[i].length > 10 && !lines[i].match(/^\s*[\d\-\*\•]/)) {
+      title = lines[i].trim();
+      break;
+    }
+  }
+  
+  let currentSection = null;
+  let totalPoints = 0;
+  
+  // Look for sections and criteria in the content
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Skip empty lines
+    if (!line) continue;
+    
+    // Check for section headers (e.g., "History Taking (3 points)")
+    const sectionMatch = line.match(/^([A-Za-z\s]+)\s*\((\d+)\s*points?\)/i);
+    if (sectionMatch) {
+      currentSection = sectionMatch[1].trim();
+      const sectionPoints = parseInt(sectionMatch[2]);
+      
+      // Add as a criterion
+      criteria.push({
+        name: currentSection,
+        points: sectionPoints,
+        description: `${currentSection} assessment`,
+        examples: [`Assessing ${currentSection.toLowerCase()}`]
+      });
+      
+      totalPoints += sectionPoints;
+      continue;
+    }
+    
+    // Check for bullet points or numbered items under a section
+    if (currentSection && (line.startsWith('-') || line.startsWith('•') || line.match(/^\d+[\.\)]/))) {
+      const itemText = line.replace(/^[-•\d\.\)]\s*/, '').trim();
+      const pointsMatch = itemText.match(/\((\d+)\s*points?\)/i);
+      
+      let itemPoints = 1;
+      let itemName = itemText;
+      
+      if (pointsMatch) {
+        itemPoints = parseInt(pointsMatch[1]);
+        itemName = itemText.replace(/\((\d+)\s*points?\)/i, '').trim();
+      }
+      
+      // Add as a criterion if it's substantial enough
+      if (itemName.length > 3) {
+        criteria.push({
+          name: itemName,
+          points: itemPoints,
+          description: `${currentSection}: ${itemName}`,
+          examples: generateExamples(itemName, currentSection)
+        });
+        
+        totalPoints += itemPoints;
+      }
+    }
+  }
+  
+  // If no criteria were found, use some default ones based on the content
+  if (criteria.length === 0) {
+    return generateDefaultRubric(filename);
+  }
+  
+  return {
+    title: title,
+    total_points: totalPoints,
+    criteria: criteria
+  };
+}
+
+// Generate examples based on criterion name and section
+function generateExamples(criterionName, sectionName) {
+  const examples = [];
+  const nameLower = criterionName.toLowerCase();
+  const sectionLower = sectionName ? sectionName.toLowerCase() : '';
+  
+  // History taking examples
+  if (sectionLower.includes('history')) {
+    if (nameLower.includes('chief') || nameLower.includes('complaint')) {
+      examples.push("What brings you in today?");
+      examples.push("Can you tell me your main concern?");
+    } else if (nameLower.includes('present') || nameLower.includes('illness')) {
+      examples.push("When did this start?");
+      examples.push("How has it changed over time?");
+    } else {
+      examples.push(`Tell me about your ${nameLower}`);
+      examples.push(`I'd like to ask about your ${nameLower}`);
+    }
+  } 
+  // Physical exam examples
+  else if (sectionLower.includes('physical') || sectionLower.includes('examination')) {
+    if (nameLower.includes('vital') || nameLower.includes('signs')) {
+      examples.push("I'm going to check your vital signs");
+      examples.push("Let me take your blood pressure");
+    } else {
+      examples.push(`I'm going to examine your ${nameLower}`);
+      examples.push(`Let me check this area`);
+    }
+  }
+  // Generic examples if no specific ones
+  else {
+    examples.push(`I'm assessing ${nameLower}`);
+    examples.push(`Let me evaluate ${nameLower}`);
+  }
+  
+  return examples;
+}
+
+// Generate YAML content from the rubric
+function generateYAMLFromRubric(rubric) {
+  return `# OSCE Assessment Rubric
+# ${rubric.title}
+# Total Points: ${rubric.total_points}
+
+system_message: |
+  You are a helpful assistant tasked with analyzing and scoring a recorded medical examination between a medical student and a patient. Provide your response in JSON format.
+
+user_message: |
+  Your task is to identify and score the following assessment criteria in the medical examination.
+  
+  Assessment Criteria:
+${rubric.criteria.map(c => `  - ${c.name} (${c.points} points): ${c.description || c.name}`).join('\n')}
+
+response_config:
+  structured_output: true
+  format: json
+
+assessment_config:
+  type: "medical_osce_assessment"
+  version: "2.0"
+  criteria_count: ${rubric.criteria.length}
+  total_points: ${rubric.total_points}
+
+assessment_criteria:
+${rubric.criteria.map((c, i) => `  - id: "criterion_${i + 1}"
+    name: "${c.name}"
+    max_points: ${c.points}
+    description: "${c.description || c.name}"
+    verbalization_examples:
+${c.examples.map(ex => `      - "${ex}"`).join('\n')}`).join('\n')}
+`;
 }
 
 // Generate default rubric structure
